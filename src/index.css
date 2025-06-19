@@ -1,0 +1,20 @@
+:root {
+    font-family: 'Consolas', 'Menlo', 'Cascadia Mono', monospace;
+    color-scheme: dark;
+    font-synthesis: none;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+:root {
+    --corner-radius: 5px;
+}
+
+button, select, input {
+    appearance: none;
+}
+
+svg {
+    fill: var(--dark-foreground) !important;
+}

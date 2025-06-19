@@ -1,0 +1,71 @@
+:root {
+    box-sizing: border-box;
+    --clickspot-width: 10px;
+}
+
+.logo {
+    height: 100px;
+    border-radius: 15px;
+}
+
+@keyframes logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.emphasis {
+    font-weight: 900;
+    font-style: italic;
+}
+
+.shadowed {
+    box-shadow: 0 0 1em #000a;
+}
+
+button {
+    appearance: none;
+    padding: 5px;
+    background: var(--accent);
+    transition: background-color 100ms ease-in-out;
+    border-radius: var(--corner-radius);
+    border: 1px solid var(--dark-background-l);
+}
+
+    button:hover {
+        background: var(--accent-hovered);
+    }
+
+    button:active {
+        background: var(--accent-selected) !important;
+        border-color: var(--dark-background-e);
+    }
+
+body {
+    background: var(--dark-background);
+    color: var(--dark-foreground);
+}
+
+.title-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    text-align: left;
+    gap: 1rem;
+}
+
+.title-container h1, span {
+    margin: 0;
+}
+
+.body-container {
+    display: flex;
+    flex-direction: row;
+    gap: 5rem;
+    height: 1000px;
+}
