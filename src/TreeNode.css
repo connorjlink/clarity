@@ -2,6 +2,21 @@
     --node-border: var(--dark-background-ll);
 }
 
+button {
+    appearance: none;
+    padding: 5px;
+    background: var(--accent);
+    transition: filter 100ms ease-in-out;
+    border-radius: var(--corner-radius);
+    border: 1px solid var(--dark-background-l);
+}
+    button:hover {
+        filter: brightness(80%);
+    }
+    button:active {
+        filter: brightness(60%);
+    }
+
 .node {
     margin: 1rem;
     height: 100px;
@@ -58,11 +73,14 @@
         top: 0;
         transform: translateX(50%);
     }
-
-
-button:hover {
-    filter: brightness(80%);
-}
+    .node-clickspot-container.bottom {
+        height: initial;
+        width: 100%;
+        flex-direction: row;
+        bottom: 0;
+        left: 0;
+        transform: translateY(50%);
+    }
 
 .node-clickspot {
     aspect-ratio: 1 / 1;

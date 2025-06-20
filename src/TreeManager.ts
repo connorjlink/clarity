@@ -1,8 +1,11 @@
+import { type Clickspot } from './TreeNode';
+
 export type TreeNodeData = {
     id: string;
     label: string;
     position: { x: number; y: number };
     parentId?: string; // when undefined, this node is the root
+    clickspots: Clickspot[];
 };
 
 export class TreeManager {
