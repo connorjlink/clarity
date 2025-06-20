@@ -12,7 +12,7 @@ export class TreeManager {
         this.nodes = initialNodes;
     }
 
-    getNodes() {
+    getNodes(): TreeNodeData[] {
         return this.nodes;
     }
 

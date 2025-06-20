@@ -1,4 +1,4 @@
-import React, { type ReactNode, useRef, useState } from 'react';
+import React, { type ReactNode, useRef } from 'react';
 import { useTransform } from './TransformContext';
 import './TreeNode.css';
 
@@ -15,15 +15,14 @@ type TreeNodeProps = {
     position: { x: number; y: number };
     onMove: (pos: { x: number; y: number }) => void;
     onConnect: (toId: string) => void;
+    onTempLine: (line: Line | null) => void;
 };
 
 
-const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine, nodeId }) => {
+const TreeNode: React.FC<TreeNodeProps> = ({ children, onMove, onConnect, onTempLine, position, nodeId }) => {
     const { screenToWorld } = useTransform();
     const isDragging = useRef(false);
     const dragOffset = useRef({ x: 0, y: 0 });
-    const nodeRef = useRef<HTMLDivElement>(null);
-    const [position, setPosition] = useState<{ x: number; y: number }>({ x: 100, y: 100 });
 
     function startNodeDrag(event: React.MouseEvent) {
         isDragging.current = true;
@@ -40,7 +39,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine, nodeId }) => {
                 return;
             }
             const dragWorld = screenToWorld({ x: e.clientX, y: e.clientY });
-            setPosition({
+            onMove({
                 x: dragWorld.x - dragOffset.current.x,
                 y: dragWorld.y - dragOffset.current.y,
             });
@@ -78,16 +77,16 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine, nodeId }) => {
 
             if (!isDragging.current) {
                 // erase the temp line
-                onAddLine({ x1: 0, y1: 0, x2: 0, y2: 0, }, true);
+                onTempLine(null);
                 return;
             }
 
-            onAddLine({
+            onTempLine({
                 x1: nodeCenter.x,
                 y1: nodeCenter.y,
                 x2: mouseWorld.x,
                 y2: mouseWorld.y
-            }, true); // temporary
+            });
         }
 
         function onMouseUp(e: MouseEvent) {
@@ -100,23 +99,28 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine, nodeId }) => {
 
             if (!hoveredElement || !hoveredElement.classList.contains('node-clickspot')) {
                 // erase the temp line
-                onAddLine({ x1: 0, y1: 0, x2: 0, y2: 0, }, true);
+                onTempLine(null);
                 return;
             }
 
-            const hoveredRect = hoveredElement.getBoundingClientRect();
-            const hoveredCenterScreen = {
-                x: hoveredRect.left + hoveredRect.width / 2,
-                y: hoveredRect.top + hoveredRect.height / 2,
-            };
-            const hoveredCenter = screenToWorld(hoveredCenterScreen);
+            //const hoveredRect = hoveredElement.getBoundingClientRect();
+            //const hoveredCenterScreen = {
+            //    x: hoveredRect.left + hoveredRect.width / 2,
+            //    y: hoveredRect.top + hoveredRect.height / 2,
+            //};
+            //const hoveredCenter = screenToWorld(hoveredCenterScreen);
 
-            onAddLine({
-                x1: nodeCenter.x,
-                y1: nodeCenter.y,
-                x2: hoveredCenter.x,
-                y2: hoveredCenter.y,
-            }, false); // permanent
+            // closet ancestor, not closest spatially!
+            const nodeElement = hoveredElement.closest('.node') as HTMLElement | null;
+            if (!nodeElement) {
+                onTempLine(null);
+                return;
+            }
+
+            const targetNodeId = nodeElement.id;
+            if (targetNodeId && targetNodeId !== nodeId) {
+                onConnect(targetNodeId);
+            }
         }
 
         document.addEventListener('mousemove', onMouseMove);
@@ -127,7 +131,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine, nodeId }) => {
         <div
             id={nodeId}
             className="node shadowed"
-            ref={nodeRef}
             style={{
                 position: 'absolute',
                 left: position.x,
@@ -144,15 +147,15 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine, nodeId }) => {
 
             <div className="node-body">
                 <div className="node-clickspot-container left">
-                    <div className="node-clickspot" onMouseDown={startDragging}></div>
-                    <div className="node-clickspot" onMouseDown={startDragging}></div>
+                    <button className="node-clickspot" onMouseDown={startDragging}></button>
+                    <button className="node-clickspot" onMouseDown={startDragging}></button>
                 </div>
 
                 <div className="node-content">{children}</div>
 
                 <div className="node-clickspot-container right">
-                    <div className="node-clickspot" onMouseDown={startDragging}></div>
-                    <div className="node-clickspot" onMouseDown={startDragging}></div>
+                    <button className="node-clickspot" onMouseDown={startDragging}></button>
+                    <button className="node-clickspot" onMouseDown={startDragging}></button>
                 </div>
             </div>
         </div>
