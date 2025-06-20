@@ -65,7 +65,12 @@ body {
 
 .body-container {
     display: flex;
-    flex-direction: row;
-    gap: 5rem;
-    height: 1000px;
+    flex-direction: column;
+    flex: 1;
+}
+
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }

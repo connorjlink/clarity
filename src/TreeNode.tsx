@@ -1,4 +1,5 @@
-import React, { type ReactNode, useRef } from 'react';
+import React, { type ReactNode, useRef, useState } from 'react';
+import { useTransform } from './TransformContext';
 import './TreeNode.css';
 
 type Line = {
@@ -10,11 +11,50 @@ type Line = {
 
 type TreeNodeProps = {
     children: ReactNode;
-    onAddLine: (line: Line) => void;
+    nodeId: string;
+    position: { x: number; y: number };
+    onMove: (pos: { x: number; y: number }) => void;
+    onConnect: (toId: string) => void;
 };
 
-const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine }) => {
+
+const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine, nodeId }) => {
+    const { screenToWorld } = useTransform();
     const isDragging = useRef(false);
+    const dragOffset = useRef({ x: 0, y: 0 });
+    const nodeRef = useRef<HTMLDivElement>(null);
+    const [position, setPosition] = useState<{ x: number; y: number }>({ x: 100, y: 100 });
+
+    function startNodeDrag(event: React.MouseEvent) {
+        isDragging.current = true;
+
+        const mouseWorld = screenToWorld({ x: event.clientX, y: event.clientY });
+
+        dragOffset.current = {
+            x: mouseWorld.x - position.x,
+            y: mouseWorld.y - position.y,
+        };
+
+        function onMouseMove(e: MouseEvent) {
+            if (!isDragging.current) {
+                return;
+            }
+            const dragWorld = screenToWorld({ x: e.clientX, y: e.clientY });
+            setPosition({
+                x: dragWorld.x - dragOffset.current.x,
+                y: dragWorld.y - dragOffset.current.y,
+            });
+        }
+
+        function onMouseUp() {
+            isDragging.current = false;
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        }
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    }
 
     function startDragging(event: React.MouseEvent) {
         isDragging.current = true;
@@ -26,57 +66,57 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine }) => {
         }
 
         const nodeRect = nodeClickspot.getBoundingClientRect();
-        const nodeCenter = {
+        const nodeCenterScreen = {
             x: nodeRect.left + nodeRect.width / 2,
-            y: nodeRect.top + nodeRect.height / 2,
+            y: nodeRect.top,
         };
+        const nodeCenter = screenToWorld(nodeCenterScreen);
 
-        function onMouseMove(e) {
-            const mousePosition = { x: e.clientX, y: e.clientY };
+        function onMouseMove(e: MouseEvent) {
+            const mouseScreen = { x: e.clientX, y: e.clientY };
+            const mouseWorld = screenToWorld(mouseScreen);
 
             if (!isDragging.current) {
+                // erase the temp line
+                onAddLine({ x1: 0, y1: 0, x2: 0, y2: 0, }, true);
                 return;
             }
 
             onAddLine({
                 x1: nodeCenter.x,
                 y1: nodeCenter.y,
-                x2: mousePosition.x,
-                y2: mousePosition.y
-            });
+                x2: mouseWorld.x,
+                y2: mouseWorld.y
+            }, true); // temporary
         }
 
-        function onMouseUp(e) {
+        function onMouseUp(e: MouseEvent) {
             isDragging.current = false;
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
 
-            const mousePosition = { x: e.clientX, y: e.clientY };
-            const hoveredElement = document.elementFromPoint(mousePosition.x, mousePosition.y);
+            const mouseScreen = { x: e.clientX, y: e.clientY };
+            const hoveredElement = document.elementFromPoint(mouseScreen.x, mouseScreen.y);
 
             if (!hoveredElement || !hoveredElement.classList.contains('node-clickspot')) {
+                // erase the temp line
+                onAddLine({ x1: 0, y1: 0, x2: 0, y2: 0, }, true);
                 return;
             }
 
             const hoveredRect = hoveredElement.getBoundingClientRect();
-            const hoveredCenter = {
+            const hoveredCenterScreen = {
                 x: hoveredRect.left + hoveredRect.width / 2,
                 y: hoveredRect.top + hoveredRect.height / 2,
             };
+            const hoveredCenter = screenToWorld(hoveredCenterScreen);
 
-            const distance = Math.sqrt(
-                Math.pow(nodeCenter.x - hoveredCenter.x, 2) +
-                Math.pow(nodeCenter.y - hoveredCenter.y, 2)
-            );
-
-            if (distance < 100) {
-                onAddLine({
-                    x1: nodeCenter.x,
-                    y1: nodeCenter.y,
-                    x2: hoveredCenter.x,
-                    y2: hoveredCenter.y,
-                });
-            }
+            onAddLine({
+                x1: nodeCenter.x,
+                y1: nodeCenter.y,
+                x2: hoveredCenter.x,
+                y2: hoveredCenter.y,
+            }, false); // permanent
         }
 
         document.addEventListener('mousemove', onMouseMove);
@@ -84,8 +124,20 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine }) => {
     }
 
     return (
-        <div className="node shadowed">
-            <div className="node-header">
+        <div
+            id={nodeId}
+            className="node shadowed"
+            ref={nodeRef}
+            style={{
+                position: 'absolute',
+                left: position.x,
+                top: position.y,
+                transform: 'translate(0, 0)',
+                zIndex: 1,
+                userSelect: isDragging.current ? 'none' : undefined,
+            }}
+        >
+            <div className="node-header" onMouseDown={startNodeDrag} style={{ cursor: 'move' }}>
                 <img src="../assets/expression.svg" className="node-icon" alt="Node Icon" />
                 <span>Exponentiation Expression</span>
             </div>
@@ -107,4 +159,4 @@ const TreeNode: React.FC<TreeNodeProps> = ({ children, onAddLine }) => {
     );
 };
 
-export default TreeNode;
+export default TreeNode
