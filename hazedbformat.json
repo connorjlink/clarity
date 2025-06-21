@@ -1,0 +1,179 @@
+{
+    "header": {
+        "version": "1.0",
+        "format": "HazeDB",
+        "created_at": "2024-10-01T12:00:00Z",
+        "author": "Connor Link",
+        "command_line": "haze.exe test.hz"
+    },
+    "symbols": [
+        {
+
+        }
+    ],
+    "source": {
+        "haze.hz": "function nvr main() {\n    print(\"Hello, World!\");\n}\n",
+    },
+    "ast": {
+        "metadata": {
+            "optimization": "??",
+            "unoptimized_size": 123,
+            "optimized_size": 120,
+            "nodes": {
+                "program": {
+                    "friendly_name": "Haze Program", 
+                    "display_color": "#FF5733"
+                },
+                "function": {
+                    "friendly_name": "Function",
+                    "display_color": "#33FF57"
+                },
+                "statement": {
+                    "friendly_name": "Statement",
+                    "display_color": "#2D74FF"
+                },
+                "expression": {
+                    "friendly_name": "Expression",
+                    "display_color": "#44FFB3"
+                }
+            }
+        },
+        "unoptimized": {
+            "macros": {
+                "TEST": {
+                    "parameters": [
+                        "x",
+                        "y"
+                    ],
+                    "substitution": "x + y"
+                }
+            },
+            "functions": {
+                "main": {
+                    "return_type": {
+                        "storage": "value|ptr",
+                        "specifier": "byte|word|dword|qword|string|struct|nvr",
+                        "qualifier": "immutable|mutable",
+                        "signedness": "unsigned|signed",
+                        "tag": "struct_t"
+                    },
+                    "parameters": {
+                        "param_name": {
+                            "type": {
+                                "storage": "value|ptr",
+                                "specifier": "byte|word|dword|qword|string|struct|nvr",
+                                "qualifier": "immutable|mutable",
+                                "signedness": "unsigned|signed",
+                                "tag": "struct_t"
+                            }
+                        }
+                    },
+                    "statements": {
+                        "compound": {
+                            "statements": {
+                                "print": {
+                                    "message:": {
+                                        "string": "Hello, World!"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "ir": {
+        "metadata": {
+            "optimization": "??",
+            "unoptimized_size": 123,
+            "optimized_size": 120,
+            "duration": "0.123µs"
+        },
+        "unoptimized": [
+            {
+                "opcode": "LOAD",
+                "operands": ["R1", "0x1000"]
+            },
+            {
+                "opcode": "ADD",
+                "operands": ["R1", "R2", "R3"]
+            },
+            {
+                "opcode": "STORE",
+                "operands": ["R3", "0x2000"]
+            }
+        ],
+        "optimized": [
+            {
+                "opcode": "LOAD",
+                "operands": ["R1", "0x1000"]
+            },
+            {
+                "opcode": "ADD",
+                "operands": ["R1", "R2", "R3"]
+            },
+            {
+                "opcode": "STORE",
+                "operands": ["R3", "0x2000"]
+            }
+        ]
+    },
+    "asm": {
+        "metadata": {
+            "architecture": "x86 (IA-32)",
+            "optimization": "??",
+            "unoptimized_size": 123, 
+            "optimized_size": 120,
+            "duration": "0.123µs"
+        },
+        "unoptimized": [
+            {
+                "opcode": "LOAD",
+                "operands": ["R1", "0x1000"]
+            },
+            {
+                "opcode": "ADD",
+                "operands": ["R1", "R2", "R3"]
+            },
+            {
+                "opcode": "STORE",
+                "operands": ["R3", "0x2000"]
+            }
+        ],
+        "optimized": [
+            {
+                "opcode": "LOAD",
+                "operands": ["R1", "0x1000"]
+            },
+            {
+                "opcode": "ADD",
+                "operands": ["R1", "R2", "R3"]
+            },
+            {
+                "opcode": "STORE",
+                "operands": ["R3", "0x2000"]
+            }
+        ]
+    },
+    "o": {
+        "metadata": {
+            "architecture": "x86 (IA-32)",
+            "endianness": "little",
+            "format": "Windows PE",
+            "optimization": "??",
+            "unoptimized_size": 123,
+            "optimized_size": 120,
+            "executable_size": 1234,
+            "duration": "0.123µs"
+        },
+        "unoptimized": {
+            "user": "asdasdasdasd",
+            "executable": "asdasdasdasd"
+        },
+        "optimized": {
+            "user": "asdasdasdasd",
+            "executable": "asdasdasdasd"
+        }
+    }
+}
