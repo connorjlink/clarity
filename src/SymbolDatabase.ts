@@ -1,19 +1,45 @@
-import { type SymbolType, type SymbolEntry } from './SymbolTree'
+export const TypeStorages = ['value', 'ptr'];
+export const TypeSpecifiers = ['byte', 'word', 'dword', 'qword', 'string', 'struct', 'nvr'];
+export const TypeQualifiers = ['const', 'volatile'];
+export const TypeSignedness = ['signed', 'unsigned'];
+export const TypeStages = ['source', 'ast', 'ir', 'asm', 'o'];
+
+export interface SymbolEntry {
+    name: string;
+    value: any;
+    type: string;
+    text: string;
+    filepath: string; // translation unit filepath
+    markup: string;
+    location: {
+        line: number;
+        column: number; // location varies by stage
+        stage: string;
+    };
+};
 
 export class SymbolDatabase {
     // maps identifier names as searchable entities
     private symbols: Map<string, SymbolEntry>;
     // relational db
-    //private tree: SymbolTree;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private tree: any;
+
+    public lastSynchronized: Date | null = null;
     
     constructor() {
         this.symbols = new Map<string, SymbolEntry>();
-        //this.tree = new SymbolTree();
     }
 
-    // blocking connection to the local database server
-    synchronize_with(filepath: string, host: string, port: string, listener: any): void {
-        throw new Error("Method not implemented. Use synchronize_from instead.");
+    lookup(name: string, line: number, column: number): SymbolEntry | undefined {
+        const entry = this.symbols.get(name);
+        if (!entry) {
+            return undefined;
+        }
+        if (entry.location && entry.location.line === line && entry.location.column === column) {
+            return entry;
+        }
+        return undefined;
     }
 
     // non-blocking connection to the local database server
@@ -24,7 +50,6 @@ export class SymbolDatabase {
 
     private internal_synchronize_from(filepath: string, host: string, port: string, listener: any, retry_counter: number): void {
         const socket = new WebSocket(`ws://${host}:${port}/symboldb`);
-        this.clear();
         socket.onopen = (event: Event) => {
             listener.notify(`database synchronization started: ${event}`);
             const command_line = `${filepath} --architecture=haze --verbosity=verbose --execution=compile --output=raw`;
@@ -32,7 +57,17 @@ export class SymbolDatabase {
         }
         socket.onmessage = (event: Event) => {
             listener.notify(`database synchronization received: ${event}`);
-            const symbol_array = JSON.parse((event as MessageEvent).data) as SymbolEntry[];
+            const db = JSON.parse((event as MessageEvent).data);
+            this.tree = db;
+            const symbols = db.symbols as SymbolEntry[];
+            for (const symbol of symbols) {
+                try {
+                    this.addSymbol(symbol.name, symbol as SymbolEntry);
+                } catch (e) {
+                    listener.notify(`database symbol error for ${symbol.name}: ${e}`);
+                }
+            }
+            this.lastSynchronized = new Date(); // now!
         }
         socket.onclose = (event: Event) => {
             listener.notify(`database synchronization completed: ${event}`);
@@ -44,8 +79,8 @@ export class SymbolDatabase {
         // the server will close the connection when it finishes synchronizing, so no need to manually clean up
     }
 
-    addSymbol(name: string, value: any, type: SymbolType): void {
-        this.symbols.set(name, { name, value, type });
+    addSymbol(name: string, entry: SymbolEntry): void {
+        this.symbols.set(name, entry);
     }
     
     getSymbol(name: string): SymbolEntry | undefined {

@@ -12,7 +12,7 @@
         }
     ],
     "source": {
-        "haze.hz": "function nvr main() {\n    print(\"Hello, World!\");\n}\n",
+        "haze.hz": "function nvr main() {\n    print(\"Hello, World!\");\n}\n"
     },
     "ast": {
         "metadata": {

@@ -56,3 +56,61 @@ html, body, #root {
     margin: 0;
     padding: 0;
 }
+
+.console {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 30, 30, 0.8);
+    color: #e0e0e0;
+    font-family: monospace;
+    font-size: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+    pointer-events: auto;
+}
+
+.console-line {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.source-editor-container {
+    height: 200px;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+    background: var(--dark-background-d);
+}
+
+.source-editor {
+    padding: 1rem;
+    padding-left: 1.5rem;
+    height: 100%;
+    outline: none;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--node-border);
+    transition: border-color 100ms ease-in-out;
+}
+.source-editor:focus {
+    border-top-color: var(--accent);
+}
+
+pre {
+    counter-reset: line;
+}
+
+code {
+    counter-increment: line;
+}
+
+code:before {
+    content: counter(line);
+    padding-right: 1rem;
+    color: var(--plain-text);
+}

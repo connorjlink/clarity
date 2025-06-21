@@ -1,10 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import Console, { type ConsoleListener } from './Console';
 import TransformedView from './TransformedView';
 import { type Point, type Line } from './TransformedView';
 import { useTransform } from './TransformContext';
 import TreeNode from './TreeNode'
 import './App.css'
 import { TreeManager, type TreeNodeData, type Connection, type ClickspotLocation, type ClickspotInfo } from './TreeManager';
+import MarkupGenerator from './MarkupGenerator';
 
 type LineMode = 'line' | 'bezier';
 
@@ -18,6 +20,39 @@ function getBezierPath(
     // and closer adherence to the location - based stretching
     const controlOffset = 100;
 
+    let inferredToLocation = toLocation;
+    if (!toLocation && fromLocation) {
+        const dx = end.x - start.x;
+        const dy = end.y - start.y;
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+        if (fromLocation === 'left') {
+            if (angle > -45 && angle < 45) {
+                inferredToLocation = 'left';
+            } else if (angle >= 45 && angle <= 135) {
+                inferredToLocation = 'bottom';
+            } else {
+                inferredToLocation = null;
+            }
+        } else if (fromLocation === 'right') {
+            if (angle > 135 || angle < -135) {
+                inferredToLocation = 'right';
+            } else if (angle >= -135 && angle <= -45) {
+                inferredToLocation = 'bottom';
+            } else {
+                inferredToLocation = null;
+            }
+        } else if (fromLocation === 'bottom') {
+            if (angle > 135 || angle < -135) {
+                inferredToLocation = 'right';
+            } else if (angle > -45 && angle < 45) {
+                inferredToLocation = 'left';
+            } else if (angle >= 45 && angle <= 135) {
+                inferredToLocation = 'bottom';
+            }
+        }
+    }
+
     let c1x = start.x;
     let c1y = start.y;
     if (fromLocation === 'left') {
@@ -30,11 +65,11 @@ function getBezierPath(
 
     let c2x = end.x;
     let c2y = end.y;
-    if (toLocation === 'left') {
+    if (inferredToLocation === 'left') {
         c2x -= controlOffset;
-    } else if (toLocation === 'right') {
+    } else if (inferredToLocation === 'right') {
         c2x += controlOffset;
-    } else if (toLocation === 'bottom') {
+    } else if (inferredToLocation === 'bottom') {
         c2y += controlOffset;
     }
 
@@ -74,9 +109,7 @@ function AppBody(
         return false;
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleConnectStart = (from: ClickspotInfo) => {
-        setVersion(v => v + 1);
     };
 
     const handleConnectEnd = (from: ClickspotInfo, to: ClickspotInfo) => {
@@ -207,6 +240,16 @@ function App() {
     // straight or bezier paths
     const [lineMode, setLineMode] = useState<LineMode>('bezier');
 
+    const [consoleMessages, setConsoleMessages] = useState<string[]>([]);
+
+    const consoleListener = useRef<ConsoleLogListener>({
+        notify: (msg: string) => setConsoleMessages(msgs => [...msgs, msg])
+    });
+
+    const markupGenerator = useState<MarkupGenerator>(
+        new MarkupGenerator('localhost', '8080', consoleListener.current)
+    );
+
     const treeManagerRef = useRef(new TreeManager([
         {
             id: 'node1',
@@ -250,13 +293,13 @@ function App() {
                 </div>
             </div>
 
-            <div style={{ margin: '1rem' }}>
+            <span style={{ margin: '1rem' }}>
                 <button
                     onClick={() => setLineMode(lineMode === 'line' ? 'bezier' : 'line')}
                 >
                     Node Connection Rendering: {lineMode === 'line' ? 'Linear' : 'Bezier'}
                 </button>
-            </div>
+            </span>
 
             <div className="body-container">
                 <TransformedView>
@@ -266,6 +309,18 @@ function App() {
                     />
                 </TransformedView>
             </div>
+
+            <div className="source-editor-container shadowed">
+                <div className="source-editor" contentEditable="true" spellCheck="false">
+                    <pre>
+                        <code>this is some content on line 1</code><br />
+                        <code>this is line 2</code><br />
+                        <code>this is line 33</code><br />
+                    </pre>
+                </div>
+            </div>
+
+            <Console messages={consoleMessages} />
         </>
     )
 }
