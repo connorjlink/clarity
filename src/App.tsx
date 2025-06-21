@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
-import Console, { type ConsoleListener } from './Console';
+import { useState, useRef, useEffect } from 'react';
+import Console, { type ConsoleListener, type ConsoleMessage } from './Console';
 import TransformedView from './TransformedView';
 import { type Point, type Line } from './TransformedView';
 import { useTransform } from './TransformContext';
@@ -240,15 +240,7 @@ function App() {
     // straight or bezier paths
     const [lineMode, setLineMode] = useState<LineMode>('bezier');
 
-    const [consoleMessages, setConsoleMessages] = useState<string[]>([]);
-
-    const consoleListener = useRef<ConsoleLogListener>({
-        notify: (msg: string) => setConsoleMessages(msgs => [...msgs, msg])
-    });
-
-    const markupGenerator = useState<MarkupGenerator>(
-        new MarkupGenerator('localhost', '8080', consoleListener.current)
-    );
+    const [editorMarkup, setEditorMarkup] = useState<string>('');
 
     const treeManagerRef = useRef(new TreeManager([
         {
@@ -283,6 +275,53 @@ function App() {
 
     const treeManager = treeManagerRef.current;
 
+    const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([]);
+    const [consoleVisible, setConsoleVisible] = useState(true);
+    const fadeTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        if (consoleMessages.length > 0) showConsole();
+        // eslint-disable-next-line
+    }, [consoleMessages.length]);
+
+    const showConsole = () => {
+        setConsoleVisible(true);
+        if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
+        fadeTimeout.current = setTimeout(() => setConsoleVisible(false), 3000); // 3 segundos de inactividad
+    };
+
+    const consoleListener = useRef<ConsoleListener>({
+        notify: (msg: string) => {
+            setConsoleMessages(msgs => [...msgs, { id: Date.now().toString(), text: msg, visible: true }]);
+            showConsole();
+        }
+    });
+
+    const markupGenerator = useRef<MarkupGenerator>(
+        new MarkupGenerator('localhost', '8080', consoleListener.current)
+    );
+
+    const updateEditorMarkup = (sourceCode: string) => {
+        setEditorMarkup('');
+        const markup = markupGenerator.current.handleGenerateRequest(sourceCode);
+        setEditorMarkup(markup);
+    };
+
+    const handleLoadFromFile = () => {
+        setEditorMarkup('');
+        const element = document.querySelector('.source-editor') as HTMLElement;
+        markupGenerator.current.requestFileDialog(element);
+        setTimeout(() => {
+            setEditorMarkup(element.innerHTML);
+        }, 100);
+    };
+
+    const handleSynchronize = () => {
+        setEditorMarkup('');
+        markupGenerator.current.refresh();
+        setEditorMarkup(markupGenerator.current.handleGenerateRequest(markupGenerator.current['previous'].sourceCode));
+    };
+
     return (
         <>
             <div className="title-container">
@@ -299,6 +338,9 @@ function App() {
                 >
                     Node Connection Rendering: {lineMode === 'line' ? 'Linear' : 'Bezier'}
                 </button>
+
+                <button onClick={handleLoadFromFile}>Load source from file</button>
+                <button onClick={handleSynchronize}>Synchronize editor with symbol database</button>
             </span>
 
             <div className="body-container">
@@ -311,16 +353,14 @@ function App() {
             </div>
 
             <div className="source-editor-container shadowed">
-                <div className="source-editor" contentEditable="true" spellCheck="false">
-                    <pre>
-                        <code>this is some content on line 1</code><br />
-                        <code>this is line 2</code><br />
-                        <code>this is line 33</code><br />
-                    </pre>
-                </div>
+                <div
+                    className="source-editor"
+                    spellCheck="false"
+                    dangerouslySetInnerHTML={{ __html: editorMarkup }}
+                />
             </div>
 
-            <Console messages={consoleMessages} />
+            <Console messages={consoleMessages} visible={consoleVisible} />
         </>
     )
 }

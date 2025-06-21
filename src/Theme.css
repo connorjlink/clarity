@@ -44,3 +44,9 @@
     --accent-hovered: color-mix(in srgb, var(--purple) 80%, white);
     --accent-selected: color-mix(in srgb, var(--purple) 80%, black);
 }
+
+.keyword {
+    color: var(--keyword);
+    font-style: italic;
+    font-weight: bold;
+}

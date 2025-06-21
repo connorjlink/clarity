@@ -4,11 +4,18 @@ export interface ConsoleListener {
     notify: (msg: string) => void;
 }
 
-interface ConsoleProps {
-    messages: string[];
+export interface ConsoleMessage {
+    id: string;
+    text: string;
+    visible: boolean;
 }
 
-const Console: React.FC<ConsoleProps> = ({ messages }) => {
+interface ConsoleProps {
+    messages: ConsoleMessage[];
+    visible: boolean;
+}
+
+const Console: React.FC<ConsoleProps> = ({ messages, visible }) => {
     const endRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -16,9 +23,9 @@ const Console: React.FC<ConsoleProps> = ({ messages }) => {
     }, [messages]);
 
     return (
-        <div className="console">
-            {messages.map((msg, idx) => (
-                <div key={idx} className="console-line">{msg}</div>
+        <div className={`console${visible ? '' : ' fade-out'}`}>
+            {messages.map((msg) => (
+                <div key={msg.id} className="console-line">{msg.text}</div>
             ))}
             <div ref={endRef} />
         </div>

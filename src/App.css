@@ -1,6 +1,7 @@
 :root {
     box-sizing: border-box;
     --clickspot-width: 10px;
+    overflow: hidden;
 }
 
 .logo {
@@ -72,7 +73,14 @@ html, body, #root {
     padding: 0.5rem 1rem;
     box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
     pointer-events: auto;
+    overflow: scroll;
+    transition: opacity 1s;
+    opacity: 1;
 }
+    .console.fade-out {
+        opacity: 0;
+        pointer-events: none;
+    }
 
 .console-line {
     white-space: pre-wrap;
@@ -80,7 +88,7 @@ html, body, #root {
 }
 
 .source-editor-container {
-    height: 200px;
+    height: 350px;
     width: 100%;
     position: absolute;
     bottom: 0;
@@ -89,13 +97,14 @@ html, body, #root {
 
 .source-editor {
     padding: 1rem;
-    padding-left: 1.5rem;
+    padding-left: 1rem;
     height: 100%;
     outline: none;
     display: flex;
     flex-direction: column;
     border-top: 1px solid var(--node-border);
     transition: border-color 100ms ease-in-out;
+    overflow: scroll;
 }
 .source-editor:focus {
     border-top-color: var(--accent);
@@ -107,10 +116,14 @@ pre {
 
 code {
     counter-increment: line;
+    display: flex;
+    flex-direction: row; 
 }
 
 code:before {
     content: counter(line);
-    padding-right: 1rem;
+    padding-right: 1.5rem;
     color: var(--plain-text);
+    width: 2rem;
+    text-align: right;
 }

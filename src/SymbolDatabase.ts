@@ -10,7 +10,6 @@ export interface SymbolEntry {
     type: string;
     text: string;
     filepath: string; // translation unit filepath
-    markup: string;
     location: {
         line: number;
         column: number; // location varies by stage

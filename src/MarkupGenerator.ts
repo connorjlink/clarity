@@ -25,7 +25,7 @@ export class MarkupGenerator {
     }
 
     // ui connection
-    public requestFileDialog(targetElement: HTMLElement ): void {
+    public requestFileDialog(targetElement: HTMLElement): void {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = '.hz';
@@ -58,13 +58,17 @@ export class MarkupGenerator {
         return this.previous.markup;
     }
 
+    public refresh(): void {
+        this.invalidate(this.previous.sourceCode);
+    }
+
     private invalidate(sourceCode: string): void {
         this.previous.sourceCode = sourceCode;
         const now = new Date();
         const diff = this.symbolDatabase.lastSynchronized ? now.getTime() - this.symbolDatabase.lastSynchronized.getTime() : 0;
-        if (diff > 1500) {
+        if (!this.symbolDatabase.lastSynchronized || diff > 1500) {
             // throttle database updates to minimum 1.5 seconds because of compiler subprocessing overhead
-            this.symbolDatabase.synchronize_from(sourceCode, 'localhost', '8080', this.listener);
+            this.symbolDatabase.synchronize_from(sourceCode, this.host, this.port, this.listener);
         }
         this.previous.markup = this.generateMarkup(sourceCode);
     }
@@ -145,7 +149,8 @@ export class MarkupGenerator {
         const lines = markup.split('\n');
         const formatted = lines
             .map(line => `<code>${line}</code>`)
-            .join('<br />\n');
+            .join('' );
+            //.join('<br />');
 
         return MarkupGenerator.formatMarkup(formatted);
     }
@@ -156,6 +161,7 @@ export class MarkupGenerator {
 
     private static escapeHtml(str: string): string {
         return str
+            //.replace(/\n/g, '')
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/<=/g, '&le;')

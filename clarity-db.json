@@ -8,7 +8,16 @@
     },
     "symbols": [
         {
-
+            "name": "function",
+            "value": null,
+            "type": "keyword",
+            "text": "function",
+            "filepath": "haze.hz",
+            "location": {
+                "line": 1,
+                "column": 1,
+                "stage": "source"
+            }
         }
     ],
     "source": {
