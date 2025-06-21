@@ -1,6 +1,9 @@
 import React, { useRef, useState, useEffect, type ReactNode, type RefObject } from 'react';
 import { TransformContext } from './TransformContext';
 
+export type Point = { x: number; y: number; };
+export type Line = { start: Point; end: Point; };
+
 type TransformedViewProps = {
     children: ReactNode;
     minScale?: number;

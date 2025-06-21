@@ -1,29 +1,58 @@
 import { useState, useRef } from 'react';
 import TransformedView from './TransformedView';
+import { type Point, type Line } from './TransformedView';
 import { useTransform } from './TransformContext';
-import { type Line } from './TreeNode'
 import TreeNode from './TreeNode'
 import './App.css'
-import { TreeManager, type TreeNodeData } from './TreeManager';
+import { TreeManager, type TreeNodeData, type Connection, type ClickspotLocation, type ClickspotInfo } from './TreeManager';
 
 type LineMode = 'line' | 'bezier';
 
-function getBezierPath(line: Line) {
-    const offset = (line.x2 - line.x1) * 0.5; // signed midpoint
-    const c1x = line.x1 + offset;
-    const c1y = line.y1;
-    const c2x = line.x2 - offset;
-    const c2y = line.y2;
-    return `M ${line.x1},${line.y1} C ${c1x},${c1y} ${c2x},${c2y} ${line.x2},${line.y2}`;
+function getBezierPath(
+    line: Line,
+    fromLocation: ClickspotLocation | null,
+    toLocation: ClickspotLocation | null
+) {
+    const { start, end } = line;
+    // set the curve ratio: a higher value enforces greater curvature 
+    // and closer adherence to the location - based stretching
+    const controlOffset = 100;
+
+    let c1x = start.x;
+    let c1y = start.y;
+    if (fromLocation === 'left') {
+        c1x -= controlOffset;
+    } else if (fromLocation === 'right') {
+        c1x += controlOffset;
+    } else if (fromLocation === 'bottom') {
+        c1y += controlOffset;
+    }
+
+    let c2x = end.x;
+    let c2y = end.y;
+    if (toLocation === 'left') {
+        c2x -= controlOffset;
+    } else if (toLocation === 'right') {
+        c2x += controlOffset;
+    } else if (toLocation === 'bottom') {
+        c2y += controlOffset;
+    }
+
+    return `M ${start.x},${start.y} C ${c1x},${c1y} ${c2x},${c2y} ${end.x},${end.y}`;
 }
 
-function AppBody({
-    lines, tempLine, lineMode, treeManager, handleNodeMove, handleAddLine, handleRemoveLines, handleTempLine, connectedClickspots
-}: any) {
+function AppBody(
+    { lineMode, treeManager }
+) {
+    // show gray dotted line while dragging
+    const [tempLine, setTempLine] = useState<[Line, ClickspotLocation] | null>(null);
+
+    const [, setVersion] = useState(0); // hmm hack to trigger repaint--what is more idiomatic?
+
     const { screenToWorld } = useTransform();
 
     const getClickspotCenter = (nodeId: string, clickspotId: string) => {
-        const el = document.querySelector(`#${nodeId} [data-clickspot-id="${clickspotId}"]`) as HTMLElement;
+        const el = document.querySelector(`[data-clickspot-id="${clickspotId}"]`) as HTMLElement;
         if (!el) {
             return null;
         }
@@ -35,14 +64,54 @@ function AppBody({
         };
     };
 
+    const isClickspotConnected = (info: ClickspotInfo) => {
+        const connections = treeManager.getConnections(info.nodeId);
+        for (const connection of connections) {
+            if (connection.from.clickspotId === info.clickspotId || connection.to.clickspotId === info.clickspotId) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const handleConnectStart = (from: ClickspotInfo) => {
+        setVersion(v => v + 1);
+    };
+
+    const handleConnectEnd = (from: ClickspotInfo, to: ClickspotInfo) => {
+        if (from && (from.nodeId !== to.nodeId || from.clickspotId !== to.clickspotId)) {
+            treeManager.connect(from, to);
+            setTempLine(null);
+            setVersion(v => v + 1);
+        }
+    };
+
+    const handleRemoveLines = (
+        tofrom: ClickspotInfo,
+    ) => {
+        treeManager.disconnect(tofrom);
+        setVersion(v => v + 1);
+    };
+
+    const handleNodeMove = (id: string, pos: Point) => {
+        treeManager.updateNodePosition(id, pos);
+        setVersion(v => v + 1);
+    };
+
+    const handleTempLine = (line: [Line, ClickspotLocation] | null) => {
+        setTempLine(line);
+        setVersion(v => v + 1);
+    }
+
     const renderLines = () => {
-        return lines.map((line: any, idx: number) => {
-            const fromCenter = getClickspotCenter(line.from.nodeId, line.from.clickspotId);
-            const toCenter = getClickspotCenter(line.to.nodeId, line.to.clickspotId);
+        const connections = treeManager.getAllConnections();
+        return connections.map((connection: Connection, idx: number) => {
+            const fromCenter = getClickspotCenter(connection.from.nodeId, connection.from.clickspotId);
+            const toCenter = getClickspotCenter(connection.to.nodeId, connection.to.clickspotId);
             if (!fromCenter || !toCenter) {
                 return null;
             }
-
             return (
                 lineMode === 'line' ? (
                     <line
@@ -57,7 +126,11 @@ function AppBody({
                 ): (
                     <path
                         key={idx}
-                        d = { getBezierPath({ x1: fromCenter.x, y1: fromCenter.y, x2: toCenter.x, y2: toCenter.y }) }
+                            d={getBezierPath(
+                                { start: { x: fromCenter.x, y: fromCenter.y }, end: { x: toCenter.x, y: toCenter.y } },
+                                connection.from.location,
+                                connection.to.location
+                            )}
                         stroke="rgb(143, 132, 213)"
                         strokeWidth="2"
                         fill="none"
@@ -87,17 +160,17 @@ function AppBody({
                         tempLine && (
                             lineMode === 'line' ? (
                                 <line
-                                    x1={tempLine.x1}
-                                    y1={tempLine.y1}
-                                    x2={tempLine.x2}
-                                    y2={tempLine.y2}
+                                    x1={tempLine[0].start.x}
+                                    y1={tempLine[0].start.y}
+                                    x2={tempLine[0].end.x}
+                                    y2={tempLine[0].end.y}
                                     stroke="gray"
                                     strokeWidth="2"
                                     strokeDasharray="4"
                                 />
                             ) : (
                                 <path
-                                    d={getBezierPath(tempLine)}
+                                    d={getBezierPath(tempLine[0], tempLine[1], null)}
                                     stroke="gray"
                                     strokeWidth="2"
                                     strokeDasharray="4"
@@ -114,34 +187,25 @@ function AppBody({
                     nodeId={n.id}
                     position={n.position}
                     clickspots={n.clickspots}
-                    onMove={(pos: any) => handleNodeMove(n.id, pos)}
-                    onConnect={(from: any, to: any) => handleAddLine(from, to)}
-                    onDisconnect={(tofrom: any) => handleRemoveLines(tofrom)}
+                    onMove={(pos: Point) => handleNodeMove(n.id, pos)}
+                    onConnectStart={handleConnectStart}
+                    onConnectEnd={handleConnectEnd}
+                    onDisconnect={handleRemoveLines}
                     onTempLine={handleTempLine}
-                    connectedClickspots={connectedClickspots}
+                    isClickspotConnected={isClickspotConnected}
                 >
                     {n.label}
                 </TreeNode>
+
             ))}
         </>
     );
 }
 
 function App() {
-    // current node line state--NOTE: decoupled from the tree manager, so requires periodic resynchronization
-    const [lines, setLines] = useState<
-        { from: { nodeId: string; clickspotId: string }, to: { nodeId: string; clickspotId: string } }[]
-        >([]);
 
-    const [connectedClickspots, setConnectedClickspots] = useState<Set<string>>(new Set());
-
-
-    // show gray dotted line while dragging
-    const [tempLine, setTempLine] = useState<Line | null>(null);
     // straight or bezier paths
     const [lineMode, setLineMode] = useState<LineMode>('bezier');
-
-    const [, setVersion] = useState(0); // hmm hack to trigger repaint--what is more idiomatic?
 
     const treeManagerRef = useRef(new TreeManager([
         {
@@ -149,8 +213,9 @@ function App() {
             label: 'Hello, 123123',
             position: { x: 100, y: 100 },
             clickspots: [
-                { id: 'a', location: 'left' },
-                { id: 'b', location: 'right' }
+                { id: 'clickspot-a', location: 'left' },
+                { id: 'clickspot-b', location: 'right' },
+                { id: 'clickspot-e', location: 'bottom' },
             ]
         },
         {
@@ -158,67 +223,22 @@ function App() {
             label: 'This is a new test node',
             position: { x: 400, y: 200 },
             clickspots: [
-                { id: 'c', location: 'left' },
-                { id: 'd', location: 'bottom' }
+                { id: 'clickspot-c', location: 'left' },
+                { id: 'clickspot-d', location: 'bottom' }
+            ]
+        },
+        {
+            id: 'node3',
+            label: 'Testing testing testing',
+            position: { x: 550, y: 400 },
+            clickspots: [
+                { id: 'clickspot-f', location: 'left' },
+                { id: 'clickspot-g', location: 'left' }
             ]
         }
     ]));
 
     const treeManager = treeManagerRef.current;
-
-    const handleNodeMove = (id: string, pos: { x: number; y: number }) => {
-        treeManager.updateNodePosition(id, pos);
-        setVersion(v => v + 1);
-    };
-
-    const handleTempLine = (line: Line | null) => {
-        setTempLine(line);
-        setVersion(v => v + 1);
-    }
-
-    const handleAddLine = (
-        from: { nodeId: string; clickspotId: string },
-        to: { nodeId: string; clickspotId: string }
-    ) => {
-        treeManager.setParent(to.nodeId, from.nodeId);
-        setLines([...lines, { from, to }]);
-        setTempLine(null);
-
-        setConnectedClickspots(prev => {
-            const next = new Set(prev);
-            next.add(`${from.nodeId}:${from.clickspotId}`);
-            next.add(`${to.nodeId}:${to.clickspotId}`);
-            return next;
-        });
-
-        setVersion(v => v + 1);
-    };
-
-    const handleRemoveLines = (
-        tofrom: { nodeId: string; clickspotId: string },
-    ) => {
-        setLines(prevLines => {
-            const filtered = prevLines.filter(
-                line =>
-                    !(
-                        (line.from.nodeId === tofrom.nodeId && line.from.clickspotId === tofrom.clickspotId) ||
-                        (line.to.nodeId === tofrom.nodeId && line.to.clickspotId === tofrom.clickspotId)
-                    )
-            );
-
-            // recalculate the connections
-            const newConnected = new Set<string>();
-            filtered.forEach(line => {
-                newConnected.add(`${line.from.nodeId}:${line.from.clickspotId}`);
-                newConnected.add(`${line.to.nodeId}:${line.to.clickspotId}`);
-            });
-            setConnectedClickspots(newConnected);
-
-            return filtered;
-        });
-
-        setVersion(v => v + 1);
-    };
 
     return (
         <>
@@ -241,15 +261,8 @@ function App() {
             <div className="body-container">
                 <TransformedView>
                     <AppBody
-                        lines={lines}
-                        tempLine={tempLine}
                         lineMode={lineMode}
                         treeManager={treeManager}
-                        handleNodeMove={handleNodeMove}
-                        handleAddLine={handleAddLine}
-                        handleRemoveLines={handleRemoveLines}
-                        handleTempLine={handleTempLine}
-                        connectedClickspots={connectedClickspots}
                     />
                 </TransformedView>
             </div>

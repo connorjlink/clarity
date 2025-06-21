@@ -1,43 +1,42 @@
 import React, { type ReactNode, useRef } from 'react';
 import { useTransform } from './TransformContext';
+import { type Point, type Line } from './TransformedView'
+import { type ClickspotLocation, type ClickspotInfo } from './TreeManager'
 import './TreeNode.css';
 
-export type Line = {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-};
-
-export type Clickspot = {
-    id: string;
-    location: 'left' | 'right' | 'bottom';
-};
-
-export type ClickspotInfo = {
-    nodeId: string;
-    clickspotId: string
-}
+export type Clickspot = { id: string; location: ClickspotLocation; };
 
 type TreeNodeProps = {
     children: ReactNode;
     nodeId: string;
-    position: { x: number; y: number };
-    onMove: (pos: { x: number; y: number }) => void;
-    onConnect: (from: ClickspotInfo, to: ClickspotInfo) => void;
-    onDisconnect: (tofrom: ClickspotInfo) => void;
-    onTempLine: (line: Line | null) => void;
+    position: Point;
+    onMove: (pos: Point) => void;
+    onConnectStart: (from: ClickspotInfo) => void;
+    onConnectEnd: (from: ClickspotInfo, to: ClickspotInfo) => void;
+    onDisconnect: (info: ClickspotInfo) => void;
+    onTempLine: (info: [Line, ClickspotLocation] | null) => void;
+    isClickspotConnected: (info: ClickspotInfo) => boolean;
     clickspots: Clickspot[];
-    connectedClickspots?: Set<string>;
 };
 
 const TreeNode: React.FC<TreeNodeProps> = ({
-    children, onMove, onConnect, onDisconnect, onTempLine, position, nodeId, clickspots,
-    connectedClickspots = new Set(),
+    children, onMove, onConnectStart, onConnectEnd, onDisconnect, onTempLine, isClickspotConnected, position, clickspots, nodeId
 }) => {
     const { screenToWorld } = useTransform();
     const isDragging = useRef(false);
     const dragOffset = useRef({ x: 0, y: 0 });
+
+    function getLocationByClassList(classList: DOMTokenList) {
+        if (classList.contains('left')) {
+            return 'left';
+        } else if (classList.contains('right')) {
+            return 'right';
+        } else if (classList.contains('bottom')) {
+            return 'bottom';
+        } else {
+            return null;
+        }
+    }
 
     function startNodeDrag(event: React.MouseEvent) {
         isDragging.current = true;
@@ -48,7 +47,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         };
 
         function onMouseMove(e: MouseEvent) {
-            if (!isDragging.current) return;
+            if (!isDragging.current) {
+                return;
+            }
             const dragWorld = screenToWorld({ x: e.clientX, y: e.clientY });
             onMove({
                 x: dragWorld.x - dragOffset.current.x,
@@ -66,89 +67,104 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         document.addEventListener('mouseup', onMouseUp);
     }
 
-    function startDragging(clickspotId: string, event: React.MouseEvent) {
-        isDragging.current = true;
-        const nodeClickspot = (event.target as HTMLElement).closest('.node-clickspot');
-        if (!nodeClickspot) {
-            isDragging.current = false;
+    function handleClickspotMouseDown(clickspotId: string, event: React.MouseEvent) {
+        if (event.button !== 0) { // only accept primary button, usually left mouse
             return;
         }
-
-        const associatedNode = nodeClickspot.closest('.node');
-        if (!associatedNode) {
-            isDragging.current = false;
-            return;
-        }
-
-        const targetNodeId = associatedNode.getAttribute('id');
-        const targetClickspotId = nodeClickspot.getAttribute('data-clickspot-id');
-        if (nodeClickspot.classList.contains("connected")) {
-            // remove the any connections to/from this node
-            nodeClickspot.classList.toggle("connected", false);
-
-            if (!targetNodeId || !targetClickspotId) {
-                return;
-            }
-
-            onDisconnect({ nodeId: targetNodeId, clickspotId: targetClickspotId });
-            return;
-        }
-
-        const nodeRect = nodeClickspot.getBoundingClientRect();
-        const nodeCenterScreen = {
-            x: nodeRect.left + nodeRect.width / 2,
-            y: nodeRect.top + nodeRect.height / 2,
-        };
-        const nodeCenter = screenToWorld(nodeCenterScreen);
-
-        function onMouseMove(e: MouseEvent) {
-            const mouseScreen = { x: e.clientX, y: e.clientY };
-            const mouseWorld = screenToWorld(mouseScreen);
-
-            if (!isDragging.current) {
+        const info: ClickspotInfo = { nodeId, clickspotId: clickspotId, location: null }; // nullish passive
+        if (isClickspotConnected(info)) {
+            onDisconnect(info);
+        } else {
+            const nodeClickspot = (event.target as HTMLElement).closest('.node-clickspot');
+            if (!nodeClickspot) {
                 onTempLine(null);
                 return;
             }
 
-            onTempLine({
-                x1: nodeCenter.x,
-                y1: nodeCenter.y,
-                x2: mouseWorld.x,
-                y2: mouseWorld.y
-            });
-        }
+            isDragging.current = true;
 
-        function onMouseUp(e: MouseEvent) {
-            isDragging.current = false;
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
+            const nodeRect = nodeClickspot.getBoundingClientRect();
+            const nodeCenterScreen = {
+                x: nodeRect.left + nodeRect.width / 2,
+                y: nodeRect.top + nodeRect.height / 2,
+            };
+            const nodeCenter = screenToWorld(nodeCenterScreen);
 
-            const mouseScreen = { x: e.clientX, y: e.clientY };
-            const hoveredElement = document.elementFromPoint(mouseScreen.x, mouseScreen.y);
-
-            if (!hoveredElement || !hoveredElement.classList.contains('node-clickspot') || hoveredElement.classList.contains('connected')) {
+            // need to recreate the info because we previously didn't know the node id
+            const parentNode = (event.target as HTMLElement).closest('.node');
+            if (!parentNode) {
                 onTempLine(null);
                 return;
             }
-
-            const targetClickspotId = hoveredElement.getAttribute('data-clickspot-id');
-            const nodeElement = hoveredElement.closest('.node') as HTMLElement | null;
-            if (!nodeElement || !targetClickspotId) {
+            const parentNodeId = parentNode.getAttribute('data-node-id');
+            if (!parentNodeId) {
                 onTempLine(null);
                 return;
             }
-
-            const targetNodeId = nodeElement.id;
-            if (targetNodeId && targetNodeId !== nodeId) {
-                onConnect(
-                    { nodeId, clickspotId },
-                    { nodeId: targetNodeId, clickspotId: targetClickspotId }
-                );
+            const parentClickspotContainer = nodeClickspot.closest('.node-clickspot-container');
+            if (!parentClickspotContainer) {
+                onTempLine(null);
+                return;
             }
-        }
+            const parentLocation = getLocationByClassList(parentClickspotContainer.classList);
+            onConnectStart({ nodeId: parentNodeId, clickspotId: clickspotId, location: parentLocation });
 
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+            function onMouseMove(e: MouseEvent) {
+                if (!isDragging.current) {
+                    onTempLine(null);
+                    return;
+                }
+                const mouseScreen = { x: e.clientX, y: e.clientY };
+                const mouseWorld = screenToWorld(mouseScreen);
+                onTempLine([{
+                    start: { x: nodeCenter.x, y: nodeCenter.y },
+                    end: { x: mouseWorld.x, y: mouseWorld.y },
+                }, parentLocation!]); // non-null strengthened (at call site)
+            }
+
+            function onMouseUp(e: MouseEvent) {
+                isDragging.current = false;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+
+                const mouseScreen = { x: e.clientX, y: e.clientY };
+                const hoveredElement = document.elementFromPoint(mouseScreen.x, mouseScreen.y);
+
+                if (!hoveredElement || !hoveredElement.classList.contains('node-clickspot') || hoveredElement.classList.contains('connected')) {
+                    onTempLine(null);
+                    return;
+                }
+
+                const targetClickspotId = hoveredElement.getAttribute('data-clickspot-id');
+                const nodeElement = hoveredElement.closest('.node') as HTMLElement | null;
+                if (!nodeElement || !targetClickspotId) {
+                    onTempLine(null);
+                    return;
+                }
+
+                const targetNodeId = nodeElement.getAttribute('data-node-id');
+
+                const targetClickspotContainer = hoveredElement.closest('.node-clickspot-container');
+                if (!targetClickspotContainer) {
+                    onTempLine(null);
+                    return;
+                }
+                const targetLocation = getLocationByClassList(targetClickspotContainer.classList);
+
+                // nodeId non-null strengthened
+                if (targetNodeId && targetNodeId !== parentNodeId) {
+                    onConnectEnd(
+                        { nodeId: parentNodeId!, clickspotId: clickspotId, location: parentLocation },
+                        { nodeId: targetNodeId, clickspotId: targetClickspotId, location: targetLocation }
+                    );
+                }
+
+                onTempLine(null);
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        }
     }
 
     const clickspotsByLocation: Record<'left' | 'right' | 'bottom', Clickspot[]> = {
@@ -160,7 +176,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
 
     return (
         <div
-            id={nodeId}
+            data-node-id={nodeId}
             className="node shadowed"
             style={{
                 position: 'absolute',
@@ -174,20 +190,18 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 <img src="../assets/expression.svg" className="node-icon" alt="Node Icon" />
                 <span>Exponentiation Expression</span>
             </div>
-
             <div className="node-body">
                 {(['left', 'bottom', 'right'] as const).map(location => (
                     <div key={location} className={`node-clickspot-container ${location}`}>
-                        {clickspotsByLocation[location].map(cs => {
-                            const isConnected = connectedClickspots.has(`${nodeId}:${cs.id}`);
+                        {clickspots.filter(cs => cs.location === location).map(cs => {
+                            const connected = isClickspotConnected({ nodeId, clickspotId: cs.id, location: cs.location });
                             return (
                                 <button
                                     key={cs.id}
-                                    className={`node-clickspot${isConnected ? ' connected' : ''}`}
                                     data-clickspot-id={cs.id}
-                                    onMouseDown={e => startDragging(cs.id, e)}
-                                >
-                                </button>
+                                    className={`node-clickspot${connected ? ' connected' : ''}`}
+                                    onMouseDown={e => handleClickspotMouseDown(cs.id, e)}
+                                />
                             );
                         })}
                     </div>
