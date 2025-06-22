@@ -1,8 +1,8 @@
 {
     "header": {
         "version": "1.0",
-        "format": "HazeDB",
-        "created_at": "2024-10-01T12:00:00Z",
+        "format": "clarity-db",
+        "created_at": "2025-06-21T12:00:00Z",
         "author": "Connor Link",
         "command_line": "haze.exe test.hz"
     },

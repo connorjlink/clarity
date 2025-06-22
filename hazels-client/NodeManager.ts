@@ -1,29 +1,15 @@
-import { type Clickspot } from './TreeNode';
+import { type Clickspot, type NodeData } from './TreeNode';
 import { type Point } from './TransformedView';
 
-export type TreeNodeData = {
-    id: string;
-    label: string;
-    position: { x: number; y: number };
-    parentId?: string;
-    clickspots: Clickspot[];
-};
 
-export type ClickspotLocation = 'left' | 'right' | 'bottom';
-
-export type ClickspotInfo = {
-    nodeId: string;
-    clickspotId: string;
-    location: ClickspotLocation | null;
-};
 
 export type Connection = {
     from: ClickspotInfo;
     to: ClickspotInfo;
 };
 
-export class TreeManager {
-    private nodes: Map<string, TreeNodeData> = new Map();
+export class NodeManager {
+    private nodes: Map<string, NodeData> = new Map();
     // adjacency map: nodeId -> Set of connected nodeIds
     private connections: Map<string, Connection> = new Map();
 
@@ -31,12 +17,12 @@ export class TreeManager {
         return [a.nodeId, a.clickspotId, b.nodeId, b.clickspotId].sort().join('|');
     }
 
-    constructor(initialNodes: TreeNodeData[] = [], initialConnections: Connection[] = []) {
+    constructor(initialNodes: NodeData[] = [], initialConnections: Connection[] = []) {
         initialNodes.forEach(node => this.nodes.set(node.id, node));
         initialConnections.forEach(conn => this.connect(conn.from, conn.to));
     }
 
-    getNodes(): TreeNodeData[] {
+    getNodes(): NodeData[] {
         return Array.from(this.nodes.values());
     }
 
@@ -52,7 +38,7 @@ export class TreeManager {
         );
     }
 
-    addNode(node: TreeNodeData) {
+    addNode(node: NodeData) {
         this.nodes.set(node.id, node);
     }
 
@@ -96,10 +82,12 @@ export class TreeManager {
         }
     }
 
-    load(nodes: TreeNodeData[], connections: Connection[]) {
+    load(nodes: NodeData[], connections: Connection[]) {
         this.nodes.clear();
         this.connections.clear();
         nodes.forEach(node => this.nodes.set(node.id, node));
         connections.forEach(conn => this.connect(conn.from, conn.to));
     }
 }
+
+export default NodeManager;

@@ -1,12 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import Console, { type ConsoleListener, type ConsoleMessage } from './Console';
-import TransformedView from './TransformedView';
-import { type Point, type Line } from './TransformedView';
-import { useTransform } from './TransformContext';
-import TreeNode from './TreeNode'
+import Console, { type ConsoleListener, type OutputWindowMessage } from './Console';
+import TransformedView from '../hazels-client/src/TransformedView';
+import { type Point, type Line } from '../hazels-client/src/TransformedView';
+import { useTransform } from '../hazels-client/src/TransformContext';
+import TreeNode from '../hazels-client/src/TreeNode'
 import './App.css'
-import { TreeManager, type TreeNodeData, type Connection, type ClickspotLocation, type ClickspotInfo } from './TreeManager';
-import MarkupGenerator from './MarkupGenerator';
+import { TreeManager, type NodeData, type Connection, type ClickspotLocation, type ClickspotInfo } from '../hazels-client/src/NodeManager';
+import MarkupGenerator from '../hazels-client/src/MarkupGenerator';
 
 type LineMode = 'line' | 'bezier';
 
@@ -214,7 +214,7 @@ function AppBody(
                     }
                 </g>
             </svg>
-            {treeManager.getNodes().map((n: TreeNodeData) => (
+            {treeManager.getNodes().map((n: NodeData) => (
                 <TreeNode
                     key={n.id}
                     nodeId={n.id}
@@ -240,7 +240,10 @@ function App() {
     // straight or bezier paths
     const [lineMode, setLineMode] = useState<LineMode>('bezier');
 
+    const [sourceCode, setSourceCode] = useState<string>('this is some content on line 1\nthis is line 2\nthis is line 33\n');
     const [editorMarkup, setEditorMarkup] = useState<string>('');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const highlightRef = useRef<HTMLPreElement>(null);
 
     const treeManagerRef = useRef(new TreeManager([
         {
@@ -275,14 +278,16 @@ function App() {
 
     const treeManager = treeManagerRef.current;
 
-    const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([]);
+    const [consoleMessages, setConsoleMessages] = useState<OutputWindowMessage[]>([]);
     const [consoleVisible, setConsoleVisible] = useState(true);
-    const fadeTimeout = useRef<NodeJS.Timeout | null>(null);
+    const fadeTimeout = useRef<number | null>(null);
 
     useEffect(() => {
-        if (consoleMessages.length > 0) showConsole();
-        // eslint-disable-next-line
+        if (consoleMessages.length > 0) {
+            showConsole();
+        }
     }, [consoleMessages.length]);
+
 
     const showConsole = () => {
         setConsoleVisible(true);
@@ -296,31 +301,6 @@ function App() {
             showConsole();
         }
     });
-
-    const markupGenerator = useRef<MarkupGenerator>(
-        new MarkupGenerator('localhost', '8080', consoleListener.current)
-    );
-
-    const updateEditorMarkup = (sourceCode: string) => {
-        setEditorMarkup('');
-        const markup = markupGenerator.current.handleGenerateRequest(sourceCode);
-        setEditorMarkup(markup);
-    };
-
-    const handleLoadFromFile = () => {
-        setEditorMarkup('');
-        const element = document.querySelector('.source-editor') as HTMLElement;
-        markupGenerator.current.requestFileDialog(element);
-        setTimeout(() => {
-            setEditorMarkup(element.innerHTML);
-        }, 100);
-    };
-
-    const handleSynchronize = () => {
-        setEditorMarkup('');
-        markupGenerator.current.refresh();
-        setEditorMarkup(markupGenerator.current.handleGenerateRequest(markupGenerator.current['previous'].sourceCode));
-    };
 
     return (
         <>
@@ -338,9 +318,6 @@ function App() {
                 >
                     Node Connection Rendering: {lineMode === 'line' ? 'Linear' : 'Bezier'}
                 </button>
-
-                <button onClick={handleLoadFromFile}>Load source from file</button>
-                <button onClick={handleSynchronize}>Synchronize editor with symbol database</button>
             </span>
 
             <div className="body-container">
@@ -352,12 +329,48 @@ function App() {
                 </TransformedView>
             </div>
 
-            <div className="source-editor-container shadowed">
-                <div
-                    className="source-editor"
-                    spellCheck="false"
+            <div className="source-editor-container shadowed" style={{ position: 'relative', height: 200 }}>
+                <pre
+                    className="source-editor-highlight"
+                    ref={highlightRef}
+                    aria-hidden="true"
+                    style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        margin: 0,
+                        pointerEvents: 'none',
+                        overflow: 'auto',
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 1,
+                    }}
                     dangerouslySetInnerHTML={{ __html: editorMarkup }}
                 />
+                <textarea
+                    ref={textareaRef}
+                    className="source-editor-textarea"
+                    value={sourceCode}
+                    onChange={e => setSourceCode(e.target.value)}
+                    onScroll={handleScroll}
+                    spellCheck={false}
+                    style={{
+                        position: 'absolute',
+                        top: 0, left: 0, right: 0, bottom: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'transparent',
+                        color: 'transparent',
+                        caretColor: 'black',
+                        resize: 'none',
+                        border: 'none',
+                        zIndex: 2,
+                        fontFamily: 'monospace',
+                        fontSize: '1em',
+                        lineHeight: '1.5em',
+                        overflow: 'auto',
+                    }}
+                />
+                {/* Optional: show caret line in highlight layer for better UX */}
             </div>
 
             <Console messages={consoleMessages} visible={consoleVisible} />

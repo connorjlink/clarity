@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <link rel="icon" type="image/svg+xml" href="./assets/haze.svg" />
+        <link rel="stylesheet" href="./assets/styles.css" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Clarity</title>
+    </head>
+    <body>
+        <style>
+            body { 
+                /* prevent FOUC */
+                background: rgb(30);
+            }
+        </style>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
+
+        <custom-console id="myConsole"></custom-console>
+        <script type="module">
+            import { ConsoleMessage } from './CustomConsole.js';
+            const el = document.getElementById('myConsole');
+            el.messages = [
+                { id: '1', text: 'Hola mundo', visible: true },
+                { id: '2', text: 'Mensaje 2', visible: true }
+            ];
+            el.visible = true;
+        </script>
+    </body>
+</html>

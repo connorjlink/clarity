@@ -1,8 +1,14 @@
 import React, { useRef, useState, useEffect, type ReactNode, type RefObject } from 'react';
-import { TransformContext } from './TransformContext';
 
 export type Point = { x: number; y: number; };
 export type Line = { start: Point; end: Point; };
+
+export type TransformContextType = {
+    position: Point;
+    scale: number;
+    screenToWorld: (pt: Point) => Point;
+    worldToScreen: (pt: Point) => Point;
+};
 
 type TransformedViewProps = {
     children: ReactNode;
@@ -143,6 +149,7 @@ const TransformedView: React.FC<TransformedViewProps> = ({
                 <div
                     style={{
                         transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
+                        willChange: 'transform',
                         transformOrigin: '0 0',
                         width: '100%',
                         height: '100%',

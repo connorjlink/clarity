@@ -15,7 +15,6 @@ export class MarkupGenerator {
     constructor(host: string, port: string, listener: any) {
         this.symbolDatabase = new SymbolDatabase();
         this.listener = listener;
-
         this.previous = {
             sourceCode: '',
             markup: ''
@@ -148,7 +147,7 @@ export class MarkupGenerator {
 
         const lines = markup.split('\n');
         const formatted = lines
-            .map(line => `<code>${line}</code>`)
+            .map((line, i) => `<code id="line${i}">${line}</code>`)
             .join('' );
             //.join('<br />');
 

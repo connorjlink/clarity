@@ -1,0 +1,26 @@
+.console {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(30, 30, 30, 0.8);
+    color: #e0e0e0;
+    max-height: 150px;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 0.5rem 1rem;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+    pointer-events: auto;
+    overflow: scroll;
+    transition: opacity 100ms ease-in-out;
+    opacity: 1;
+}
+    .console.fade-out {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+.console-line {
+    white-space: pre-wrap;
+    word-break: break-all;
+}

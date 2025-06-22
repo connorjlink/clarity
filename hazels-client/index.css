@@ -1,0 +1,86 @@
+:root {
+    color-scheme: dark;
+    overflow: hidden;
+
+    --corner-radius: 5px;
+    --clickspot-width: 10px;
+}
+
+/* NOTE: supposedly, this is the highest-performance method to set global defaults for these rules */ 
+html {
+    font-family: 'Consolas', 'Menlo', 'Cascadia Mono', monospace !important;
+    box-sizing: border-box;
+}
+
+*, *::before, *::after {
+    font-family: inherit;
+    box-sizing: inherit;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+button, select, input {
+    appearance: none;
+}
+
+svg {
+    fill: var(--dark-foreground) !important;
+}
+
+
+.logo {
+    height: 100px;
+    border-radius: 15px;
+}
+
+@keyframes logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.emphasis {
+    font-weight: 900;
+    font-style: italic;
+}
+
+.shadowed {
+    box-shadow: 0 0 1em #000a;
+}
+
+body {
+    background: var(--dark-background);
+    color: var(--dark-foreground);
+}
+
+.title-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    text-align: left;
+    gap: 1rem;
+}
+
+.title-container h1, span {
+    margin: 0;
+}
+
+.body-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}

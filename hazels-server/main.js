@@ -6,7 +6,7 @@ const path = require('path');
 const server = http.createServer();
 const wss = new WebSocket.Server({ noServer: true });
 
-const jsonFilePath = path.join(__dirname, 'clarity-db.json'); // Cambia 'archivo.json' por el nombre de tu archivo
+const jsonFilePath = path.join(__dirname, 'clarity-db.json');
 
 wss.on('connection', function connection(ws) {
     fs.readFile(jsonFilePath, 'utf8', (err, data) => {
@@ -33,5 +33,5 @@ server.on('upgrade', function upgrade(request, socket, head) {
 });
 
 server.listen(8080, () => {
-  console.log('ClarityDB hosting on ws://localhost:8080/symboldb');
+  console.log('haze language server hosting on ws://localhost:8080/symboldb');
 });
