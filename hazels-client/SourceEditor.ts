@@ -10,6 +10,9 @@ export class SourceEditor extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        if (this.shadowRoot === null) {
+            throw new Error('Shadow root not attached');
+        }
         this._markupGenerator = new MarkupGenerator('localhost', '8080', null);
     }
 
@@ -74,10 +77,8 @@ export class SourceEditor extends HTMLElement {
     }
 
     private render() {
-        if (!this.shadowRoot) {
-            return;
-        }
-        this.shadowRoot.innerHTML = `
+        // non-null strengthened
+        this.shadowRoot!.innerHTML = `
             <link rel="stylesheet" href="./SourceEditor.css">
             <button class="load-btn">Load source from file</button>
             <button class="sync-btn">Synchronize editor with symbol database</button>
@@ -90,8 +91,8 @@ export class SourceEditor extends HTMLElement {
                 <div class="highlighted-code"></div>
             </div>
         `;
-        this._editorRef = this.shadowRoot.querySelector('.source-editor');
-        this._markupRef = this.shadowRoot.querySelector('.highlighted-code');
+        this._editorRef = this.shadowRoot!.querySelector('.source-editor');
+        this._markupRef = this.shadowRoot!.querySelector('.highlighted-code');
         this.renderHighlight();
         this.attachEventListeners();
     }

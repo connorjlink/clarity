@@ -1,41 +1,69 @@
-import React, { useRef, useState, useEffect, type ReactNode, type RefObject } from 'react';
+export class TransformedViewElement extends HTMLElement {
+    private container: HTMLDivElement;
+    private content: HTMLElement;
+    private position = { x: 0, y: 0 };
+    private scale = 1;
+    private minScale = 0.2;
+    private maxScale = 3;
+    private isPanning = false;
+    private lastPos = { x: 0, y: 0 };
 
-export type Point = { x: number; y: number; };
-export type Line = { start: Point; end: Point; };
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        if (this.shadowRoot === null) {
+            throw new Error('Shadow root not attached');
+        }
 
-export type TransformContextType = {
-    position: Point;
-    scale: number;
-    screenToWorld: (pt: Point) => Point;
-    worldToScreen: (pt: Point) => Point;
-};
+        this.container = document.createElement('div');
+        this.content = document.createElement('div');
 
-type TransformedViewProps = {
-    children: ReactNode;
-    minScale?: number;
-    maxScale?: number;
-    initialScale?: number;
-    containerRef?: RefObject<HTMLDivElement>;
-};
+        this.container.style.width = '100%';
+        this.container.style.height = '100%';
+        this.container.style.position = 'relative';
+        this.container.style.userSelect = 'none';
+        this.container.style.overflow = 'hidden';
 
-const TransformedView: React.FC<TransformedViewProps> = ({
-    children,
-    minScale = 0.2,
-    maxScale = 3,
-    initialScale = 1,
-    containerRef,
-}) => {
-    const lastPos = useRef({ x: 0, y: 0 });
-    const internalRef = useRef<HTMLDivElement>(null);
-    const ref = containerRef || internalRef;
+        this.content.style.width = '100%';
+        this.content.style.height = '100%';
+        this.content.style.position = 'relative';
+        this.content.style.display = 'flex';
+        this.content.style.justifyContent = 'center';
+        this.content.style.alignItems = 'center';
+        this.content.style.transformOrigin = '0 0';
+        this.content.style.willChange = 'transform';
 
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const [scale, setScale] = useState(initialScale);
-    const [isPanning, setIsPanning] = useState(false);
-    const isPanningRef = useRef(false);
+        this.container.appendChild(this.content);
+        this.shadowRoot.appendChild(this.container);
 
-    function onMouseDown(e: React.MouseEvent) {
+        this.onMouseDown = this.onMouseDown.bind(this);
+        this.onMouseMove = this.onMouseMove.bind(this);
+        this.onMouseUp = this.onMouseUp.bind(this);
+        this.onWheel = this.onWheel.bind(this);
+    }
+
+    connectedCallback() {
+        // Move children into content
+        while (this.childNodes.length > 0) {
+            this.content.appendChild(this.childNodes[0]);
+        }
+        this.updateTransform();
+
+        this.container.addEventListener('mousedown', this.onMouseDown);
+        this.container.addEventListener('wheel', this.onWheel, { passive: false });
+    }
+
+    disconnectedCallback() {
+        this.container.removeEventListener('mousedown', this.onMouseDown);
+        this.container.removeEventListener('wheel', this.onWheel);
+        window.removeEventListener('mousemove', this.onMouseMove);
+        window.removeEventListener('mouseup', this.onMouseUp);
+    }
+
+    private onMouseDown(e: MouseEvent) {
         let el = e.target as HTMLElement | null;
+        // don't pan if already interacting with a node header! 
+        // TODO: find a more efficient way to check for this condition
         while (el) {
             if (el.classList && Array.from(el.classList).some(cls => cls.includes('node'))) {
                 return;
@@ -43,127 +71,41 @@ const TransformedView: React.FC<TransformedViewProps> = ({
             el = el.parentElement;
         }
 
-        setIsPanning(true);
-        isPanningRef.current = true;
-        lastPos.current = { x: e.clientX - position.x, y: e.clientY - position.y };
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
+        this.isPanning = true;
+        this.lastPos = { x: e.clientX - this.position.x, y: e.clientY - this.position.y };
+        window.addEventListener('mousemove', this.onMouseMove);
+        window.addEventListener('mouseup', this.onMouseUp);
+        this.container.style.cursor = 'grabbing';
     }
 
-    function onMouseMove(e: MouseEvent) {
-        if (!isPanningRef.current) {
-            return;
-        }
-        setPosition({
-            x: e.clientX - lastPos.current.x,
-            y: e.clientY - lastPos.current.y,
-        });
+    private onMouseUp() {
+        this.isPanning = false;
+        window.removeEventListener('mousemove', this.onMouseMove);
+        window.removeEventListener('mouseup', this.onMouseUp);
+        this.container.style.cursor = 'default';
     }
 
-    function onMouseUp() {
-        setIsPanning(false);
-        isPanningRef.current = false;
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-    }
-
-    function onWheel(e: WheelEvent) {
+    private onWheel(e: WheelEvent) {
         e.preventDefault();
-
-        // compute and clamp the zoom
         const scaleAmount = -e.deltaY * 0.001;
-        const newScale = Math.min(maxScale, Math.max(minScale, scale + scaleAmount));
+        const newScale = Math.min(this.maxScale, Math.max(this.minScale, this.scale + scaleAmount));
 
-        if (ref.current) {
-            const rect = ref.current.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-            const dx = mouseX - position.x;
-            const dy = mouseY - position.y;
-            const ratio = newScale / scale;
+        const rect = this.container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        const dx = mouseX - this.position.x;
+        const dy = mouseY - this.position.y;
+        const ratio = newScale / this.scale;
 
-            setPosition({
-                x: mouseX - dx * ratio,
-                y: mouseY - dy * ratio,
-            });
-        }
-
-        setScale(newScale);
+        this.position.x = mouseX - dx * ratio;
+        this.position.y = mouseY - dy * ratio;
+        this.scale = newScale;
+        this.updateTransform();
     }
 
-    useEffect(() => {
-        if (!ref.current) {
-            return;
-        }
+    private updateTransform() {
+        this.content.style.transform = `translate(${this.position.x}px, ${this.position.y}px) scale(${this.scale})`;
+    }
+}
 
-        const element = ref.current; // local copy to avoid refresh change
-        const handler = (e: WheelEvent) => onWheel(e);
-
-        element.addEventListener('wheel', handler, { passive: false });
-        return () => {
-            element.removeEventListener('wheel', handler);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [scale, position]);
-
-    const screenToWorld = (pt: { x: number, y: number }) => {
-        if (!ref.current) {
-            return { x: 0, y: 0 };
-        }
-
-        const rect = ref.current.getBoundingClientRect();
-        const localX = pt.x - rect.left;
-        const localY = pt.y - rect.top;
-
-        return {
-            x: (localX - position.x) / scale,
-            y: (localY - position.y) / scale,
-        };
-    };
-
-    const worldToScreen = (pt: { x: number, y: number }) => {
-        if (!ref.current) {
-            return { x: 0, y: 0 };
-        }
-
-        const rect = ref.current.getBoundingClientRect();
-        return {
-            x: pt.x * scale + position.x + rect.left,
-            y: pt.y * scale + position.y + rect.top,
-        };
-    };
-
-    return (
-        <TransformContext.Provider value={{ position, scale, screenToWorld, worldToScreen }}>
-            <div
-                ref={ref}
-                style={{
-                    width: '100%',
-                    height: '100%',
-                    cursor: isPanning ? 'grabbing' : 'default',
-                    position: 'relative',
-                    userSelect: 'none',
-                }}
-                onMouseDown={onMouseDown}
-            >
-                <div
-                    style={{
-                        transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-                        willChange: 'transform',
-                        transformOrigin: '0 0',
-                        width: '100%',
-                        height: '100%',
-                        position: 'relative',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                    }}
-                >
-                    {children}
-                </div>
-            </div>
-        </TransformContext.Provider>
-    );
-};
-
-export default TransformedView;
+customElements.define('transformed-view', TransformedViewElement);
