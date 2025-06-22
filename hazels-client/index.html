@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <link rel="icon" type="image/svg+xml" href="./assets/haze.svg" />
-        <link rel="stylesheet" href="./assets/styles.css" />
+        <link rel="stylesheet" href="./index.css" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Clarity</title>
     </head>
@@ -11,21 +11,12 @@
         <style>
             body { 
                 /* prevent FOUC */
-                background: rgb(30);
+                background: rgb(30, 30, 30);
             }
         </style>
         <div id="root"></div>
-        <script type="module" src="/src/main.tsx"></script>
 
         <custom-console id="myConsole"></custom-console>
-        <script type="module">
-            import { ConsoleMessage } from './CustomConsole.js';
-            const el = document.getElementById('myConsole');
-            el.messages = [
-                { id: '1', text: 'Hola mundo', visible: true },
-                { id: '2', text: 'Mensaje 2', visible: true }
-            ];
-            el.visible = true;
-        </script>
+        <script src="./g/index.js"></script>
     </body>
 </html>
