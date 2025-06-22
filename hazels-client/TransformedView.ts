@@ -1,49 +1,28 @@
+import { type Point } from './TreeNode';
+
 export class TransformedViewElement extends HTMLElement {
-    private container: HTMLDivElement;
-    private content: HTMLElement;
-    private position = { x: 0, y: 0 };
+    static minScale = 0.2;
+    static maxScale = 3;
+
+    private container!: HTMLDivElement;
+    private content!: HTMLElement;
     private scale = 1;
-    private minScale = 0.2;
-    private maxScale = 3;
-    private isPanning = false;
-    private lastPos = { x: 0, y: 0 };
+    
+    private _isPanning = false;
+    private _position: Point = { x: 0, y: 0 };
+    private _lastPosition: Point = { x: 0, y: 0 };
 
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        if (this.shadowRoot === null) {
-            throw new Error('Shadow root not attached');
-        }
-
-        this.container = document.createElement('div');
-        this.content = document.createElement('div');
-
-        this.container.style.width = '100%';
-        this.container.style.height = '100%';
-        this.container.style.position = 'relative';
-        this.container.style.userSelect = 'none';
-        this.container.style.overflow = 'hidden';
-
-        this.content.style.width = '100%';
-        this.content.style.height = '100%';
-        this.content.style.position = 'relative';
-        this.content.style.display = 'flex';
-        this.content.style.justifyContent = 'center';
-        this.content.style.alignItems = 'center';
-        this.content.style.transformOrigin = '0 0';
-        this.content.style.willChange = 'transform';
-
-        this.container.appendChild(this.content);
-        this.shadowRoot.appendChild(this.container);
-
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onWheel = this.onWheel.bind(this);
+        this.render();
     }
 
     connectedCallback() {
-        // Move children into content
         while (this.childNodes.length > 0) {
             this.content.appendChild(this.childNodes[0]);
         }
@@ -60,10 +39,23 @@ export class TransformedViewElement extends HTMLElement {
         window.removeEventListener('mouseup', this.onMouseUp);
     }
 
+    screenToWorld(point: Point): Point {
+        return {
+            x: (point.x - this._position.x) / this.scale,
+            y: (point.y - this._position.y) / this.scale
+        };
+    }
+
+    worldToScreen(point: Point): Point {
+        return {
+            x: point.x * this.scale + this._position.x,
+            y: point.y * this.scale + this._position.y
+        };
+    }
+
     private onMouseDown(e: MouseEvent) {
         let el = e.target as HTMLElement | null;
         // don't pan if already interacting with a node header! 
-        // TODO: find a more efficient way to check for this condition
         while (el) {
             if (el.classList && Array.from(el.classList).some(cls => cls.includes('node'))) {
                 return;
@@ -71,15 +63,24 @@ export class TransformedViewElement extends HTMLElement {
             el = el.parentElement;
         }
 
-        this.isPanning = true;
-        this.lastPos = { x: e.clientX - this.position.x, y: e.clientY - this.position.y };
+        this._isPanning = true;
+        this._lastPosition = { x: e.clientX - this._position.x, y: e.clientY - this._position.y };
         window.addEventListener('mousemove', this.onMouseMove);
         window.addEventListener('mouseup', this.onMouseUp);
         this.container.style.cursor = 'grabbing';
     }
 
+    private onMouseMove(e: MouseEvent) {
+        if (!this._isPanning) {
+            return;
+        }
+        this._position.x = e.clientX - this._lastPosition.x;
+        this._position.y = e.clientY - this._lastPosition.y;
+        this.updateTransform();
+    }
+
     private onMouseUp() {
-        this.isPanning = false;
+        this._isPanning = false;
         window.removeEventListener('mousemove', this.onMouseMove);
         window.removeEventListener('mouseup', this.onMouseUp);
         this.container.style.cursor = 'default';
@@ -88,23 +89,39 @@ export class TransformedViewElement extends HTMLElement {
     private onWheel(e: WheelEvent) {
         e.preventDefault();
         const scaleAmount = -e.deltaY * 0.001;
-        const newScale = Math.min(this.maxScale, Math.max(this.minScale, this.scale + scaleAmount));
+        const newScale = Math.min(TransformedViewElement.maxScale, Math.max(TransformedViewElement.minScale, this.scale + scaleAmount));
 
         const rect = this.container.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
-        const dx = mouseX - this.position.x;
-        const dy = mouseY - this.position.y;
+        const dx = mouseX - this._position.x;
+        const dy = mouseY - this._position.y;
         const ratio = newScale / this.scale;
 
-        this.position.x = mouseX - dx * ratio;
-        this.position.y = mouseY - dy * ratio;
+        this._position.x = mouseX - dx * ratio;
+        this._position.y = mouseY - dy * ratio;
         this.scale = newScale;
         this.updateTransform();
     }
 
     private updateTransform() {
-        this.content.style.transform = `translate(${this.position.x}px, ${this.position.y}px) scale(${this.scale})`;
+        this.content.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this.scale})`;
+    }
+
+    private render() {
+        if (!this.shadowRoot) {
+            return;
+        }
+        this.shadowRoot.innerHTML = `
+            <link rel="stylesheet" href="./TransformedView.css">  
+            <div class="container">
+                <div class="content">
+                    <slot></slot>
+                </div>
+            </div>
+        `;
+        this.container = this.shadowRoot.querySelector('.container') as HTMLDivElement;
+        this.content = this.shadowRoot.querySelector('.content') as HTMLElement;
     }
 }
 

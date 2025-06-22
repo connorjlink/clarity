@@ -17,6 +17,8 @@ export class TreeNodeElement extends HTMLElement {
     onDisconnect?: (info: ClickspotInfo) => void;
     onTempLine?: (info: [Line, ClickspotLocation] | null) => void;
     isClickspotConnected?: (info: ClickspotInfo) => boolean;
+    screenToWorld?: (screenPoint: Point) => Point;
+    worldToScreen?: (worldPoint: Point) => Point;
 
     setCallbacks(callbacks: {
         onMove?: (pos: Point) => void;
@@ -25,12 +27,11 @@ export class TreeNodeElement extends HTMLElement {
         onDisconnect?: (info: ClickspotInfo) => void;
         onTempLine?: (info: [Line, ClickspotLocation] | null) => void;
         isClickspotConnected?: (info: ClickspotInfo) => boolean;
+        screenToWorld?: (screenPoint: Point) => Point;
+        worldToScreen?: (worldPoint: Point) => Point;
     }) {
         Object.assign(this, callbacks);
     }
-
-    private isDragging = false;
-    private dragOffset: Point = { x: 0, y: 0 };
 
     constructor() {
         super();
@@ -99,18 +100,18 @@ export class TreeNodeElement extends HTMLElement {
             y: mouseWorld.y - this._dragOffset.y,
         };
 
-        function onMouseMove(e: MouseEvent) {
+        const onMouseMove = (e: MouseEvent) => {
             if (!this._isDragging) {
                 return;
             }
             const dragWorld = this.screenToWorld({ x: e.clientX, y: e.clientY });
-            this.onMove({
+            this.onMove?.({
                 x: dragWorld.x - this._dragOffset.current.x,
                 y: dragWorld.y - this._dragOffset.current.y,
             });
         }
 
-        function onMouseUp() {
+        const onMouseUp = () => {
             this._isDragging = false;
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
@@ -162,7 +163,7 @@ export class TreeNodeElement extends HTMLElement {
             const parentLocation = this.getLocationByClassList(parentClickspotContainer.classList);
             this.onConnectStart({ nodeId: parentNodeId, clickspotId: clickspotId, location: parentLocation });
 
-            function onMouseMove(e: MouseEvent) {
+            const onMouseMove = (e: MouseEvent) => {
                 if (!this._isDragging) {
                     this.onTempLine(null);
                     return;
@@ -175,7 +176,7 @@ export class TreeNodeElement extends HTMLElement {
                 }, parentLocation!]); // non-null strengthened (at call site)
             }
 
-            function onMouseUp(e: MouseEvent) {
+            const onMouseUp = (e: MouseEvent) => {
                 this._isDragging = false;
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
@@ -195,15 +196,14 @@ export class TreeNodeElement extends HTMLElement {
                     return;
                 }
 
-                const targetNodeId = nodeElement.getAttribute('id');
-
                 const targetClickspotContainer = hoveredElement.closest('.node-clickspot-container');
                 if (!targetClickspotContainer) {
                     this.onTempLine(null);
                     return;
                 }
                 const targetLocation = this.getLocationByClassList(targetClickspotContainer.classList);
-
+                
+                const targetNodeId = nodeElement.getAttribute('id');
                 if (targetNodeId && targetNodeId !== parentNodeId) {
                     this.onConnectEnd(
                         { nodeId: parentNodeId!, clickspotId: clickspotId, location: parentLocation },

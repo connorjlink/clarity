@@ -1,11 +1,16 @@
-import { type Clickspot, type NodeData } from './TreeNode';
-import { type Point } from './TransformedView';
-
-
+import { type Point, type Clickspot, type ClickspotInfo } from './TreeNode';
 
 export type Connection = {
     from: ClickspotInfo;
     to: ClickspotInfo;
+};
+
+export type NodeData = {
+    id: string;
+    label: string;
+    position: { x: number; y: number };
+    parentId?: string;
+    clickspots: Clickspot[];
 };
 
 export class NodeManager {
@@ -66,8 +71,10 @@ export class NodeManager {
     }
 
     connect(from: ClickspotInfo, to: ClickspotInfo) {
-        if (from.nodeId === to.nodeId) return;
-        const key = TreeManager.connectionKey(from, to);
+        if (from.nodeId === to.nodeId) {
+            return;
+        }
+        const key = NodeManager.connectionKey(from, to);
         this.connections.set(key, { from, to });
     }
 

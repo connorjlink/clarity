@@ -8,73 +8,7 @@ import './App.css'
 import { TreeManager, type NodeData, type Connection, type ClickspotLocation, type ClickspotInfo } from '../hazels-client/src/NodeManager';
 import MarkupGenerator from '../hazels-client/src/MarkupGenerator';
 
-type LineMode = 'line' | 'bezier';
 
-function getBezierPath(
-    line: Line,
-    fromLocation: ClickspotLocation | null,
-    toLocation: ClickspotLocation | null
-) {
-    const { start, end } = line;
-    // set the curve ratio: a higher value enforces greater curvature 
-    // and closer adherence to the location - based stretching
-    const controlOffset = 100;
-
-    let inferredToLocation = toLocation;
-    if (!toLocation && fromLocation) {
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
-        if (fromLocation === 'left') {
-            if (angle > -45 && angle < 45) {
-                inferredToLocation = 'left';
-            } else if (angle >= 45 && angle <= 135) {
-                inferredToLocation = 'bottom';
-            } else {
-                inferredToLocation = null;
-            }
-        } else if (fromLocation === 'right') {
-            if (angle > 135 || angle < -135) {
-                inferredToLocation = 'right';
-            } else if (angle >= -135 && angle <= -45) {
-                inferredToLocation = 'bottom';
-            } else {
-                inferredToLocation = null;
-            }
-        } else if (fromLocation === 'bottom') {
-            if (angle > 135 || angle < -135) {
-                inferredToLocation = 'right';
-            } else if (angle > -45 && angle < 45) {
-                inferredToLocation = 'left';
-            } else if (angle >= 45 && angle <= 135) {
-                inferredToLocation = 'bottom';
-            }
-        }
-    }
-
-    let c1x = start.x;
-    let c1y = start.y;
-    if (fromLocation === 'left') {
-        c1x -= controlOffset;
-    } else if (fromLocation === 'right') {
-        c1x += controlOffset;
-    } else if (fromLocation === 'bottom') {
-        c1y += controlOffset;
-    }
-
-    let c2x = end.x;
-    let c2y = end.y;
-    if (inferredToLocation === 'left') {
-        c2x -= controlOffset;
-    } else if (inferredToLocation === 'right') {
-        c2x += controlOffset;
-    } else if (inferredToLocation === 'bottom') {
-        c2y += controlOffset;
-    }
-
-    return `M ${start.x},${start.y} C ${c1x},${c1y} ${c2x},${c2y} ${end.x},${end.y}`;
-}
 
 function AppBody(
     { lineMode, treeManager }
@@ -84,20 +18,6 @@ function AppBody(
 
     const [, setVersion] = useState(0); // hmm hack to trigger repaint--what is more idiomatic?
 
-    const { screenToWorld } = useTransform();
-
-    const getClickspotCenter = (nodeId: string, clickspotId: string) => {
-        const el = document.querySelector(`[data-clickspot-id="${clickspotId}"]`) as HTMLElement;
-        if (!el) {
-            return null;
-        }
-        const rect = el.getBoundingClientRect();
-        const rectWorld = screenToWorld({ x: rect.left, y: rect.top });
-        return {
-            x: rectWorld.x + rect.width / 2,
-            y: rectWorld.y + rect.height / 2
-        };
-    };
 
     const isClickspotConnected = (info: ClickspotInfo) => {
         const connections = treeManager.getConnections(info.nodeId);
