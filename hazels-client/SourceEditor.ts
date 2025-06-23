@@ -76,6 +76,9 @@ export class SourceEditor extends HTMLElement {
         this.render();
     }
 
+    // NOTE: user inner text for text areas!!!!!!!!!!!!!!!!!!!
+    // will strip out the html tags to give us a clean text model with which to interact periodically
+    // slow, so should probably only sychronize upon symbol database reload
     private render() {
         // non-null strengthened
         this.shadowRoot!.innerHTML = `

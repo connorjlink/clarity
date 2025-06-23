@@ -10,7 +10,3 @@ el.messages = [
     { id: '2', text: 'Mensaje 2', visible: true }
 ];
 el.visible = true;
-
-document.body.insertAdjacentHTML('beforeend', `
-    
-`);

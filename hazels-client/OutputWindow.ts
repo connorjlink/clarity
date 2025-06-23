@@ -12,8 +12,6 @@ export class OutputWindow extends HTMLElement {
 
     constructor() {
         super();
-        // automatically assigns this.shadowRoot
-        this.attachShadow({ mode: 'open' });
     }
 
     private _messages: OutputWindowMessage[] = [];
@@ -56,11 +54,7 @@ export class OutputWindow extends HTMLElement {
     }
 
     private render() {
-        if (!this.shadowRoot) {
-            return;
-        }
-        this.shadowRoot.innerHTML = `
-            <link rel="stylesheet" href="./OutputWindow.css">
+        this.innerHTML = `
             <div class="console${this.visible ? '' : ' fade-out'}">
                 ${this._messages.map(msg =>
                     `<div class="console-line">${msg.text}</div>`
@@ -68,7 +62,7 @@ export class OutputWindow extends HTMLElement {
                 <div id="end"></div>
             </div>
         `;
-        this._endRef = this.shadowRoot.querySelector('#end') as HTMLDivElement;
+        this._endRef = this.querySelector('#end') as HTMLDivElement;
         this.scrollToEnd();
     }
 }

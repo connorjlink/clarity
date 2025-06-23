@@ -35,7 +35,6 @@ export class TreeNodeElement extends HTMLElement {
 
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
     }
 
     connectedCallback() {
@@ -73,10 +72,11 @@ export class TreeNodeElement extends HTMLElement {
 
     private attachEventListeners() {
         // Delegated event listeners for drag, clickspots, etc.
-        if (this.shadowRoot) {
-            this.shadowRoot.querySelector('.node-header')?.addEventListener('mousedown', this.startNodeDrag.bind(this));
-            this.shadowRoot.querySelectorAll('.node-clickspot')?.forEach(c => c.addEventListener('mousedown', this.onConnectStart.bind(this)));
-        }
+        this.querySelector('.node-header')?.addEventListener('mousedown', this.startNodeDrag.bind(this));
+        this.querySelectorAll('.node-clickspot')?.forEach(c => {
+            c.addEventListener('mousedown', this.onConnectStart.bind(this))
+            c.addEventListener('mousedown', this.handleClickspotMouseDown.bind(this, c.getAttribute('id')!));
+        });
     }
 
     private getLocationByClassList(classList: DOMTokenList) {
@@ -92,6 +92,10 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     private startNodeDrag(event: MouseEvent) {
+        // only accept primary button, usually left mouse
+        if (event.button !== 0) {
+            return;
+        }
         this._isDragging = true;
         const mouseWorld = this.screenToWorld({ x: event.clientX, y: event.clientY });
         // mouse as delta from drag start last paint
@@ -106,8 +110,8 @@ export class TreeNodeElement extends HTMLElement {
             }
             const dragWorld = this.screenToWorld({ x: e.clientX, y: e.clientY });
             this.onMove?.({
-                x: dragWorld.x - this._dragOffset.current.x,
-                y: dragWorld.y - this._dragOffset.current.y,
+                x: dragWorld.x - this._dragOffset.x,
+                y: dragWorld.y - this._dragOffset.y,
             });
         }
 
@@ -145,7 +149,7 @@ export class TreeNodeElement extends HTMLElement {
             const nodeCenter = this.screenToWorld(nodeCenterScreen);
 
             // need to recreate the info because we previously didn't know the parent information
-            const parentNode = (event.target as HTMLElement).closest('.node');
+            const parentNode = (event.target as HTMLElement).closest('tree-node');
             if (!parentNode) {
                 this.onTempLine(null);
                 return;
@@ -182,19 +186,20 @@ export class TreeNodeElement extends HTMLElement {
                 document.removeEventListener('mouseup', onMouseUp);
 
                 const mouseScreen = { x: e.clientX, y: e.clientY };
+                
                 const hoveredElement = document.elementFromPoint(mouseScreen.x, mouseScreen.y);
-
                 if (!hoveredElement || !hoveredElement.classList.contains('node-clickspot') || hoveredElement.classList.contains('connected')) {
                     this.onTempLine(null);
                     return;
                 }
-
                 const targetClickspotId = hoveredElement.getAttribute('id');
-                const nodeElement = hoveredElement.closest('.node') as HTMLElement | null;
+
+                const nodeElement = hoveredElement.closest('tree-node') as HTMLElement | null;
                 if (!nodeElement || !targetClickspotId) {
                     this.onTempLine(null);
                     return;
                 }
+                const targetNodeId = nodeElement.getAttribute('id');
 
                 const targetClickspotContainer = hoveredElement.closest('.node-clickspot-container');
                 if (!targetClickspotContainer) {
@@ -203,7 +208,6 @@ export class TreeNodeElement extends HTMLElement {
                 }
                 const targetLocation = this.getLocationByClassList(targetClickspotContainer.classList);
                 
-                const targetNodeId = nodeElement.getAttribute('id');
                 if (targetNodeId && targetNodeId !== parentNodeId) {
                     this.onConnectEnd(
                         { nodeId: parentNodeId!, clickspotId: clickspotId, location: parentLocation },
@@ -220,18 +224,13 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     private render() {
-        if (!this.shadowRoot) {
-            return;
-        }
-        this.shadowRoot.innerHTML = `
-            <link rel="stylesheet" href="./TreeNode.css">
+        this.innerHTML = `
             <div
                 class="node shadowed"
-                id="${this._nodeId}"
                 style="left: ${this._position.x}px; top: ${this._position.y}px;"
             >
                 <div class="node-header">
-                    <img src="./assets/expression.svg" class="node-icon" alt="Node Icon" />
+                    <img src="./res/expression.svg" class="node-icon" alt="Node Icon" />
                     <span>Exponentiation Expression</span>
                 </div>
                 <div class="node-body">

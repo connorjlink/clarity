@@ -19,43 +19,7 @@ function AppBody(
     const [, setVersion] = useState(0); // hmm hack to trigger repaint--what is more idiomatic?
 
 
-    const isClickspotConnected = (info: ClickspotInfo) => {
-        const connections = treeManager.getConnections(info.nodeId);
-        for (const connection of connections) {
-            if (connection.from.clickspotId === info.clickspotId || connection.to.clickspotId === info.clickspotId) {
-                return true;
-            }
-        }
-        return false;
-    };
 
-    const handleConnectStart = (from: ClickspotInfo) => {
-    };
-
-    const handleConnectEnd = (from: ClickspotInfo, to: ClickspotInfo) => {
-        if (from && (from.nodeId !== to.nodeId || from.clickspotId !== to.clickspotId)) {
-            treeManager.connect(from, to);
-            setTempLine(null);
-            setVersion(v => v + 1);
-        }
-    };
-
-    const handleRemoveLines = (
-        tofrom: ClickspotInfo,
-    ) => {
-        treeManager.disconnect(tofrom);
-        setVersion(v => v + 1);
-    };
-
-    const handleNodeMove = (id: string, pos: Point) => {
-        treeManager.updateNodePosition(id, pos);
-        setVersion(v => v + 1);
-    };
-
-    const handleTempLine = (line: [Line, ClickspotLocation] | null) => {
-        setTempLine(line);
-        setVersion(v => v + 1);
-    }
 
     const renderLines = () => {
         const connections = treeManager.getAllConnections();

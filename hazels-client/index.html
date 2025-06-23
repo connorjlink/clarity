@@ -3,9 +3,15 @@
     <head>
         <meta charset="utf-8" />
         <link rel="icon" type="image/svg+xml" href="./assets/haze.svg" />
-        <link rel="stylesheet" href="./index.css" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Clarity</title>
+        <link rel="stylesheet" href="./index.css" />
+        <link rel="stylesheet" href="./Theme.css">
+        <link rel="stylesheet" href="./TreeNode.css">
+        <link rel="stylesheet" href="./TransformedView.css">
+        <link rel="stylesheet" href="./ProgramTree.css">
+        <link rel="stylesheet" href="./OutputWindow.css">
+        <link rel="stylesheet" href="./SourceEditor.css">
     </head>
     <body>
         <style>
@@ -13,7 +19,15 @@
                 background: rgb(30, 30, 30);
             }
         </style>
-        
+
+        <div class="title-container">
+            <a href="./"><img src="./res/haze.svg" class="logo shadowed" alt="clarityLogo" /></a>
+            <div>
+                <h1><a class="emphasis" href="https://github.com/connorjlink/haze">Haze</a> Clarity</h1>
+                <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
+            </div>
+        </div>
+
         <program-tree></program-tree>
         <output-window id="output-window"></output-window>
         

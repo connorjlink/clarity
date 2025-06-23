@@ -1,4 +1,4 @@
-import { type Line, type ClickspotLocation } from './TreeNode';
+import { TreeNodeElement, type Point, type Line, type ClickspotLocation, type ClickspotInfo } from './TreeNode';
 import { NodeManager, type Connection } from './NodeManager';
 import { TransformedViewElement as TransformedViewElement } from './TransformedView';
 
@@ -71,13 +71,15 @@ function getBezierPath(
 export class ProgramTreeElement extends HTMLElement {
     static observedAttributes = [];
 
+    // model references
     private _nodeManager: NodeManager;
 
+    // DOM references
     private _transformedViewRef?: TransformedViewElement;
+    private _connectionsRef?: SVGSVGElement;
 
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
         this._nodeManager = new NodeManager([
             {
                 id: 'node1',
@@ -115,6 +117,7 @@ export class ProgramTreeElement extends HTMLElement {
     }
 
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+        // for now no attributes require re-rendering
     }
 
     private getClickspotCenter(nodeId: string, clickspotId: string) {
@@ -130,9 +133,72 @@ export class ProgramTreeElement extends HTMLElement {
         };
     };
 
+    private isClickspotConnected(info: ClickspotInfo) {
+        const connections = this._nodeManager.getConnections(info.nodeId);
+        for (const connection of connections) {
+            if (connection.from.clickspotId === info.clickspotId || connection.to.clickspotId === info.clickspotId) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    private handleConnectStart(from: ClickspotInfo) {
+        // stub
+    };
+
+    private handleConnectEnd(from: ClickspotInfo, to: ClickspotInfo) {
+        if (from && (from.nodeId !== to.nodeId || from.clickspotId !== to.clickspotId)) {
+            this._nodeManager.connect(from, to);
+            this.handleTempLine(null);
+        }
+        this.renderLines();
+    };
+
+    private handleRemoveLines(tofrom: ClickspotInfo) {
+        this._nodeManager.disconnect(tofrom);
+        
+        // complex selector, but cheaper than reloading every path from scratch
+
+        const fromLinesRef = this._connectionsRef?.querySelectorAll(`path[data-connection-from="${tofrom.nodeId}-${tofrom.clickspotId}"]`);
+        fromLinesRef?.forEach(el => el.remove());
+
+        const toLinesRef = this._connectionsRef?.querySelectorAll(`path[data-connection-to="${tofrom.nodeId}-${tofrom.clickspotId}"]`);
+        toLinesRef?.forEach(el => el.remove());
+    };
+
+    private handleNodeMove(id: string, pos: Point) {
+        this._nodeManager.updateNodePosition(id, pos);
+        // since moving a node can repath multiple lines, it makes sense to re-render everything for now
+        this.renderLines();
+        this.renderNodes(); // TODO; figure out a way to move the existing nodes instead of a complete DOM re-render!!!!!!!!
+    };
+
+    private handleTempLine(line: [Line, ClickspotLocation] | null) {
+        // always remove the old one, back out if we don't want to draw a new one
+        this._connectionsRef?.querySelectorAll('.temp-line').forEach(el => el.remove());
+        if (!line) {
+            return;
+        }
+
+        const { start, end } = line[0];
+        const fromLocation = line[1];
+        const path = getBezierPath(line[0], fromLocation, null);
+
+        const tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        tempLine.setAttribute('d', path);
+        tempLine.setAttribute('stroke', 'rgb(171, 167, 200)');
+        tempLine.setAttribute('stroke-width', '2');
+        tempLine.setAttribute('stroke-dasharray', '4');
+        tempLine.setAttribute('fill', 'none');
+        tempLine.classList.add('temp-line');
+
+        this._connectionsRef?.appendChild(tempLine);
+    }
+
     private renderLines() {
         const connections = this._nodeManager.getAllConnections();
-        return connections.map((connection: Connection, idx: number) => {
+        const markup =  connections.map((connection: Connection, idx: number) => {
             const fromCenter = this.getClickspotCenter(connection.from.nodeId, connection.from.clickspotId);
             const toCenter = this.getClickspotCenter(connection.to.nodeId, connection.to.clickspotId);
             if (!fromCenter || !toCenter || !connection.from.location || !connection.to.location) {
@@ -145,38 +211,76 @@ export class ProgramTreeElement extends HTMLElement {
                         connection.from.location,
                         connection.to.location
                     )}"
+                    data-connection-from="${connection.from.nodeId}-${connection.from.clickspotId}"
+                    data-connection-to="${connection.to.nodeId}-${connection.to.clickspotId}"
                     stroke="rgb(143, 132, 213)"
                     stroke-width="2"
                     fill="none"
                 />
             `;
         }).join('');
+
+        this._connectionsRef!.innerHTML = markup;
+    }
+
+    private renderNodes() {
+        const contentRef = this._transformedViewRef?.querySelector('div[slot="transformed-view-slot"]');
+        if (!contentRef) {
+            console.error('Transformed view content slot not found');
+            return;
+        }
+
+        const existingNodes = contentRef.querySelectorAll('tree-node');
+        existingNodes.forEach(node => node.remove());
+
+        for (const node of this._nodeManager.getNodes()) {
+            // custom elements
+            const nodeElement = document.createElement('tree-node') as TreeNodeElement;
+            nodeElement.setAttribute('id', node.id);
+            nodeElement.setAttribute('x', node.position.x.toString());
+            nodeElement.setAttribute('y', node.position.y.toString());
+            
+            const nodeContent = nodeElement.querySelector('.node-content');
+            if (nodeContent) {
+                nodeContent.textContent = node.label;
+            }
+
+            nodeElement.data = {
+                nodeId: node.id,
+                position: node.position,
+                clickspots: node.clickspots
+            };
+
+            nodeElement.setCallbacks({
+                onMove: (pos) => this.handleNodeMove(node.id, pos),
+                onConnectStart: (info) => this.handleConnectStart(info),
+                onConnectEnd: (from, to) => this.handleConnectEnd(from, to),
+                onDisconnect: (info) => this.handleRemoveLines(info),
+                onTempLine: (info) => this.handleTempLine(info),
+                isClickspotConnected: (info) => this.isClickspotConnected(info),
+                screenToWorld: (pt) => this._transformedViewRef?.screenToWorld(pt) ?? pt,
+                worldToScreen: (pt) => this._transformedViewRef?.worldToScreen(pt) ?? pt
+            });
+
+            contentRef.appendChild(nodeElement);
+        }
     }
 
     private render() {
-        if (!this.shadowRoot) {
-            return;
-        }
-        const nodesHtml = this._nodeManager.getNodes().map(node => `
-            <tree-node
-                id="${node.id}"
-                x="${node.position.x}"
-                y="${node.position.y}"
-                data-label="${node.label}"
-                ${node.clickspots.map(cs => `id="${cs.id}"`).join(' ')}
-            >${node.label}</tree-node>
-        `).join('');
-
-        this.shadowRoot.innerHTML = `
-            <link rel="stylesheet" href="./ProgramTree.css">
+        this.innerHTML = `
             <transformed-view id="program-tree-transformed-view">
-                <svg class="connections" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;  ">
-                    ${this.renderLines()}
-                </svg>
-                ${nodesHtml}
+                <div slot="transformed-view-slot">
+                    <svg id="connections">
+                    </svg>
+                </div>
             </transformed-view>
         `;
-        this._transformedViewRef = this.shadowRoot.querySelector('#program-tree-transformed-view') as   TransformedViewElement;
+
+        this._transformedViewRef = this.querySelector('#program-tree-transformed-view') as TransformedViewElement;
+        this._connectionsRef = this._transformedViewRef.querySelector('#connections') as SVGSVGElement;
+
+        this.renderNodes();
+        this.renderLines();
     }
 }
 
