@@ -1,5 +1,6 @@
 # CLARITY
 [https://connorjlink.com/clarity](https://connorjlink.com/clarity)
+
 A complement to my custom programming language compiler, [haze](https://github.com/connorjlink/haze), _clarity_ offers a visual presentation of the stages and transformations of the compilation process, from source code level through AST and IR symbols down to bare-metal machine code and then platform-dependent native executable files (i.e., Windows PE .exe). Clarity includes a fully-custom source code editor powered by hazels-client (Typescript Web frontend) and hazels-server (node.js backend) seen in this repository, just two constituents of my custom language server for the _haze_ compiler.
 
 ## Technical Details
@@ -9,9 +10,9 @@ Since the C++ compiler runs as a separate process and communicates over an stdou
 
 ## More Information
 The project remains in its infancy and will mature in its scope and goals in due time. For now, my primary goals follow as such:
- - [] Powerful data visualization over the stages of compilation (source, preprocessed?, AST, IR, ocode, and exe)
- - [] Complete source editor and language server client running locally in-browser
+ - [ ] Powerful data visualization over the stages of compilation (source, preprocessed?, AST, IR, ocode, and exe)
+ - [ ] Complete source editor and language server client running locally in-browser
 
 One of my long-term ideas includes running the full-stack setup in-browser hosted on my GitHub pages site. This will involve at a minimum:
- - [] Targeting WASM output from the Haze compiler (automated through GitHub actions?)
- - [] Projecting the hazels-server as a less-standalone JS environment
+ - [ ] Targeting WASM output from the Haze compiler (automated through GitHub actions?)
+ - [ ] Projecting the hazels-server as a less-standalone JS environment
