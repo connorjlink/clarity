@@ -3,6 +3,7 @@ import './ProgramTree';
 import './TransformedView';
 import './TreeNode';
 import './NodeManager';
+import './SourceEditor';
 
 const el = document.getElementById('output-window') as any;
 el.messages = [

@@ -1,64 +1,38 @@
+import { PieceTable } from './PieceTable';
 import { MarkupGenerator } from './MarkupGenerator'; 
 
 export class SourceEditor extends HTMLElement {
-    private _rawText: string = '';
-    private _editorMarkup: string = '';
-    private _markupGenerator: any;
+    private _pieceTable: PieceTable;
+    private _markupGenerator: MarkupGenerator;
     private _editorRef: HTMLTextAreaElement | null = null;
     private _markupRef: HTMLDivElement | null = null;
 
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
+        this._pieceTable = new PieceTable('function nvr main = () {}');
         this._markupGenerator = new MarkupGenerator('localhost', '8080', null);
     }
 
     connectedCallback() {
         this.render();
-        this.attachEventListeners();
     }
 
     private attachEventListeners() {
-        if (!this.shadowRoot) {
-            return;
-        }
-        this.shadowRoot.querySelector('.load-btn')?.addEventListener('click', () => this.handleLoadFromFile());
-        this.shadowRoot.querySelector('.sync-btn')?.addEventListener('click', () => this.handleSynchronize());
-        this._editorRef = this.shadowRoot.querySelector('.editor');
-        this._markupRef = this.shadowRoot.querySelector('.highlighted-code');
         this._editorRef?.addEventListener('input', (e) => this.handleInputChange(e));
         this._editorRef?.addEventListener('scroll', () => this.handleScroll());
     }
 
     private handleInputChange(e: Event) {
         const target = e.target as HTMLTextAreaElement;
-        this._rawText = target.value;
-        this.updateEditorMarkup(this._rawText);
+        this._pieceTable = new PieceTable(target.value);
         this.renderHighlight();
     }
 
-    private updateEditorMarkup(sourceCode: string) {
-        this._editorMarkup = '';
-        this._editorMarkup = this._markupGenerator.handleGenerateRequest(sourceCode);
-        this.render();
-    }
-
-    private handleLoadFromFile() {
-        this._editorMarkup = '';
-        const element = this.shadowRoot?.querySelector('.source-editor') as HTMLElement;
-        this._markupGenerator.requestFileDialog(element);
-        setTimeout(() => {
-            if (element) {
-                this._editorMarkup = element.innerHTML;
-                this.renderHighlight();
-            }
-        }, 100);
-    }
-
-    private handleSynchronize() {
-        this._markupGenerator.refresh();
-        this._editorMarkup = this._markupGenerator.handleGenerateRequest(this._rawText);
-        this.renderHighlight();
+    private renderHighlight() {
+        if (this._markupRef) {
+            const text = this._pieceTable.getText();
+            this._markupRef.innerHTML = this._markupGenerator.handleGenerateRequest(text);
+        }
     }
 
     private handleScroll() {
@@ -68,32 +42,16 @@ export class SourceEditor extends HTMLElement {
         }
     }
 
-    private renderHighlight() {
-        if (this._markupRef) {
-            this._markupRef.innerHTML = this._editorMarkup;
-        }
-        this.render();
-    }
-
     private render() {
-        if (!this.shadowRoot) {
-            return;
-        }
-        this.shadowRoot.innerHTML = `
-            <link rel="stylesheet" href="./SourceEditor.css">
-            <button class="load-btn">Load source from file</button>
-            <button class="sync-btn">Synchronize editor with symbol database</button>
-            <div class="source-editor-container shadowed">
-                <textarea
-                    id="source-editor"
-                    rows="10"
-                    cols="50"
-                >${this._rawText}</textarea>
+        const text = this._pieceTable.getText();
+        this.innerHTML = `
+            <div class="source-editor-container">
                 <div id="highlighted-code"></div>
+                <textarea id="source-editor" rows="10" cols="50">${text}</textarea>
             </div>
         `;
-        this._editorRef = this.shadowRoot.querySelector('#source-editor');
-        this._markupRef = this.shadowRoot.querySelector('#highlighted-code');
+        this._editorRef = this.querySelector('#source-editor');
+        this._markupRef = this.querySelector('#highlighted-code');
         this.renderHighlight();
         this.attachEventListeners();
     }

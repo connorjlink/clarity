@@ -22,8 +22,9 @@ body {
     flex-direction: column;
 }
 
-button, select, input {
+button, select, input, textarea {
     appearance: none;
+    outline: none;
 }
 
 svg {
