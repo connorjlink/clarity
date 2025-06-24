@@ -30,6 +30,7 @@ button {
     user-select: none;
     background: none;
     border-radius: var(--corner-radius);
+    will-change: transform;
 }
 
 .node-header {

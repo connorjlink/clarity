@@ -68,10 +68,10 @@ export class TreeNodeElement extends HTMLElement {
         this.render();
     }
 
-    refreshPositionTransform(pos: Point) {
+    updateTransform(pos: Point) {
         this._position = pos;
         if (this._contentRef) {
-            this._contentRef.style.transform = `translate(${this._position.x}px, ${this._position.y}px)`;
+            this._contentRef.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0)`;
         }
     }
 
@@ -257,7 +257,7 @@ export class TreeNodeElement extends HTMLElement {
         `;
 
         this._contentRef = this.querySelector(`#${this._nodeId}`);
-        this.refreshPositionTransform(this._position);
+        this.updateTransform(this._position);
 
         if (this._areCallbacksSet) {
             this.attachEventListeners();

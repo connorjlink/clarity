@@ -4,7 +4,7 @@ export type OutputWindowMessage = {
     visible: boolean;
 };
 
-export class OutputWindow extends HTMLElement {
+export class OutputWindowElement extends HTMLElement {
     // Observed attributes for attributeChangedCallback
     static get observedAttributes() {
         return ['visible'];
@@ -67,4 +67,4 @@ export class OutputWindow extends HTMLElement {
     }
 }
 
-customElements.define('output-window', OutputWindow);
+customElements.define('output-window', OutputWindowElement);

@@ -1,25 +1,34 @@
 import { PieceTable } from './PieceTable';
 import { MarkupGenerator } from './MarkupGenerator'; 
 
-export class SourceEditor extends HTMLElement {
+export class SourceEditorElement extends HTMLElement {
+    // model references
     private _pieceTable: PieceTable;
-    private _markupGenerator: MarkupGenerator;
+    private _markupGenerator?: MarkupGenerator;
+    private _consoleListener: any = null;
+
+    // DOM references
     private _editorRef: HTMLTextAreaElement | null = null;
     private _markupRef: HTMLDivElement | null = null;
+
 
     constructor() {
         super();
         this._pieceTable = new PieceTable('function nvr main = () {}');
-        this._markupGenerator = new MarkupGenerator('localhost', '8080', null);
+        // have to defer construction of the markup generator until the console listener attaches
     }
 
     connectedCallback() {
         this.render();
     }
 
-    private attachEventListeners() {
+    attachEventListeners(consoleListener?: any) {
         this._editorRef?.addEventListener('input', (e) => this.handleInputChange(e));
         this._editorRef?.addEventListener('scroll', () => this.handleScroll());
+        if (!this._consoleListener) {
+            this._consoleListener = consoleListener;
+            this._markupGenerator = new MarkupGenerator('localhost', '8080', this._consoleListener);
+        }
     }
 
     private handleInputChange(e: Event) {
@@ -31,7 +40,10 @@ export class SourceEditor extends HTMLElement {
     private renderHighlight() {
         if (this._markupRef) {
             const text = this._pieceTable.getText();
-            this._markupRef.innerHTML = this._markupGenerator.handleGenerateRequest(text);
+            const response = this._markupGenerator?.handleGenerateRequest(text);
+            if (response) {
+                this._markupRef.innerHTML = response;
+            }
         }
     }
 
@@ -57,4 +69,4 @@ export class SourceEditor extends HTMLElement {
     }
 }
 
-customElements.define('source-editor', SourceEditor);
+customElements.define('source-editor', SourceEditorElement);

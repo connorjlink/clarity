@@ -106,7 +106,7 @@ export class TransformedViewElement extends HTMLElement {
     }
 
     private updateTransform() {
-        this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this._scale})`;
+        this._container.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0) scale(${this._scale})`;
     }
 
     private render() {

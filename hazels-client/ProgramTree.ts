@@ -107,7 +107,7 @@ export class ProgramTreeElement extends HTMLElement {
         const nodeElement = this._contentRef?.querySelector(`#${id}`) as HTMLElement;
         const parentElement = nodeElement.parentElement as TreeNodeElement;
         if (parentElement) {
-            parentElement.refreshPositionTransform(pos);
+            parentElement.updateTransform(pos);
         }
         
         // since moving a node can repath multiple lines, it makes sense to re-render everything for now
