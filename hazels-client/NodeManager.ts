@@ -16,7 +16,7 @@ export type NodeData = {
 export class NodeManager {
     private nodes: Map<string, NodeData> = new Map();
     // adjacency map: nodeId -> Set of connected nodeIds
-    private connections: Map<string, Connection> = new Map();
+    private connections: Map<string, Set<Connection>> = new Map();
 
     private static connectionKey(a: ClickspotInfo, b: ClickspotInfo) {
         return [a.nodeId, a.clickspotId, b.nodeId, b.clickspotId].sort().join('|');
@@ -32,15 +32,19 @@ export class NodeManager {
     }
 
     getAllConnections(): Connection[] {
-        return Array.from(this.connections.values());
+        return Array.from(this.connections.values()).flatMap(set => Array.from(set));
     }
 
     getConnections(nodeId: string): Set<Connection> {
-        return new Set(
-            Array.from(this.connections.values()).filter(
-                c => c.from.nodeId === nodeId || c.to.nodeId === nodeId
-            )
-        );
+        const result = new Set<Connection>();
+        for (const set of this.connections.values()) {
+            for (const conn of set) {
+                if (conn.from.nodeId === nodeId || conn.to.nodeId === nodeId) {
+                    result.add(conn);
+                }
+            }
+        }
+        return result;
     }
 
     addNode(node: NodeData) {
@@ -49,9 +53,14 @@ export class NodeManager {
 
     removeNode(nodeId: string) {
         this.nodes.delete(nodeId);
-        for (const [key, conn] of Array.from(this.connections.entries())) {
-            if (conn.from.nodeId === nodeId || conn.to.nodeId === nodeId) {
-                this.connections.delete(key);
+        for (const [nodeId, connections] of Array.from(this.connections.entries())) {
+            for (const connection of connections) {
+                if (connection.from.nodeId === nodeId || connection.to.nodeId === nodeId) {
+                    connections.delete(connection);
+                }
+                if (connections.size === 0) {
+                    this.connections.delete(nodeId);
+                }
             }
         }
     }
@@ -74,18 +83,55 @@ export class NodeManager {
         if (from.nodeId === to.nodeId) {
             return;
         }
-        const key = NodeManager.connectionKey(from, to);
-        this.connections.set(key, { from, to });
+        // using outbound adjacency lists
+        let set = this.connections.get(from.nodeId);
+        if (!set) {
+            set = new Set<Connection>();
+            this.connections.set(from.nodeId, set);
+        }
+        set.add({ from, to });
+
+        document.getElementById(from.clickspotId)?.classList.toggle('connected', true);
+        var fromNode = this.nodes.get(from.nodeId)?.clickspots.find(cs => cs.id === from.clickspotId);
+        if (fromNode) {
+            fromNode.isConnected = true;
+        }
+
+        document.getElementById(to.clickspotId)?.classList.toggle('connected', true);
+        var toNode = this.nodes.get(to.nodeId)?.clickspots.find(cs => cs.id === to.clickspotId);
+        if (toNode) {
+            toNode.isConnected = true;
+        }
     }
 
     disconnect(info: ClickspotInfo) {
-        for (const [key, conn] of this.connections.entries()) {
-            if (
-                (conn.from.nodeId === info.nodeId && conn.from.clickspotId === info.clickspotId) ||
-                (conn.to.nodeId === info.nodeId && conn.to.clickspotId === info.clickspotId)
-            ) {
-                this.connections.delete(key);
+        for (const [nodeId, connections] of this.connections.entries()) {
+            for (const connection of connections) {
+                if (
+                    (connection.from.nodeId === info.nodeId && connection.from.clickspotId === info.clickspotId) ||
+                    (connection.to.nodeId === info.nodeId && connection.to.clickspotId === info.clickspotId)
+                ) {
+                    
+                    document.getElementById(connection.from.clickspotId)?.classList.toggle('connected', false);
+                    var fromNode = this.nodes.get(connection.from.nodeId)?.clickspots.find(cs => cs.id === connection.from.clickspotId);
+                    if (fromNode) {
+                        fromNode.isConnected = false;
+                    }
+                    
+                    document.getElementById(connection.to.clickspotId)?.classList.toggle('connected', false);
+                    var toNode = this.nodes.get(connection.to.nodeId)?.clickspots.find(cs => cs.id === connection.to.clickspotId);
+                    if (toNode) {
+                        toNode.isConnected = false;
+                    }
+
+                    connections.delete(connection);
+                    if (connections.size === 0) {
+                        this.connections.delete(nodeId);
+                    }
+                    break;
+                }
             }
+            
         }
     }
 

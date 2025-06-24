@@ -2,72 +2,6 @@ import { TreeNodeElement, type Point, type Line, type ClickspotLocation, type Cl
 import { NodeManager, type Connection } from './NodeManager';
 import { TransformedViewElement as TransformedViewElement } from './TransformedView';
 
-function getBezierPath(
-    line: Line,
-    fromLocation: ClickspotLocation,
-    toLocation: ClickspotLocation | null  // inferred if not provided
-) {
-    const { start, end } = line;
-    // set the curve ratio: a higher value enforces greater curvature 
-    // and closer adherence to the location - based stretching
-    const controlOffset = 100;
-
-    let inferredToLocation = toLocation;
-    if (!toLocation && fromLocation) {
-        const dx = end.x - start.x;
-        const dy = end.y - start.y;
-        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-
-        if (fromLocation === 'left') {
-            if (angle > -45 && angle < 45) {
-                inferredToLocation = 'left';
-            } else if (angle >= 45 && angle <= 135) {
-                inferredToLocation = 'bottom';
-            } else {
-                inferredToLocation = null;
-            }
-        } else if (fromLocation === 'right') {
-            if (angle > 135 || angle < -135) {
-                inferredToLocation = 'right';
-            } else if (angle >= -135 && angle <= -45) {
-                inferredToLocation = 'bottom';
-            } else {
-                inferredToLocation = null;
-            }
-        } else if (fromLocation === 'bottom') {
-            if (angle > 135 || angle < -135) {
-                inferredToLocation = 'right';
-            } else if (angle > -45 && angle < 45) {
-                inferredToLocation = 'left';
-            } else if (angle >= 45 && angle <= 135) {
-                inferredToLocation = 'bottom';
-            }
-        }
-    }
-
-    let c1x = start.x;
-    let c1y = start.y;
-    if (fromLocation === 'left') {
-        c1x -= controlOffset;
-    } else if (fromLocation === 'right') {
-        c1x += controlOffset;
-    } else if (fromLocation === 'bottom') {
-        c1y += controlOffset;
-    }
-
-    let c2x = end.x;
-    let c2y = end.y;
-    if (inferredToLocation === 'left') {
-        c2x -= controlOffset;
-    } else if (inferredToLocation === 'right') {
-        c2x += controlOffset;
-    } else if (inferredToLocation === 'bottom') {
-        c2y += controlOffset;
-    }
-
-    return `M ${start.x},${start.y} C ${c1x},${c1y} ${c2x},${c2y} ${end.x},${end.y}`;
-}
-
 export class ProgramTreeElement extends HTMLElement {
     static observedAttributes = [];
 
@@ -76,7 +10,9 @@ export class ProgramTreeElement extends HTMLElement {
 
     // DOM references
     private _transformedViewRef?: TransformedViewElement;
-    private _connectionsRef?: SVGSVGElement;
+    private _contentRef?: HTMLElement;
+    private _connectionsCanvas?: HTMLCanvasElement;
+    private _canvasRef?: CanvasRenderingContext2D;
 
     constructor() {
         super();
@@ -158,129 +94,271 @@ export class ProgramTreeElement extends HTMLElement {
     private handleRemoveLines(tofrom: ClickspotInfo) {
         this._nodeManager.disconnect(tofrom);
         
-        // complex selector, but cheaper than reloading every path from scratch
+        if (!this._connectionsCanvas || !this._canvasRef) {
+            return;
+        }
 
-        const fromLinesRef = this._connectionsRef?.querySelectorAll(`path[data-connection-from="${tofrom.nodeId}-${tofrom.clickspotId}"]`);
-        fromLinesRef?.forEach(el => el.remove());
-
-        const toLinesRef = this._connectionsRef?.querySelectorAll(`path[data-connection-to="${tofrom.nodeId}-${tofrom.clickspotId}"]`);
-        toLinesRef?.forEach(el => el.remove());
+        this.renderLines();
     };
 
     private handleNodeMove(id: string, pos: Point) {
         this._nodeManager.updateNodePosition(id, pos);
+        
+        const nodeElement = this._contentRef?.querySelector(`#${id}`) as HTMLElement;
+        const parentElement = nodeElement.parentElement as TreeNodeElement;
+        if (parentElement) {
+            parentElement.refreshPositionTransform(pos);
+        }
+        
         // since moving a node can repath multiple lines, it makes sense to re-render everything for now
         this.renderLines();
-        this.renderNodes(); // TODO; figure out a way to move the existing nodes instead of a complete DOM re-render!!!!!!!!
     };
 
+    private clearLines() {
+        if (!this._connectionsCanvas || !this._canvasRef) {
+            return;
+        }
+
+        this._canvasRef.clearRect(0, 0, this._connectionsCanvas.width, this._connectionsCanvas.height);
+    }
+
+    private renderLines() {
+        if (!this._connectionsCanvas || !this._canvasRef) {
+            return;
+        }
+
+        this.clearLines();
+
+        const connections = this._nodeManager.getAllConnections();
+        for (const connection of connections) {
+            const fromCenter = this.getClickspotCenter(connection.from.nodeId, connection.from.clickspotId);
+            const toCenter = this.getClickspotCenter(connection.to.nodeId, connection.to.clickspotId);
+            if (!fromCenter || !toCenter || !connection.from.location || !connection.to.location) {
+                continue;
+            }
+            this.drawBezierPath(
+                fromCenter,
+                toCenter,
+                connection.from.location,
+                connection.to.location,
+                'rgb(143, 132, 213)',
+                2,
+                false
+            );
+        }
+    }
+
     private handleTempLine(line: [Line, ClickspotLocation] | null) {
-        // always remove the old one, back out if we don't want to draw a new one
-        this._connectionsRef?.querySelectorAll('.temp-line').forEach(el => el.remove());
-        if (!line) {
+        this.renderLines();
+        if (!line || !this._canvasRef) {
             return;
         }
 
         const { start, end } = line[0];
         const fromLocation = line[1];
-        const path = getBezierPath(line[0], fromLocation, null);
-
-        const tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        tempLine.setAttribute('d', path);
-        tempLine.setAttribute('stroke', 'rgb(171, 167, 200)');
-        tempLine.setAttribute('stroke-width', '2');
-        tempLine.setAttribute('stroke-dasharray', '4');
-        tempLine.setAttribute('fill', 'none');
-        tempLine.classList.add('temp-line');
-
-        this._connectionsRef?.appendChild(tempLine);
+        this.drawBezierPath(
+            start,
+            end,
+            fromLocation,
+            null,
+            'rgb(171, 167, 200)',
+            2,
+            true
+        );
     }
 
-    private renderLines() {
-        const connections = this._nodeManager.getAllConnections();
-        const markup =  connections.map((connection: Connection, idx: number) => {
-            const fromCenter = this.getClickspotCenter(connection.from.nodeId, connection.from.clickspotId);
-            const toCenter = this.getClickspotCenter(connection.to.nodeId, connection.to.clickspotId);
-            if (!fromCenter || !toCenter || !connection.from.location || !connection.to.location) {
-                return '';
-            }
-            return `
-                <path
-                    d="${getBezierPath(
-                        { start: { x: fromCenter.x, y: fromCenter.y }, end: { x: toCenter.x, y: toCenter.y } },
-                        connection.from.location,
-                        connection.to.location
-                    )}"
-                    data-connection-from="${connection.from.nodeId}-${connection.from.clickspotId}"
-                    data-connection-to="${connection.to.nodeId}-${connection.to.clickspotId}"
-                    stroke="rgb(143, 132, 213)"
-                    stroke-width="2"
-                    fill="none"
-                />
-            `;
-        }).join('');
+    private getBezierPath(
+        line: Line,
+        fromLocation: ClickspotLocation,
+        toLocation: ClickspotLocation | null  // inferred if not provided
+    ) {
+        const { start, end } = line;
+        // set the curve ratio: a higher value enforces greater curvature 
+        // and closer adherence to the location - based stretching
+        const controlOffset = 100;
 
-        this._connectionsRef!.innerHTML = markup;
+        if (this._transformedViewRef) {
+            const transformedViewPosition = this._transformedViewRef?.getBoundingClientRect();
+            start.x -= transformedViewPosition?.left || 0;
+            start.y -= transformedViewPosition?.top || 0;
+            end.x -= transformedViewPosition?.left || 0;
+            end.y -= transformedViewPosition?.top || 0;
+        }
+
+
+        let inferredToLocation = toLocation;
+        if (!toLocation && fromLocation) {
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+            if (fromLocation === 'left') {
+                if (angle > -45 && angle < 45) {
+                    inferredToLocation = 'left';
+                } else if (angle >= 45 && angle <= 135) {
+                    inferredToLocation = 'bottom';
+                } else {
+                    inferredToLocation = null;
+                }
+            } else if (fromLocation === 'right') {
+                if (angle > 135 || angle < -135) {
+                    inferredToLocation = 'right';
+                } else if (angle >= -135 && angle <= -45) {
+                    inferredToLocation = 'bottom';
+                } else {
+                    inferredToLocation = null;
+                }
+            } else if (fromLocation === 'bottom') {
+                if (angle > 135 || angle < -135) {
+                    inferredToLocation = 'right';
+                } else if (angle > -45 && angle < 45) {
+                    inferredToLocation = 'left';
+                } else if (angle >= 45 && angle <= 135) {
+                    inferredToLocation = 'bottom';
+                }
+            }
+        }
+
+        let c1x = start.x;
+        let c1y = start.y;
+        if (fromLocation === 'left') {
+            c1x -= controlOffset;
+        } else if (fromLocation === 'right') {
+            c1x += controlOffset;
+        } else if (fromLocation === 'bottom') {
+            c1y += controlOffset;
+        }
+
+        let c2x = end.x;
+        let c2y = end.y;
+        if (inferredToLocation === 'left') {
+            c2x -= controlOffset;
+        } else if (inferredToLocation === 'right') {
+            c2x += controlOffset;
+        } else if (inferredToLocation === 'bottom') {
+            c2y += controlOffset;
+        }
+
+        return  [start.x, start.y, c1x, c1y, c2x, c2y, end.x, end.y];
+    }
+
+    private drawBezierPath(
+        start: Point,
+        end: Point,
+        fromLocation: ClickspotLocation,
+        toLocation: ClickspotLocation | null,
+        strokeStyle: string,
+        lineWidth: number,
+        dashed: boolean
+    ) {
+        if (!this._canvasRef) {
+            return;
+        }
+        const [x1, y1, c1x, c1y, c2x, c2y, x2, y2] = this.getBezierPath({ start, end }, fromLocation, toLocation);
+
+        this._canvasRef.save();
+        this._canvasRef.beginPath();
+        if (dashed) {
+            this._canvasRef.setLineDash([4, 4]);
+        } else {
+            this._canvasRef.setLineDash([]);
+        }
+        this._canvasRef.moveTo(x1, y1);
+        this._canvasRef.bezierCurveTo(c1x, c1y, c2x, c2y, x2, y2);
+        this._canvasRef.strokeStyle = strokeStyle;
+        this._canvasRef.lineWidth = lineWidth;
+        this._canvasRef.stroke();
+        this._canvasRef.restore();
+    }
+
+    private resizeCanvas() {
+        if (!this._connectionsCanvas) {
+            return;
+        }
+        const parent = this._connectionsCanvas.parentElement;
+        if (parent) {
+            const rect = parent.getBoundingClientRect();
+            this._connectionsCanvas.width = rect.width;
+            this._connectionsCanvas.height = rect.height;
+        }
     }
 
     private renderNodes() {
-        const contentRef = this._transformedViewRef?.querySelector('div[slot="transformed-view-slot"]');
-        if (!contentRef) {
-            console.error('Transformed view content slot not found');
+        if (!this._contentRef) {
             return;
         }
 
-        const existingNodes = contentRef.querySelectorAll('tree-node');
-        existingNodes.forEach(node => node.remove());
+        const nodesById = new Map<string, TreeNodeElement>();
+        this._contentRef.querySelectorAll('tree-node').forEach(node => {
+            const id = node.getAttribute('id');
+            if (id) {
+                nodesById.set(id, node as TreeNodeElement);
+            }
+        });
 
+        const currentNodeIds = new Set<string>();
         for (const node of this._nodeManager.getNodes()) {
-            // custom elements
-            const nodeElement = document.createElement('tree-node') as TreeNodeElement;
-            nodeElement.setAttribute('id', node.id);
-            nodeElement.setAttribute('x', node.position.x.toString());
-            nodeElement.setAttribute('y', node.position.y.toString());
-            
+            currentNodeIds.add(node.id);
+            let nodeElement = nodesById.get(node.id);
+
+            if (!nodeElement) {
+                nodeElement = document.createElement('tree-node') as TreeNodeElement;
+
+                nodeElement.data = {
+                    nodeId: node.id,
+                    position: node.position,
+                    clickspots: node.clickspots
+                };
+
+                nodeElement.setCallbacks({
+                    onMove: (pos) => this.handleNodeMove(node.id, pos),
+                    onConnectStart: (info) => this.handleConnectStart(info),
+                    onConnectEnd: (from, to) => this.handleConnectEnd(from, to),
+                    onDisconnect: (info) => this.handleRemoveLines(info),
+                    onTempLine: (info) => this.handleTempLine(info),
+                    isClickspotConnected: (info) => this.isClickspotConnected(info),
+                    screenToWorld: (pt) => this._transformedViewRef?.screenToWorld(pt) ?? pt,
+                    worldToScreen: (pt) => this._transformedViewRef?.worldToScreen(pt) ?? pt
+                });
+
+                this._contentRef.appendChild(nodeElement);
+            }
+
             const nodeContent = nodeElement.querySelector('.node-content');
             if (nodeContent) {
                 nodeContent.textContent = node.label;
             }
-
-            nodeElement.data = {
-                nodeId: node.id,
-                position: node.position,
-                clickspots: node.clickspots
-            };
-
-            nodeElement.setCallbacks({
-                onMove: (pos) => this.handleNodeMove(node.id, pos),
-                onConnectStart: (info) => this.handleConnectStart(info),
-                onConnectEnd: (from, to) => this.handleConnectEnd(from, to),
-                onDisconnect: (info) => this.handleRemoveLines(info),
-                onTempLine: (info) => this.handleTempLine(info),
-                isClickspotConnected: (info) => this.isClickspotConnected(info),
-                screenToWorld: (pt) => this._transformedViewRef?.screenToWorld(pt) ?? pt,
-                worldToScreen: (pt) => this._transformedViewRef?.worldToScreen(pt) ?? pt
-            });
-
-            contentRef.appendChild(nodeElement);
         }
+
+        nodesById.forEach((nodeElement, id) => {
+            if (!currentNodeIds.has(id)) {
+                nodeElement.remove();
+            }
+        });
     }
 
     private render() {
         this.innerHTML = `
             <transformed-view id="program-tree-transformed-view">
-                <div slot="transformed-view-slot">
-                    <svg id="connections">
-                    </svg>
+                <div slot="transformed-view-slot" style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                    <canvas id="connections-canvas"></canvas>
                 </div>
             </transformed-view>
         `;
 
         this._transformedViewRef = this.querySelector('#program-tree-transformed-view') as TransformedViewElement;
-        this._connectionsRef = this._transformedViewRef.querySelector('#connections') as SVGSVGElement;
+        this._contentRef = this._transformedViewRef.querySelector('div[slot="transformed-view-slot"]') as HTMLDivElement;
+        this._connectionsCanvas = this._contentRef.querySelector('#connections-canvas') as HTMLCanvasElement;
+        this._canvasRef = this._connectionsCanvas.getContext('2d')!;
 
-        this.renderNodes();
+        window.addEventListener('resize', () => {
+            this.resizeCanvas();
+            this.renderLines();
+        });
+
+        this.resizeCanvas();
         this.renderLines();
+        this.renderNodes();
     }
 }
 

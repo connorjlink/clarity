@@ -5,7 +5,6 @@ export class TransformedViewElement extends HTMLElement {
     static maxScale = 3;
 
     private _container!: HTMLDivElement;
-    private _content!: HTMLElement;
     private _scale = 1;
     
     private _isPanning = false;
@@ -107,7 +106,7 @@ export class TransformedViewElement extends HTMLElement {
     }
 
     private updateTransform() {
-        this._content.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this._scale})`;
+        this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this._scale})`;
     }
 
     private render() {
@@ -117,13 +116,10 @@ export class TransformedViewElement extends HTMLElement {
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./TransformedView.css">
             <div class="container">
-                <div class="content">
-                    <slot name="transformed-view-slot"></slot>
-                </div>
+                <slot name="transformed-view-slot"></slot>
             </div>
         `;
         this._container = this.shadowRoot.querySelector('.container') as HTMLDivElement;
-        this._content = this.shadowRoot.querySelector('.content') as HTMLElement;
     }
 }
 

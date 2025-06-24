@@ -10,9 +10,6 @@ export class SourceEditor extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        if (this.shadowRoot === null) {
-            throw new Error('Shadow root not attached');
-        }
         this._markupGenerator = new MarkupGenerator('localhost', '8080', null);
     }
 
@@ -22,11 +19,13 @@ export class SourceEditor extends HTMLElement {
     }
 
     private attachEventListeners() {
-        const shadow = this.shadowRoot!;
-        shadow.querySelector('.load-btn')?.addEventListener('click', () => this.handleLoadFromFile());
-        shadow.querySelector('.sync-btn')?.addEventListener('click', () => this.handleSynchronize());
-        this._editorRef = shadow.querySelector('.editor');
-        this._markupRef = shadow.querySelector('.highlighted-code');
+        if (!this.shadowRoot) {
+            return;
+        }
+        this.shadowRoot.querySelector('.load-btn')?.addEventListener('click', () => this.handleLoadFromFile());
+        this.shadowRoot.querySelector('.sync-btn')?.addEventListener('click', () => this.handleSynchronize());
+        this._editorRef = this.shadowRoot.querySelector('.editor');
+        this._markupRef = this.shadowRoot.querySelector('.highlighted-code');
         this._editorRef?.addEventListener('input', (e) => this.handleInputChange(e));
         this._editorRef?.addEventListener('scroll', () => this.handleScroll());
     }
@@ -76,26 +75,25 @@ export class SourceEditor extends HTMLElement {
         this.render();
     }
 
-    // NOTE: user inner text for text areas!!!!!!!!!!!!!!!!!!!
-    // will strip out the html tags to give us a clean text model with which to interact periodically
-    // slow, so should probably only sychronize upon symbol database reload
     private render() {
-        // non-null strengthened
-        this.shadowRoot!.innerHTML = `
+        if (!this.shadowRoot) {
+            return;
+        }
+        this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./SourceEditor.css">
             <button class="load-btn">Load source from file</button>
             <button class="sync-btn">Synchronize editor with symbol database</button>
             <div class="source-editor-container shadowed">
                 <textarea
-                    class="source-editor"
+                    id="source-editor"
                     rows="10"
                     cols="50"
                 >${this._rawText}</textarea>
-                <div class="highlighted-code"></div>
+                <div id="highlighted-code"></div>
             </div>
         `;
-        this._editorRef = this.shadowRoot!.querySelector('.source-editor');
-        this._markupRef = this.shadowRoot!.querySelector('.highlighted-code');
+        this._editorRef = this.shadowRoot.querySelector('#source-editor');
+        this._markupRef = this.shadowRoot.querySelector('#highlighted-code');
         this.renderHighlight();
         this.attachEventListeners();
     }
