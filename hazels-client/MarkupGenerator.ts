@@ -49,9 +49,7 @@ export class MarkupGenerator {
         // short circuits over length comparison :)
         if (this.previous.sourceCode !== sourceCode) {
             this.invalidate(sourceCode);
-            if (this.listener) {
-                this.listener.notify('markup cache invalidation completed');
-            }
+            this.symbolDatabase.notifyListener(this.listener, 'markup cache invalidation completed');
         }
 
         return this.previous.markup;
@@ -133,29 +131,43 @@ export class MarkupGenerator {
         }
 
         // consult the symbol database to provide semantic analysis
-        let markup = '';
+        let lines: string[] = [''];
         for (const token of tokens) {
+            let html = '';
             if (token.isSymbol) {
                 const symbol = this.symbolDatabase.lookup(token.text, token.line, token.column);
                 if (symbol) {
-                    markup += `<span class="${symbol.type}">${MarkupGenerator.escapeHtml(token.text)}</span>`;
-                    continue;
+                    html = `<span class="${symbol.type}">${MarkupGenerator.escapeHtml(token.text)}</span>`;
+                } else {
+                    html = MarkupGenerator.escapeHtml(token.text);
                 }
+            } else {
+                html = MarkupGenerator.escapeHtml(token.text);
             }
-            markup += MarkupGenerator.escapeHtml(token.text);
+
+            // split across newlines if necessary to avoid rendering issues
+            const parts = html.split('\n');
+            lines[lines.length - 1] += parts[0];
+            for (let j = 1; j < parts.length; j++) {
+                lines.push(parts[j]);
+            }
+            if (token.text === '\n') {
+                lines.push('');
+            }
         }
 
-        const lines = markup.split('\n');
+        // rendered HTML requires <br> elements since it will not show new lines otherwise
         const formatted = lines
             .map((line, i) => `<code id="line${i}">${line}</code>`)
-            .join('' );
-            //.join('<br />');
+            .join('');
 
         return MarkupGenerator.formatMarkup(formatted);
     }
 
     private static formatMarkup(sourceMarkup: string): string {
-        return `<pre>\n${sourceMarkup}\n</pre>`;
+        // NOTE: old method before implementing new piece-table line handler
+        //return `<pre>\n${sourceMarkup}\n</pre>`;
+        return `${sourceMarkup}`;
     }
 
     private static escapeHtml(str: string): string {

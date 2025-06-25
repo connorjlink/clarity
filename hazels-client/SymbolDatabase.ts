@@ -30,6 +30,18 @@ export class SymbolDatabase {
         this.symbols = new Map<string, SymbolEntry>();
     }
 
+    notifyListener(listener: any, message: string): void {
+        if (listener) {
+            try {
+                listener.notify(message);
+            } catch (error) {
+                console.error('Error notifying listener:', error);
+            }
+        } else {
+            console.warn('No listener to notify of message `' + message + '`');
+        }
+    }
+
     lookup(name: string, line: number, column: number): SymbolEntry | undefined {
         const entry = this.symbols.get(name);
         if (!entry) {
@@ -50,12 +62,12 @@ export class SymbolDatabase {
     private internal_synchronize_from(filepath: string, host: string, port: string, listener: any, retry_counter: number): void {
         const socket = new WebSocket(`ws://${host}:${port}/symboldb`);
         socket.onopen = (event: Event) => {
-            listener.notify(`database synchronization started: ${event}`);
+            this.notifyListener(listener, `database synchronization started: ${event}`);
             const command_line = `${filepath} --architecture=haze --verbosity=verbose --execution=compile --output=raw`;
             socket.send(`[request synchronize]~(${command_line})`);
         }
         socket.onmessage = (event: Event) => {
-            listener.notify(`database synchronization received: ${event}`);
+            this.notifyListener(listener, `database synchronization received: ${event}`);
             const db = JSON.parse((event as MessageEvent).data);
             this.tree = db;
             const symbols = db.symbols as SymbolEntry[];
@@ -63,16 +75,16 @@ export class SymbolDatabase {
                 try {
                     this.addSymbol(symbol.name, symbol as SymbolEntry);
                 } catch (e) {
-                    listener.notify(`database symbol error for ${symbol.name}: ${e}`);
+                    this.notifyListener(listener, `database symbol error for ${symbol.name}: ${e}`);
                 }
             }
             this.lastSynchronized = new Date(); // now!
         }
         socket.onclose = (event: Event) => {
-            listener.notify(`database synchronization completed: ${event}`);
+            this.notifyListener(listener, `database synchronization completed: ${event}`);
         }
         socket.onerror = (event: Event) => {
-            listener.notify(`database synchronization failure: ${event}`);
+            this.notifyListener(listener, `database synchronization failure: ${event}`);
             this.internal_synchronize_from(filepath, host, port, listener, retry_counter - 1);
         }
         // the server will close the connection when it finishes synchronizing, so no need to manually clean up
