@@ -12,10 +12,10 @@
             "value": null,
             "type": "keyword",
             "text": "function",
-            "filepath": "haze.hz",
             "location": {
                 "line": 1,
                 "column": 1,
+                "filepath": "haze.hz",
                 "stage": "source"
             },
             "confidence": 100
