@@ -107,6 +107,15 @@ export class LSPDocument {
         // properties automatically initialized
     }
     
+    getDiagnostics(): lsp.Diagnostic[] {
+        return this.diagnostics.map(d => ({
+            ...d,
+            range: {
+                start: this.applyDeltasToPosition(d.range.start),
+                end: this.applyDeltasToPosition(d.range.end)
+            }
+        }));
+    }
     
     getSymbolsByName(name: string): lsp.WorkspaceSymbol[] {
         const syms = this.symbolsByName.get(name);
@@ -160,6 +169,32 @@ export class LSPDocument {
                 }
             }
         };
+    }
+
+    getSymbolAroundPosition(position: lsp.Position): lsp.WorkspaceSymbol | null {
+        const originalPosition = this.revertDeltasFromPosition(position);
+        for (const symbol of this.symbols) {
+            const range = symbol.location.range;
+            // return any symbol with a range that encompasses the original position
+            if (
+                (originalPosition.line > range.start.line ||
+                    (originalPosition.line === range.start.line && originalPosition.character >= range.start.character)) &&
+                (originalPosition.line < range.end.line ||
+                    (originalPosition.line === range.end.line && originalPosition.character <= range.end.character))
+            ) {
+                return {
+                    ...symbol,
+                    location: {
+                        ...symbol.location,
+                        range: {
+                            start: this.applyDeltasToPosition(range.start),
+                            end: this.applyDeltasToPosition(range.end)
+                        }
+                    }
+                };
+            }
+        }
+        return null;
     }
 
     getAllSymbols(): lsp.WorkspaceSymbol[] {
@@ -284,17 +319,21 @@ export class LSPDocument {
             charDelta
         });
 
+        let replacement: string[];
+
         if (newLines.length === 1) {
             // single-line replacement
             const replacedLine = beforeText + newLines[0] + afterText;
-            return [...before, replacedLine, ...after];
+            replacement = [...before, replacedLine, ...after];
         } else {
             // multi-line replacement
             const firstLine = beforeText + newLines[0];
             const lastLine = newLines[newLines.length - 1] + afterText;
             const middleLines = newLines.slice(1, -1);
-            return [...before, firstLine, ...middleLines, lastLine, ...after];
+            replacement = [...before, firstLine, ...middleLines, lastLine, ...after];
         }
+
+        return replacement;
     }
 
     // lazy-loading and caching the text representation should help performance since the document synchronizes

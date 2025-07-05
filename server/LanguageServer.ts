@@ -3,14 +3,29 @@ import {v4 as uuidv4} from 'uuid';
 
 import * as rpc from '../common/JSONRPC';
 import * as lsp from '../common/LSP';
-import * as router from './SocketRouter';
-import * as doc from './DocumentManager';
+import * as doc from './LSPDocument';
+
+type MethodNames = Exclude<{
+    [K in keyof LanguageServer]: LanguageServer[K] extends Function ? K : never }[keyof LanguageServer],
+    'execute'
+>
 
 export class LanguageServer {
     private documentManager: doc.DocumentManager = new doc.DocumentManager();
     private hasInitialized: boolean = false;
     private hasShutdown: boolean = false;
 
+    // dynamic dispatch for onMessage callbacks
+    execute(key: MethodNames, ...args: any[]) {
+        const property = (this as any)[key];
+        if (typeof property === 'function') {
+            // property is a valid function
+            return property.apply(this, args);
+        }
+        throw new Error(`Method \"${key}\" does not exist on type LanguageServer`);
+    }
+
+    // NOTE: parent must call to register handlers with the correct WebSocket route first!
     getHandlers() {
         return {
             onOpen: this.onOpen.bind(this),
@@ -41,11 +56,20 @@ export class LanguageServer {
                 return;
             }
 
-            switch (request.method) {
-                case 'initialize': {
-                    this.initialize(ws, request);
-                } break;
+            try {
+                // dynamically dispatch the request handler
+                const method = request.method.replace('/', '_');
+                const key = method as MethodNames;
+                this.execute(key, ws, request);
 
+            } catch (error) {
+                // invalid method (or not supported by the server)
+                ws.send(JSON.stringify(
+                    rpc.createErrorResponse(
+                        request.id || null, // null for notifications, specified Id for requests
+                        rpc.JSONRPC_ERRORS.METHOD_NOT_FOUND.code, 
+                        rpc.JSONRPC_ERRORS.METHOD_NOT_FOUND.message + `: ${request.method}`
+                    )));
             }
 
         } catch (error) {
@@ -130,13 +154,14 @@ export class LanguageServer {
         throw new Error('Exit Code 1: Not Shut Down');
     }
 
-    private async didOpen(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_didOpen(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const languageId = request.params.textDocument.languageId;
         const version = request.params.textDocument.version;
         const text = request.params.textDocument.text;
 
-        // for simplicity, the language server ONLY checks the URI at document open 
+        // for simplicity, the language server ONLY checks the URI and document language upon opening
+         
         if (!LanguageServer.validateDocumentUri(request)) {
             ws.send(JSON.stringify(
                 rpc.createErrorResponse(
@@ -167,13 +192,10 @@ export class LanguageServer {
             }
         } else {
             // did not exist, create a new document
-            const newDocument = new doc.LSPDocument();
-            newDocument.uri = uri;
-            newDocument.languageId = languageId;
-            newDocument.version = version;
+            const newDocument = new doc.LSPDocument(uri, languageId, version);
             newDocument.lines = text.split('\n');
-            newDocument.symbols = [];
-            newDocument.diagnostics = [];
+            // clears the symbols and diagnostics to empty
+            newDocument.invalidateSymbols();
             this.documentManager.createDocument(uri, newDocument);
             await this.requestCompleteRefresh(ws, uri, newDocument.lines);
         }
@@ -182,7 +204,7 @@ export class LanguageServer {
         this.publishDiagnostics(ws, uri, this.documentManager.getDocument(uri)?.lines.join('\n') ?? '', version);
     }
 
-    private didChange(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChange(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const version = request.params.textDocument.version;
         const contentChanges = request.params.contentChanges;
@@ -202,7 +224,7 @@ export class LanguageServer {
 
         for (const change of contentChanges) {
             if (change.range) {
-                lines = applyTextEdit(lines, change.range, change.text);
+                lines = existingDocument.applyTextEdit(lines, change.range, change.text);
             } else {
                 // Full change: replace the whole text
                 lines = change.text.split('\n');
@@ -215,7 +237,7 @@ export class LanguageServer {
         this.requestCompleteRefresh(ws, uri, lines);
     }
 
-    private didClose(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didClose(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         // retains symbol and diagnostic data because the server must continue to 
         // be able to respond to symbol and diagnostic requests
         const uri = request.params.textDocument.uri;
@@ -226,7 +248,7 @@ export class LanguageServer {
         }
     }
 
-    private didSave(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didSave(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
 
         let text: string | undefined = request.params.text;
@@ -246,35 +268,52 @@ export class LanguageServer {
         }
     }
 
-    private didChangeConfiguration(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChangeConfiguration(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
         this.sendMessageToClient(ws, lsp.MessageKind.Info, 'The client configuration has changed on disk. Please reload the editor to apply the new settings.');
     }
 
-    private didChangeWatchedFiles(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChangeWatchedFiles(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
         this.sendMessageToClient(ws, lsp.MessageKind.Info, 'One or more workspace files has been changed on disk. Please reload the document to prevent a loss of data.');
     }
 
-    private hover(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
-    }
+    private textDocument_hover(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+        const uri = request.params.textDocument;
+        const position = request.params.position;
 
-    // Document-specific symbol search. Requires valid document identification.
-    private documentSymbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
-        const uri = request.params.textDocument.uri;
-
-        if (!this.documentManager.hasDocument(uri)) {
-            ws.send(JSON.stringify(
-                rpc.createErrorResponse(
-                    request.id, 
-                    rpc.JSONRPC_ERRORS.INVALID_PARAMS.code, 
-                    `Document with URI ${uri} not found`
-                )));
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, request.id);
             return;
         }
 
-        const doc = this.documentManager.getDocument(uri);
-        const symbols = doc?.getAllSymbols() || [];
+        const hoveredSymbol = existingDocument.getSymbolAroundPosition(position);
+        if (hoveredSymbol) {
+            ws.send(JSON.stringify(
+                rpc.createSuccessResponse(request.id, {
+                    contents: hoveredSymbol.name,
+                    range: hoveredSymbol.location.range
+                })
+            ));
+        } else {
+            ws.send(JSON.stringify(
+                rpc.createSuccessResponse(request.id, null)
+            ));
+        }
+    }
+
+    // Document-specific symbol search. Requires valid document identification.
+    private textDocument_documentSymbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+        const uri = request.params.textDocument.uri;
+
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, request.id);
+            return;
+        }
+
+        const symbols = existingDocument?.getAllSymbols();
 
         ws.send(JSON.stringify(
             rpc.createSuccessResponse(request.id, symbols)
@@ -282,7 +321,7 @@ export class LanguageServer {
     }
 
     // Project-wide symbol search. Does not require a specific document URI.
-    private workspaceSymbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private workspace_symbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         const query = request.params.query;
         const queryResult: lsp.WorkspaceSymbol[] = [];
         
@@ -302,31 +341,53 @@ export class LanguageServer {
 
     /////////////////////////////////////////////////////////
 
-    private publishDiagnostics(ws: ws.WebSocket, uri: string, text: string, version?: lsp.integer) {
+    private publishDiagnostics(ws: ws.WebSocket, uri: string, text: string, version?: lsp.integer, requestId?: rpc.JSONRPCID) {
         const existingDocument = this.documentManager.getDocument(uri);
-        if (existingDocument) {
-            ws.send(JSON.stringify(
-                rpc.createRequest("textDocument/publishDiagnostics", {
-                    uri: uri,
-                    version: version,
-                    diagnostics: existingDocument.diagnostics || []
-                }, uuidv4())));
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, requestId)
+            return;
         }
+
+        ws.send(JSON.stringify(
+            rpc.createRequest("textDocument/publishDiagnostics", {
+                uri: uri,
+                version: version,
+                diagnostics: existingDocument.getDiagnostics() || []
+            }, uuidv4())));
     }
     
-    private async requestCompleteRefresh(ws: ws.WebSocket, uri: string, linesOptional?: string[]) {
-        let lines = linesOptional || this.documentManager.getDocument(uri)?.lines;
-        if (lines) {
-            // TODO: invoke the compiler driver to perform a full AST rebuild
-            // AND inject the new symbols and diagnostics into the DocumentManager-managed document
-            this.publishDiagnostics(ws, uri, lines.join('\n'));
+    private async requestCompleteRefresh(ws: ws.WebSocket, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
+        let lines = linesOptional;
+        if (!lines) {
+            const existingDocument = this.documentManager.getDocument(uri);
+            if (!existingDocument) {
+                this.uriDoesNotExist(ws, uri, requestId);
+                return;
+            }
+            lines = existingDocument.lines;
         }
-    }
 
+        // TODO: invoke the compiler driver to perform a full AST rebuild
+        // AND inject the new symbols and diagnostics into the DocumentManager-managed document
+        this.publishDiagnostics(ws, uri, lines.join('\n'));
+    }
     
     private sendMessageToClient(ws: ws.WebSocket, kind: lsp.MessageKindType, message: string) {
-        let response = rpc.createSuccessResponse()
-        // maybe window/showMessage?
+        ws.send(JSON.stringify(
+            rpc.createRequest("window/showMessage", {
+                type: kind,
+                message: message
+                // not support action items for now
+            }, uuidv4())));
+    }
+
+    private uriDoesNotExist(ws: ws.WebSocket, uri: string, requestId?: rpc.JSONRPCID) {
+        ws.send(JSON.stringify(
+            rpc.createErrorResponse(
+                requestId || null,
+                rpc.JSONRPC_ERRORS.INVALID_PARAMS.code, 
+                rpc.JSONRPC_ERRORS.INVALID_PARAMS.message + `Document with URI ${uri} not found`
+            )));
     }
 
     /////////////////////////////////////////////////////////
