@@ -1,0 +1,58 @@
+{
+    "symbol": {
+        "location": {
+            "position":15,
+            "column":16,
+            "line":1,
+            "filepath":"test\\compiler\\fib.hz",
+            "stage":"source"
+        },
+        "text":"fib",
+        "name":"fib",
+        "value":null,
+        "type":"function",
+        "confidence":0
+    }
+}
+{
+    "location": {
+        "position":81,
+        "column":13,
+        "line":8,
+        "filepath":"test\\compiler\\fib.hz",
+        "stage":"source"
+    },
+    "text":"fib",
+    "name":"fib",
+    "value":null,
+    "type":"function",
+    "confidence":0
+}
+{
+    "location": {
+        "position":113,
+        "column":16,
+        "line":11,
+        "filepath":"test\\compiler\\fib.hz",
+        "stage":"source"
+    },
+    "text":"main",
+    "name":"main",
+    "value":null,
+    "type":"function",
+    "confidence":0
+}
+{
+    "location": {
+        "position":133,
+        "column":9,
+        "line":13,
+        "filepath":"test\\compiler\\fib.hz",
+        "stage":"source"
+    },
+    "text":"fib",
+    "name":"fib",
+    "value":null,
+    "type":"function",
+    "confidence":0
+}

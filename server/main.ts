@@ -1,59 +1,54 @@
 import ws from 'ws';
-
-
-
-
-import * as rpc from '../common/JSONRPC.ts';
-import * as lsp from '../common/LSP.ts';
-
-import * as doc from './DocumentManager.ts';
-
-import { SocketRouter } from './SocketRouter.ts';
-
-
-
-import url, { fileURLToPath } from 'url';
+import  { fileURLToPath } from 'url';
 import path, { dirname } from 'path';
-import { readFileAsHex, readFile } from './FileManager.ts';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
-//const filePath = fileURLToPath(`file://${jsonFilePath}`);
-const jsonFilePath = path.join(__dirname, 'clarity-db.json');
-const exeFilePath = path.join(__dirname, 'test.exe');
+import * as rpc from '../common/JSONRPC';
+import * as lsp from '../common/LSP';
 
+import * as doc from './DocumentManager';
+import * as sr from './SocketRouter';
+import * as fm from './FileManager';
 
 
 var documentManager = new doc.DocumentManager();
 
 // running on development port for now
-const router = new SocketRouter(8080);
+const router = new sr.SocketRouter(8080);
 
-
-const exeFile = await (exeFilePath);
-
-// Example usage
-await readFileAsHex('./test.exe')
-    .then(hexString => console.log(hexString))
-    .catch(err => console.error('Error reading file:', err));
-
-
-
- try {
-            const hexData = await readFileAsHex(exeFilePath);
-            ws.send(JSON.stringify({ type: 'hexData', data: hexData }));
-        } catch (err) {
-            ws.send(JSON.stringify({ type: 'error', message: err.message }));
-        }
-
-
-
-
-
-
-wss.on('connection', function connection(ws) {
-    
+// used to talk with the LSP client
+router.attachEndpoint('/clarity-client', {
+    onOpen: (ws) => {
+        console.log('clarity haze language server socket opened');  
+    },
+    onMessage: async (ws, message) => {
+    },
+    onClose: (ws) => {
+        console.log('clarity haze language server socket closed');
+    },
+    onError: (ws, error) => {
+        console.error('clarity haze language server socket error:', error);
+    }
 });
+
+// used to talk with the compiler process
+router.attachEndpoint('/compiler', {
+    onOpen: (ws) => {
+        console.log('clarity compiler socket opened');  
+    },
+    onMessage: async (ws, message) => {
+        const result = JSON.parse(message.toString());
+        if (result.symbol) {
+
+        }
+    },
+    onClose: (ws) => {
+        console.log('clarity compiler server socket closed');
+    },
+    onError: (ws, error) => {
+        console.error('clarity compiler server socket error:', error);
+    }
+});
+
 
 wss.on('message', function message(data) {
     try {
@@ -179,7 +174,7 @@ wss.on('message', function message(data) {
 
 function sendMessageToClient(ws: ws.WebSocket, kind: lsp.MessageKindType, message: string) {
     let response = rpc.createSuccessResponse()
-
+    // maybe window/showMessage?
 }
 
 
