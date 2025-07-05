@@ -81,85 +81,37 @@ export function convertHazeSymbolTypeToLSPKind(type: string): lsp.SymbolKind {
 }
 
 export class LSPDocument {
+
+    // symbol name => [symbols]
+    private symbolsByName: Map<string, lsp.WorkspaceSymbol[]> = new Map();
+    // location key => symbol (unique)
+    private symbolsByLocation: Map<lsp.Position, lsp.WorkspaceSymbol> = new Map();
+    // composite key (name:line:character) => symbol (unique)
+    private symbolsByComposite: Map<string, lsp.WorkspaceSymbol> = new Map();
+    private symbols: lsp.WorkspaceSymbol[] = [];
+    private diagnostics: lsp.Diagnostic[] = [];
+    
+    // document text editor tracking
+    private editDeltas: EditDelta[] = [];
+    private lastGetTextVersion: lsp.integer = -1;
+    private text: string = '';
+
+    
+
     constructor(
         public uri: string,
         public languageId: string,
-        public lines: string[],
-        public version: lsp.integer = 0,
-        // symbol text => location => symbols
-        public symbolsByName: Map<string, Map<lsp.Position, lsp.WorkspaceSymbol[]>> = new Map(),
-        // location => symbol text => symbols
-        public symbolsByLocation: Map<lsp.Position, Map<string, lsp.WorkspaceSymbol[]>> = new Map(),
-        public diagnostics: lsp.Diagnostic[] = [],
-        // incrementally apply edit history until the next full document refresh
-        private editDeltas: EditDelta[] = [],
-        // memoize some text operations to avoid recomputing repeatedly
-        private lastGetTextVersion: lsp.integer = -1,
-        private text: string = '',
+        public lines: string[] = [],
+        public version: lsp.integer = 0
     ) {
-        // automatically initialized
+        // properties automatically initialized
     }
-
-    /// NOTE: HAVE TO APPLY EDIT DELTAS TO ALL SYMBOL AND DIAGNOSTIC RANGES FOR GET REQUESTS
-    /// DELTAS MUST APPLY INCREMENTALLY; DELTAS REFRESH UPON A FULL DOCUMENT REFRESH (LIKE SAVE OR OPEN)
-
-    // useful to provide the highlight box when clicked on a symbol
+    
+    
     getSymbolsByName(name: string): lsp.WorkspaceSymbol[] {
-        const symbolMap = this.symbolsByName.get(name);
-        if (!symbolMap) {
-            return [];
-        }
-        const symbols = Array.from(symbolMap.entries()).flatMap(([pos, syms]) => {
-            const adjustedPosition = this.applyDeltasToPosition(pos);
-            return syms.map(sym => ({
-                ...sym,
-                location: {
-                    ...sym.location,
-                    range: {
-                        ...sym.location.range,
-                        start: adjustedPosition,
-                        end: this.applyDeltasToPosition(sym.location.range.end)
-                    }
-                }
-            }));
-        });
-        return symbols;
-    }
-
-    // useful to provide a completion list when typing
-    getSymbolsByNamePrefix(prefix: string): lsp.WorkspaceSymbol[] {
-        const symbols: lsp.WorkspaceSymbol[] = [];
-        for (const [name, nameMap] of this.symbolsByName.entries()) {
-            if (name.startsWith(prefix)) {
-                for (const [position, syms] of nameMap.entries()) {
-                    const adjustedPosition = this.applyDeltasToPosition(position);
-                    for (const sym of syms) {
-                        symbols.push({
-                            ...sym,
-                            location: {
-                                ...sym.location,
-                                range: {
-                                    ...sym.location.range,
-                                    start: adjustedPosition,
-                                    end: this.applyDeltasToPosition(sym.location.range.end)
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-        }
-        return symbols;
-    }
-
-    // useful to provide specific information requests at the cursor
-    getSymbolsByPosition(position: lsp.Position): lsp.WorkspaceSymbol[] {
-        const originalPosition = this.revertDeltasFromPosition(position);
-        const symbolMap = this.symbolsByLocation.get(originalPosition);
-        if (!symbolMap) {
-            return [];
-        }
-        const symbols = Array.from(symbolMap.values()).flat().map(sym => ({
+        const syms = this.symbolsByName.get(name);
+        if (!syms) return [];
+        return syms.map(sym => ({
             ...sym,
             location: {
                 ...sym.location,
@@ -169,35 +121,84 @@ export class LSPDocument {
                 }
             }
         }));
-        return symbols;
     }
 
-    addSymbol(symbol: lsp.WorkspaceSymbol, position: lsp.Position, name: string) {
-        // update symbolsByName
-        if (!this.symbolsByName.has(name)) {
-            this.symbolsByName.set(name, new Map());
+    getSymbolsByNamePrefix(prefix: string): lsp.WorkspaceSymbol[] {
+        const results: lsp.WorkspaceSymbol[] = [];
+        for (const [name, syms] of this.symbolsByName.entries()) {
+            if (name.startsWith(prefix)) {
+                for (const sym of syms) {
+                    results.push({
+                        ...sym,
+                        location: {
+                            ...sym.location,
+                            range: {
+                                start: this.applyDeltasToPosition(sym.location.range.start),
+                                end: this.applyDeltasToPosition(sym.location.range.end)
+                            }
+                        }
+                    });
+                }
+            }
         }
-        const nameMap = this.symbolsByName.get(name)!;
-        if (!nameMap.has(position)) {
-            nameMap.set(position, []);
-        }
-        nameMap.get(position)!.push(symbol); // non-null strengthened
-
-        // update symbolsByLocation
-        if (!this.symbolsByLocation.has(position)) {
-            this.symbolsByLocation.set(position, new Map());
-        }
-        const locationMap = this.symbolsByLocation.get(position)!;
-        if (!locationMap.has(name)) {
-            locationMap.set(name, []);
-        }
-        locationMap.get(name)!.push(symbol); // non-null strengthened
+        return results;
     }
 
-    // used for a complete document refresh
+    getSymbolsByPosition(position: lsp.Position): lsp.WorkspaceSymbol | null {
+        const originalPosition = this.revertDeltasFromPosition(position);
+        const symbol = this.symbolsByLocation.get(originalPosition);
+        if (!symbol) {
+            return null;
+        }
+        return {
+            ...symbol,
+            location: {
+                ...symbol.location,
+                range: {
+                    start: this.applyDeltasToPosition(symbol.location.range.start),
+                    end: this.applyDeltasToPosition(symbol.location.range.end)
+                }
+            }
+        };
+    }
+
+    getAllSymbols(): lsp.WorkspaceSymbol[] {
+        return this.symbols.map(sym => ({
+            ...sym,
+            location: {
+                ...sym.location,
+                range: {
+                    start: this.applyDeltasToPosition(sym.location.range.start),
+                    end: this.applyDeltasToPosition(sym.location.range.end)
+                }
+            }
+        }));
+    }
+
+    addOrUpdateSymbol(symbol: lsp.WorkspaceSymbol, name: string) {
+        const position = symbol.location.range.start;
+        const compositeKey = LSPDocument.compositeKey(name, position);
+
+        let existing = this.symbolsByComposite.get(compositeKey);
+        if (existing) {
+            Object.assign(existing, symbol);
+        } else {
+            if (!this.symbolsByName.has(name)) {
+                this.symbolsByName.set(name, []);
+            }
+            this.symbols.push(symbol);
+            this.symbolsByName.get(name)!.push(symbol); // non-null strengthened
+            this.symbolsByLocation.set(position, symbol);
+            this.symbolsByComposite.set(compositeKey, symbol);
+        }
+    }
+
+    // Limpia todos los símbolos y deltas
     invalidateSymbols() {
+        this.symbols = [];
         this.symbolsByName.clear();
         this.symbolsByLocation.clear();
+        this.symbolsByComposite.clear();
         this.editDeltas = [];
     }
 
@@ -218,49 +219,7 @@ export class LSPDocument {
                 }
             }
         };
-
-        const position: lsp.Position = { 
-            line: symbol.location.line, 
-            character: symbol.location.column 
-        };
-        const name = symbol.name;
-
-        let updated = false;
-
-        if (this.symbolsByName.has(name)) {
-            const nameMap = this.symbolsByName.get(name)!;
-            if (nameMap.has(position)) {
-                const array = nameMap.get(position)!;
-                for (let i = 0; i < array.length; i++) {
-                    // should be unqiue by position anyway, but check for safety since compiler errors/document desync could cause duplicates
-                    if (array[i].name === workspaceSymbol.name) {
-                        array[i] = workspaceSymbol;
-                        updated = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (this.symbolsByLocation.has(position)) {
-            const posMap = this.symbolsByLocation.get(position)!;
-            if (posMap.has(name)) {
-                const arr = posMap.get(name)!;
-                for (let i = 0; i < arr.length; i++) {
-                    // should be unqiue by position anyway, but check for safety since compiler errors/document desync could cause duplicates
-                    if (arr[i].name === workspaceSymbol.name) {
-                        arr[i] = workspaceSymbol;
-                        updated = true;
-                        break;
-                    }
-                }
-            }
-        }
-
-        // only add as necessary
-        if (!updated) {
-            this.addSymbol(workspaceSymbol, position, name);
-        }
+        this.addOrUpdateSymbol(workspaceSymbol, symbol.name);
     }
 
     applyDeltasToPosition(pos: lsp.Position): lsp.Position {
@@ -281,23 +240,23 @@ export class LSPDocument {
     }
 
     revertDeltasFromPosition(pos: lsp.Position): lsp.Position {
-    let origPosition = { ...pos };
-    for (let i = this.editDeltas.length - 1; i >= 0; i--) {
-        const delta = this.editDeltas[i];
-        // only revert the deltas that could affect this position
-        if (
-            origPosition.line > delta.range.end.line + delta.lineDelta ||
-            (origPosition.line === delta.range.end.line + delta.lineDelta &&
-                origPosition.character >= delta.range.end.character + (delta.lineDelta === 0 ? delta.charDelta : 0))
-        ) {
-            origPosition.line -= delta.lineDelta;
-            if (origPosition.line === delta.range.end.line) {
-                origPosition.character -= delta.charDelta;
+        let origPosition = { ...pos };
+        for (let i = this.editDeltas.length - 1; i >= 0; i--) {
+            const delta = this.editDeltas[i];
+            // only revert the deltas that could affect this position
+            if (
+                origPosition.line > delta.range.end.line + delta.lineDelta ||
+                (origPosition.line === delta.range.end.line + delta.lineDelta &&
+                    origPosition.character >= delta.range.end.character + (delta.lineDelta === 0 ? delta.charDelta : 0))
+            ) {
+                origPosition.line -= delta.lineDelta;
+                if (origPosition.line === delta.range.end.line) {
+                    origPosition.character -= delta.charDelta;
+                }
             }
         }
+        return origPosition;
     }
-    return origPosition;
-}
 
     applyTextEdit(
         lines: string[],
@@ -353,6 +312,12 @@ export class LSPDocument {
         }
 
         return this.text;
+    }
+
+    ////////////////////////////////////////////////////
+
+    private static compositeKey(name: string, pos: lsp.Position): string {
+        return `${name}:${pos.line}:${pos.character}`;
     }
 }
 

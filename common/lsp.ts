@@ -54,6 +54,14 @@ export namespace SymbolKind {
 
 export type SymbolKind = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26;
 
+export namespace TextDocumentSyncKind {
+	export const None = 0;
+	export const Full = 1;
+	export const Incremental = 2;
+}
+
+export type TextDocumentSyncKind = 0 | 1 | 2;
+
 export type Position = {
     line: uinteger;
     character: uinteger;

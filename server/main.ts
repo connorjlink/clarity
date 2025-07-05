@@ -1,50 +1,33 @@
-import ws from 'ws';
-import  { fileURLToPath } from 'url';
-import path, { dirname } from 'path';
+import * as ws from 'ws';
 
 import * as rpc from '../common/JSONRPC';
 import * as lsp from '../common/LSP';
-
-import * as doc from './DocumentManager';
 import * as sr from './SocketRouter';
-import * as fm from './FileManager';
+import * as ls from './LanguageServer';
 
-
-var documentManager = new doc.DocumentManager();
+var languageServer = new ls.LanguageServer();
 
 // running on development port for now
 const router = new sr.SocketRouter(8080);
 
-// used to talk with the LSP client
-router.attachEndpoint('/clarity-client', {
-    onOpen: (ws) => {
-        console.log('clarity haze language server socket opened');  
-    },
-    onMessage: async (ws, message) => {
-    },
-    onClose: (ws) => {
-        console.log('clarity haze language server socket closed');
-    },
-    onError: (ws, error) => {
-        console.error('clarity haze language server socket error:', error);
-    }
-});
+// websocket connection with the LSP client
+router.attachEndpoint('/clarity-client', languageServer.getHandlers());
 
-// used to talk with the compiler process
+// websocket connection with the compiler
 router.attachEndpoint('/compiler', {
-    onOpen: (ws) => {
+    onOpen: (ws: ws.WebSocket) => {
         console.log('clarity compiler socket opened');  
     },
-    onMessage: async (ws, message) => {
+    onMessage: (ws: ws.WebSocket, message: ws.RawData) => {
         const result = JSON.parse(message.toString());
         if (result.symbol) {
 
         }
     },
-    onClose: (ws) => {
+    onClose: (ws: ws.WebSocket) => {
         console.log('clarity compiler server socket closed');
     },
-    onError: (ws, error) => {
+    onError: (ws: ws.WebSocket, error: Error) => {
         console.error('clarity compiler server socket error:', error);
     }
 });
@@ -172,10 +155,6 @@ wss.on('message', function message(data) {
     }
 });
 
-function sendMessageToClient(ws: ws.WebSocket, kind: lsp.MessageKindType, message: string) {
-    let response = rpc.createSuccessResponse()
-    // maybe window/showMessage?
-}
 
 
 // listen for textDocument/didOpen to request a full new symbol set per the new file

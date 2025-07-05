@@ -2,10 +2,10 @@ import * as ws from 'ws';
 import * as http from 'http';
 
 type EndpointHandlers = {
-    onOpen?: (ws: WebSocket, req: any) => void;
-    onClose?: (ws: WebSocket, code: number, reason: Buffer) => void;
-    onMessage?: (ws: WebSocket, message: ws.RawData) => void;
-    onError?: (ws: WebSocket, error: Error) => void;
+    onOpen?: (ws: ws.WebSocket, req: any) => void;
+    onClose?: (ws: ws.WebSocket, code: number, reason: Buffer) => void;
+    onMessage?: (ws: ws.WebSocket, message: ws.RawData) => void;
+    onError?: (ws: ws.WebSocket, error: Error) => void;
 };
 
 export class SocketRouter {
