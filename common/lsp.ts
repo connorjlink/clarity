@@ -72,6 +72,24 @@ export type Range = {
     end: Position;
 }
 
+export type Location = {
+    uri: string;
+    range: Range;
+}
+
+export namespace DocumentHighlightKind {
+    export const Text = 1;
+    export const Read = 2;
+    export const Write = 3;
+}
+
+export type DocumentHighlightKind = 1 | 2 | 3;
+
+export type DocumentHighlight = {
+    range: Range;
+    kind?: DocumentHighlightKind;
+}
+
 export type WorkspaceSymbol = {
     name: string;
     detail?: string; // e.g., the signature of a function
@@ -110,4 +128,44 @@ export type Diagnostic = {
         message: string;
     }[];
     data?: LSPAny; // DO NOT USE
+}
+
+export namespace CompletionItemKind {
+	export const Text = 1;
+	export const Method = 2;
+	export const Function = 3;
+	export const Constructor = 4;
+	export const Field = 5;
+	export const Variable = 6;
+	export const Class = 7;
+	export const Interface = 8;
+	export const Module = 9;
+	export const Property = 10;
+	export const Unit = 11;
+	export const Value = 12;
+	export const Enum = 13;
+	export const Keyword = 14;
+	export const Snippet = 15;
+	export const Color = 16;
+	export const File = 17;
+	export const Reference = 18;
+	export const Folder = 19;
+	export const EnumMember = 20;
+	export const Constant = 21;
+	export const Struct = 22;
+	export const Event = 23;
+	export const Operator = 24;
+	export const TypeParameter = 25;
+}
+
+export type CompletionItemKind = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25;
+
+export type CompletionItem = {
+    label: string;
+    kind: CompletionItemKind;
+    detail?: string;
+    documentation?: string;
+    insertText?: string;
+    insertTextFormat?: integer; // 1 for snippet, 2 for plain text
+    insertTextMode?: integer; // 1 for as-is, 2 for adjust whitespace
 }

@@ -13,6 +13,7 @@ export type HazeSymbol = {
     value: any | null;
     type: string;
     confidence: lsp.integer;
+    isDeclaration: boolean;
 }
 
 type EditDelta = {
@@ -80,23 +81,26 @@ export function convertHazeSymbolTypeToLSPKind(type: string): lsp.SymbolKind {
     }
 }
 
+export type InternalSymbol = {
+    symbol: lsp.WorkspaceSymbol;
+    isDeclaration: boolean; // true only if an an orignial forward declaration or definition
+}
+
 export class LSPDocument {
 
     // symbol name => [symbols]
-    private symbolsByName: Map<string, lsp.WorkspaceSymbol[]> = new Map();
+    private symbolsByName: Map<string, InternalSymbol[]> = new Map();
     // location key => symbol (unique)
-    private symbolsByLocation: Map<lsp.Position, lsp.WorkspaceSymbol> = new Map();
+    private symbolsByLocation: Map<lsp.Position, InternalSymbol> = new Map();
     // composite key (name:line:character) => symbol (unique)
-    private symbolsByComposite: Map<string, lsp.WorkspaceSymbol> = new Map();
-    private symbols: lsp.WorkspaceSymbol[] = [];
+    private symbolsByComposite: Map<string, InternalSymbol> = new Map();
+    private symbols: InternalSymbol[] = [];
     private diagnostics: lsp.Diagnostic[] = [];
     
     // document text editor tracking
     private editDeltas: EditDelta[] = [];
     private lastGetTextVersion: lsp.integer = -1;
     private text: string = '';
-
-    
 
     constructor(
         public uri: string,
@@ -117,35 +121,43 @@ export class LSPDocument {
         }));
     }
     
-    getSymbolsByName(name: string): lsp.WorkspaceSymbol[] {
+    getSymbolsByName(name: string): InternalSymbol[] {
         const syms = this.symbolsByName.get(name);
-        if (!syms) return [];
+        if (!syms) {
+            return [];
+        }
         return syms.map(sym => ({
-            ...sym,
-            location: {
-                ...sym.location,
-                range: {
-                    start: this.applyDeltasToPosition(sym.location.range.start),
-                    end: this.applyDeltasToPosition(sym.location.range.end)
+            symbol: {
+                ...sym.symbol,
+                location: {
+                    ...sym.symbol.location,
+                    range: {
+                        start: this.applyDeltasToPosition(sym.symbol.location.range.start),
+                        end: this.applyDeltasToPosition(sym.symbol.location.range.end)
+                    }
                 }
-            }
+            },
+            isDeclaration: sym.isDeclaration
         }));
     }
 
-    getSymbolsByNamePrefix(prefix: string): lsp.WorkspaceSymbol[] {
-        const results: lsp.WorkspaceSymbol[] = [];
+    getSymbolsByNamePrefix(prefix: string): InternalSymbol[] {
+        const results: InternalSymbol[] = [];
         for (const [name, syms] of this.symbolsByName.entries()) {
             if (name.startsWith(prefix)) {
                 for (const sym of syms) {
                     results.push({
-                        ...sym,
-                        location: {
-                            ...sym.location,
-                            range: {
-                                start: this.applyDeltasToPosition(sym.location.range.start),
-                                end: this.applyDeltasToPosition(sym.location.range.end)
+                        symbol: {
+                            ...sym.symbol,
+                            location: {
+                                ...sym.symbol.location,
+                                range: {
+                                    start: this.applyDeltasToPosition(sym.symbol.location.range.start),
+                                    end: this.applyDeltasToPosition(sym.symbol.location.range.end)
+                                }
                             }
-                        }
+                        },
+                        isDeclaration: sym.isDeclaration
                     });
                 }
             }
@@ -153,28 +165,44 @@ export class LSPDocument {
         return results;
     }
 
-    getSymbolsByPosition(position: lsp.Position): lsp.WorkspaceSymbol | null {
+    getSymbolByPosition(position: lsp.Position): InternalSymbol | null {
         const originalPosition = this.revertDeltasFromPosition(position);
         const symbol = this.symbolsByLocation.get(originalPosition);
         if (!symbol) {
             return null;
         }
         return {
-            ...symbol,
-            location: {
-                ...symbol.location,
-                range: {
-                    start: this.applyDeltasToPosition(symbol.location.range.start),
-                    end: this.applyDeltasToPosition(symbol.location.range.end)
+            symbol: {
+                ...symbol.symbol,
+                location: {
+                    ...symbol.symbol.location,
+                    range: {
+                        start: this.applyDeltasToPosition(symbol.symbol.location.range.start),
+                        end: this.applyDeltasToPosition(symbol.symbol.location.range.end)
+                    }
                 }
-            }
+            },
+            isDeclaration: symbol.isDeclaration
         };
     }
 
-    getSymbolAroundPosition(position: lsp.Position): lsp.WorkspaceSymbol | null {
+    /** Useful to generate completion list items. Produces the fragment of "progress" text before a new symbol is generated while typing. */
+    getTextFragmentBeforePosition(position: lsp.Position): string | null {
+        const originalPosition = this.revertDeltasFromPosition(position);
+        const line = this.lines[originalPosition.line] || '';
+        
+        const cursor = originalPosition.character;
+        const left = line.slice(0, cursor);
+        // NOTE: this is a bit too greedy (e.g., 1hello would match "hello"), but it's OK for now
+        const match = left.match(/[a-zA-Z_][a-zA-Z0-9_]*$/);
+        
+        return match ? match[0] : null;
+    }
+
+    getSymbolAroundPosition(position: lsp.Position): InternalSymbol | null {
         const originalPosition = this.revertDeltasFromPosition(position);
         for (const symbol of this.symbols) {
-            const range = symbol.location.range;
+            const range = symbol.symbol.location.range;
             // return any symbol with a range that encompasses the original position
             if (
                 (originalPosition.line > range.start.line ||
@@ -183,35 +211,38 @@ export class LSPDocument {
                     (originalPosition.line === range.end.line && originalPosition.character <= range.end.character))
             ) {
                 return {
-                    ...symbol,
-                    location: {
-                        ...symbol.location,
-                        range: {
-                            start: this.applyDeltasToPosition(range.start),
-                            end: this.applyDeltasToPosition(range.end)
+                    symbol: {
+                        ...symbol.symbol,
+                        location: {
+                            ...symbol.symbol.location,
+                            range: {
+                                start: this.applyDeltasToPosition(range.start),
+                                end: this.applyDeltasToPosition(range.end)
+                            }
                         }
-                    }
+                    },
+                    isDeclaration: symbol.isDeclaration
                 };
             }
         }
         return null;
     }
 
-    getAllSymbols(): lsp.WorkspaceSymbol[] {
+    getAllSymbols(): InternalSymbol[] {
         return this.symbols.map(sym => ({
             ...sym,
             location: {
-                ...sym.location,
+                ...sym.symbol.location,
                 range: {
-                    start: this.applyDeltasToPosition(sym.location.range.start),
-                    end: this.applyDeltasToPosition(sym.location.range.end)
+                    start: this.applyDeltasToPosition(sym.symbol.location.range.start),
+                    end: this.applyDeltasToPosition(sym.symbol.location.range.end)
                 }
             }
         }));
     }
 
-    addOrUpdateSymbol(symbol: lsp.WorkspaceSymbol, name: string) {
-        const position = symbol.location.range.start;
+    addOrUpdateSymbol(symbol: InternalSymbol, name: string) {
+        const position = symbol.symbol.location.range.start;
         const compositeKey = LSPDocument.compositeKey(name, position);
 
         let existing = this.symbolsByComposite.get(compositeKey);
@@ -228,7 +259,6 @@ export class LSPDocument {
         }
     }
 
-    // Limpia todos los símbolos y deltas
     invalidateSymbols() {
         this.symbols = [];
         this.symbolsByName.clear();
@@ -254,7 +284,11 @@ export class LSPDocument {
                 }
             }
         };
-        this.addOrUpdateSymbol(workspaceSymbol, symbol.name);
+        const internalSymbol: InternalSymbol = {
+            symbol: workspaceSymbol,
+            isDeclaration: symbol.isDeclaration
+        };
+        this.addOrUpdateSymbol(internalSymbol, symbol.name);
     }
 
     applyDeltasToPosition(pos: lsp.Position): lsp.Position {

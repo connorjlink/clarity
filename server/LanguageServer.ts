@@ -10,6 +10,180 @@ type MethodNames = Exclude<{
     'execute'
 >
 
+function getKeywordsForLanguage(languageId: string): lsp.CompletionItem[] {
+    switch (languageId) {
+        // standard compiler set
+        case 'haze':
+            return [
+                // TYPE QUALIFIERS
+                {
+                    label: 'immutable',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type qualifier declaring logical and bitwise constancy.',
+                    documentation: 'Denotes that instances of the specified type cannot be modified after initialization.',
+                    insertText: 'immutable ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'mutable',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type qualifier declaring logical and bitwise mutability.',
+                    documentation: 'Denotes that instances of the specified type can be modified after initialization.',
+                    insertText: 'mutable ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+
+                // TYPE SIGNEDNESS
+                {
+                    label: 'unsigned',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type signedness declaring an unsigned integrality.',
+                    documentation: 'Denotes that instances of the specified type should be treated as unsigned.',
+                    insertText: 'unsigned ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'signed',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type signedness declaring a signed integrality.',
+                    documentation: 'Denotes that instances of the specified type should be treated as signed.',
+                    insertText: 'signed ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+
+                // TYPE STORAGE
+                {
+                    label: 'value',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type storage declaring a value type.',
+                    documentation: 'Denotes that instances of the specified type are treated and passed by value.',
+                    insertText: 'value ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'ptr',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type storage declaring a pointer (reference) type.',
+                    documentation: 'Denotes that instances of the specified type serve as reference pointers to a different underlying object.',
+                    insertText: 'ptr ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+
+                // TYPE SPECIFIERS
+                {
+                    label: 'struct',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type specifier declaring a struct (composite) type.',
+                    documentation: 'Denotes that instances of the specified type refer to a composite object.',
+                    insertText: 'struct ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'byte',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type specifier declaring a byte integer type.',
+                    documentation: 'Denotes that instances of the specified type are byte integers exactly 8 bits in size.',
+                    insertText: 'word ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'word',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type specifier declaring a word integer type.',
+                    documentation: 'Denotes that instances of the specified type are word integers exactly 16 bits in size.',
+                    insertText: 'word ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'dword',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type specifier declaring a double-word integer type.',
+                    documentation: 'Denotes that instances of the specified type are double-word integers exactly 32 bits in size.',
+                    insertText: 'dword ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'qword',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type specifier declaring a quad-word integer type.',
+                    documentation: 'Denotes that instances of the specified type are quad-word integers exactly 64 bits in size.',
+                    insertText: 'qword ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'string',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type qualifier declaring a string type.',
+                    documentation: 'Denotes that instances of the specified type refer to character strings.',
+                    insertText: 'string ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'nvr',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Type qualifier declaring a non-value–returning function..',
+                    documentation: 'Denotes that a function produces no return value. Not valid for variable declarations.',
+                    insertText: 'nvr ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                
+                // KEYWORDS
+                // declare
+                // proto
+                // print
+                // intrinsic
+                // function
+                // return
+                // while
+                // for
+                // if
+                // else
+                // asm
+
+                // PREPROCESSOR
+                // .define -- ALSO NOT ACTUALLY PREPROCESSOR, BUT IS PRACTICALLY USED AS SUCH 
+                // .include
+                // .macro
+                // .hook -\
+                // .unhook --- NOT ACTUALLY PREPROCESSOR, BUT MIGHT BE USED AS SUCH
+                
+                {
+                    label: 'if',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Conditional statement corresponding to branched machine logic.',
+                    documentation: 'Conditionally executed the given block of code according to the specified condition.',
+                    insertText: 'if (${1:condition})\n{\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                },
+            ];
+
+        // IR code
+        case 'hazei':
+            return [];
+
+        // machine code. X86 for now.
+        case 'hazes':
+            return [];
+
+        default: 
+            return [];
+    }
+}
+
 export class LanguageServer {
     private documentManager: doc.DocumentManager = new doc.DocumentManager();
     private hasInitialized: boolean = false;
@@ -35,11 +209,13 @@ export class LanguageServer {
         };
     }
 
+    /////////////////////////////////////////////////////////
+
     onOpen(ws: ws.WebSocket) {
         console.log('clarity haze language server socket opened');
     }
 
-    async onMessage(ws: ws.WebSocket, message: ws.RawData) {
+    onMessage(ws: ws.WebSocket, message: ws.RawData) {
         try {
             var request: rpc.JSONRPCRequest = JSON.parse(message.toString());
 
@@ -154,6 +330,139 @@ export class LanguageServer {
         throw new Error('Exit Code 1: Not Shut Down');
     }
 
+    private async textDocument_definition(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+        const uri = request.params.textDocument.uri;
+        const position = request.params.position;
+
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, request.id);
+            return;
+        }
+
+        const internal = existingDocument.getSymbolAroundPosition(position);
+        
+        if (internal) {
+            if (!internal.isDeclaration) {
+                let locations: lsp.Location[] = [];
+
+                const references = existingDocument.getSymbolsByName(internal.symbol.name);
+                for (const reference of references) {
+                    if (reference.isDeclaration) {
+                        locations.push({
+                            uri: reference.symbol.location.uri,
+                            range: reference.symbol.location.range
+                        });
+                    }
+                }
+
+                if (locations.length > 0) {
+                    ws.send(JSON.stringify(
+                        rpc.createSuccessResponse(request.id, locations)
+                    ));
+                    return;
+                }
+            }
+            // fallack to the current symbol if no original declaration is found
+            ws.send(JSON.stringify(
+                rpc.createSuccessResponse(request.id, [{
+                    uri: internal.symbol.location.uri,
+                    range: internal.symbol.location.range
+                }])));
+        } else {
+            ws.send(JSON.stringify(
+                rpc.createSuccessResponse(request.id, null)
+            ));
+        }
+    }
+
+    public async textDocument_completion(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+        const uri = request.params.textDocument.uri;
+        const position = request.params.position;
+        const context = request.params.context;
+
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, request.id);
+            return;
+        }
+
+        const fragment = existingDocument.getTextFragmentBeforePosition(position);
+        if (fragment) {
+            const allSymbols = existingDocument.getSymbolsByNamePrefix(fragment);
+            const allKeywords = getKeywordsForLanguage(existingDocument.languageId);
+
+        } else {
+            // no symbol found, return empty completion list
+            ws.send(JSON.stringify(
+                rpc.createSuccessResponse(request.id, [])
+            ));
+        }
+    }
+
+    private async textDocument_highlight(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+        const uri = request.params.textDocument.uri;
+        const position = request.params.position;
+
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, request.id);
+            return;
+        }
+
+        const internal = existingDocument.getSymbolAroundPosition(position);
+        if (!internal) {
+            ws.send(JSON.stringify(
+                rpc.createSuccessResponse(request.id, null)
+            ));
+            return;
+        }
+
+        // get all symbols with the same name
+        const internalSymbols = existingDocument.getSymbolsByName(internal.symbol.name);
+
+        // filter out declarations
+        const highlights: lsp.DocumentHighlight[] = internalSymbols.map(s => ({
+            range: s.symbol.location.range,
+            kind: s.isDeclaration ? undefined : lsp.DocumentHighlightKind.Write
+        }));
+
+        ws.send(JSON.stringify(
+            rpc.createSuccessResponse(request.id, highlights)
+        ));
+    }
+
+    private async textDocument_references(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+        const uri = request.params.textDocument.uri;
+        const position = request.params.position;
+        const includeDeclaration = request.params.context?.includeDeclaration ?? false;
+
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, request.id);
+            return;
+        }
+
+        const internal = existingDocument.getSymbolAroundPosition(position);
+        if (!internal) {
+            ws.send(JSON.stringify(
+                rpc.createSuccessResponse(request.id, [])
+            ));
+            return;
+        }
+
+        // filter by declaration as required
+        const internalSymbols = existingDocument.getSymbolsByName(internal.symbol.name);
+        const filteredSymbols = internalSymbols.filter(s => includeDeclaration || !s.isDeclaration);
+
+        ws.send(JSON.stringify(
+            rpc.createSuccessResponse(request.id, filteredSymbols.map(s => ({
+                uri: s.symbol.location.uri,
+                range: s.symbol.location.range
+            })))
+        ));
+    }
+
     private async textDocument_didOpen(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const languageId = request.params.textDocument.languageId;
@@ -161,7 +470,7 @@ export class LanguageServer {
         const text = request.params.textDocument.text;
 
         // for simplicity, the language server ONLY checks the URI and document language upon opening
-         
+
         if (!LanguageServer.validateDocumentUri(request)) {
             ws.send(JSON.stringify(
                 rpc.createErrorResponse(
@@ -270,12 +579,18 @@ export class LanguageServer {
 
     private textDocument_didChangeConfiguration(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
-        this.sendMessageToClient(ws, lsp.MessageKind.Info, 'The client configuration has changed on disk. Please reload the editor to apply the new settings.');
+        this.sendMessageToClient(
+            ws, 
+            'The client configuration has changed on disk. Please reload the editor to apply the new settings.', 
+            lsp.MessageKind.Info);
     }
 
     private textDocument_didChangeWatchedFiles(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
-        this.sendMessageToClient(ws, lsp.MessageKind.Info, 'One or more workspace files has been changed on disk. Please reload the document to prevent a loss of data.');
+        this.sendMessageToClient(
+            ws, 
+            'One or more workspace files has been changed on disk. Please reload the document to prevent a loss of data.', 
+            lsp.MessageKind.Info);
     }
 
     private textDocument_hover(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
@@ -288,12 +603,12 @@ export class LanguageServer {
             return;
         }
 
-        const hoveredSymbol = existingDocument.getSymbolAroundPosition(position);
-        if (hoveredSymbol) {
+        const hoveredInternal = existingDocument.getSymbolAroundPosition(position);
+        if (hoveredInternal) {
             ws.send(JSON.stringify(
                 rpc.createSuccessResponse(request.id, {
-                    contents: hoveredSymbol.name,
-                    range: hoveredSymbol.location.range
+                    contents: hoveredInternal.symbol.name,
+                    range: hoveredInternal.symbol.location.range
                 })
             ));
         } else {
@@ -303,7 +618,10 @@ export class LanguageServer {
         }
     }
 
-    // Document-specific symbol search. Requires valid document identification.
+    // NOTE: NOT SUPPORTING PULL DIAGNOSTICS. RELY ON textDocument/publishDiagnostics INSTEAD.
+    //private textDocument_diagnostic(ws: ws.WebSocket, request: rpc.JSONRPCRequest);
+
+    /** Document-specific symbol search. Requires valid document identification. */
     private textDocument_documentSymbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
 
@@ -320,16 +638,16 @@ export class LanguageServer {
         ));
     }
 
-    // Project-wide symbol search. Does not require a specific document URI.
+    /** Project-wide symbol search. Does not require a specific document URI. */
     private workspace_symbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
         const query = request.params.query;
         const queryResult: lsp.WorkspaceSymbol[] = [];
         
         for (const [uri, doc] of this.documentManager.zipAllDocuments()) {
-            for (const symbol of doc.getAllSymbols()) {
+            for (const internal of doc.getAllSymbols()) {
                 // empty == every symbol, otherwise LIKE (case-sensitive)
-                if (query === "" || symbol.name.includes(query)) {
-                    queryResult.push(symbol);
+                if (query === "" || internal.symbol.name.includes(query)) {
+                    queryResult.push(internal.symbol);
                 }
             }
         }
@@ -339,8 +657,7 @@ export class LanguageServer {
         ));
     }
 
-    /////////////////////////////////////////////////////////
-
+    /** Push complete document-wide diagnostic data to the connected client. Does not support pull-mode diagnostics. */
     private publishDiagnostics(ws: ws.WebSocket, uri: string, text: string, version?: lsp.integer, requestId?: rpc.JSONRPCID) {
         const existingDocument = this.documentManager.getDocument(uri);
         if (!existingDocument) {
@@ -355,6 +672,8 @@ export class LanguageServer {
                 diagnostics: existingDocument.getDiagnostics() || []
             }, uuidv4())));
     }
+
+    /////////////////////////////////////////////////////////
     
     private async requestCompleteRefresh(ws: ws.WebSocket, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
         let lines = linesOptional;
@@ -372,7 +691,8 @@ export class LanguageServer {
         this.publishDiagnostics(ws, uri, lines.join('\n'));
     }
     
-    private sendMessageToClient(ws: ws.WebSocket, kind: lsp.MessageKindType, message: string) {
+    /** Send a message of specified kind and text to the connected client. */
+    private sendMessageToClient(ws: ws.WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Info) {
         ws.send(JSON.stringify(
             rpc.createRequest("window/showMessage", {
                 type: kind,
@@ -381,6 +701,16 @@ export class LanguageServer {
             }, uuidv4())));
     }
 
+    /** Send an invisible text message to the connected client for logging. */
+    private sendLogToClient(ws: ws.WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
+        ws.send(JSON.stringify(
+            rpc.createRequest("window/logMessage", {
+                type: kind,
+                message: message
+            }, uuidv4())));
+    }
+
+    /** Error-notify the connected client that the server has no active information about a specified document. */
     private uriDoesNotExist(ws: ws.WebSocket, uri: string, requestId?: rpc.JSONRPCID) {
         ws.send(JSON.stringify(
             rpc.createErrorResponse(
