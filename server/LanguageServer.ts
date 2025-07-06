@@ -141,12 +141,105 @@ function getKeywordsForLanguage(languageId: string): lsp.CompletionItem[] {
                 },
                 
                 // KEYWORDS
-                // declare
-                // proto
-                // print
-                // intrinsic
-                // function
-                // return
+                {
+                    label: 'declare',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword declaring or defining a variable or function.',
+                    documentation: 'Declares or defines a variable or function with the specified name and associated type(s).',
+                    insertText: 'declare ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'proto',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword declaring a function prototype.',
+                    documentation: 'Declares a function signature prototype with the specified name and associated type(s).',
+                    insertText: 'proto ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'print',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword printing a string or integer type to the standard console.',
+                    documentation: 'Prints the specified value to the console output.',
+                    insertText: 'print(${1:value})',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'intrinsic',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'IMPORTANT: DO NOTE USE.',
+                    documentation: 'Reserved keyword for future language use. IMPORTANT: DO NOT USE.',
+                    insertText: 'intrinsic ',
+                    insertTextFormat: 1, // plain text
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'function',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword declaring a function.',
+                    documentation: 'Declares a function with the specified name and associated type(s).',
+                    insertText: 'function ${1:type} ${2:name} = (${3:params})\n{\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                },
+                {
+                    label: 'return',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword returning a value from a function.',
+                    documentation: 'Returns the specified value from the current function.',
+                    insertText: 'return ${1:value}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },               
+                {
+                    label: 'while',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword denoting a uniconditional loop statement.',
+                    documentation: 'Executes the given block of code while the specified condition remains true.',
+                    insertText: 'while (${1:condition})\n{\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                },
+                {
+                    label: 'for',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword denoting a definite conditional loop statement.',
+                    documentation: 'Executes the given block of code according to the specified initialization, condition, and increment.',
+                    insertText: 'for (${1:initialization}; ${2:condition}; ${3:increment})\n{\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                },
+                {
+                    label: 'if',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Conditional statement corresponding to branched machine logic.',
+                    documentation: 'Conditionally executes the given block of code according to the specified condition.',
+                    insertText: 'if (${1:condition})\n{\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                },
+                {
+                    label: 'else',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Conditional statement corresponding to branched machine logic.',
+                    documentation: 'Conditionally executes the given block of code when the associated condition proved false.',
+                    insertText: 'else\n{\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                },
+                {
+                    label: 'asm',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Keyword denoting a _Haze_ inline assembly block.',
+                    documentation: 'Denotes an Haze inline assembly statement useful for low-level operationslllll.',
+                    insertText: 'asm {\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                }
                 // while
                 // for
                 // if
@@ -160,15 +253,7 @@ function getKeywordsForLanguage(languageId: string): lsp.CompletionItem[] {
                 // .hook -\
                 // .unhook --- NOT ACTUALLY PREPROCESSOR, BUT MIGHT BE USED AS SUCH
                 
-                {
-                    label: 'if',
-                    kind: lsp.CompletionItemKind.Keyword,
-                    detail: 'Conditional statement corresponding to branched machine logic.',
-                    documentation: 'Conditionally executed the given block of code according to the specified condition.',
-                    insertText: 'if (${1:condition})\n{\n\t$0\n}',
-                    insertTextFormat: 2, // snippet
-                    insertTextMode: 2 // adjust whitespace since multi-line completion
-                },
+                
             ];
 
         // IR code
