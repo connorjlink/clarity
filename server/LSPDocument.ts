@@ -111,6 +111,12 @@ export class LSPDocument {
         // properties automatically initialized
     }
     
+    addDiagnostic(diagnostic: lsp.Diagnostic) {
+        // NOTE: do not need to apply deltas because the diagnostic range will compute dynamically for publish
+        // See getDiagnostics() for the proper application of editor text deltas.
+        this.diagnostics.push(diagnostic);
+    }
+
     getDiagnostics(): lsp.Diagnostic[] {
         return this.diagnostics.map(d => ({
             ...d,

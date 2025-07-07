@@ -4,6 +4,7 @@ import {v4 as uuidv4} from 'uuid';
 import * as rpc from '../common/JSONRPC';
 import * as lsp from '../common/LSP';
 import * as doc from './LSPDocument';
+import * as cd from './CompilerDriver';
 
 type MethodNames = Exclude<{
     [K in keyof LanguageServer]: LanguageServer[K] extends Function ? K : never }[keyof LanguageServer],
@@ -235,32 +236,207 @@ function getKeywordsForLanguage(languageId: string): lsp.CompletionItem[] {
                     label: 'asm',
                     kind: lsp.CompletionItemKind.Keyword,
                     detail: 'Keyword denoting a _Haze_ inline assembly block.',
-                    documentation: 'Denotes an Haze inline assembly statement useful for low-level operationslllll.',
+                    documentation: 'Denotes an Haze inline assembly statement useful for low-level operations.',
                     insertText: 'asm {\n\t$0\n}',
                     insertTextFormat: 2, // snippet
                     insertTextMode: 2 // adjust whitespace since multi-line completion
-                }
-                // while
-                // for
-                // if
-                // else
-                // asm
+                },
 
-                // PREPROCESSOR
-                // .define -- ALSO NOT ACTUALLY PREPROCESSOR, BUT IS PRACTICALLY USED AS SUCH 
-                // .include
-                // .macro
-                // .hook -\
-                // .unhook --- NOT ACTUALLY PREPROCESSOR, BUT MIGHT BE USED AS SUCH
-                
-                
+                // "PREPROCESSOR"
+                {
+                    label: '.define',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Compiler directive defining a compile-time constant.',
+                    documentation: 'Defines a compile-time constant with the specified name and value. Not a preprocessor directive.',
+                    insertText: '.define ${1:name} = ${2:value}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: '.include',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Preprocessor directive including a file into the current compilation unit.',
+                    documentation: 'Lexically pastes the specified file into the current compilation unit at the point of inclusion.',
+                    insertText: '.include "${1:file}"',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: '.macro',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Preprocessor directive defining a macro.',
+                    documentation: 'Defines a macro with the specified name and parameters. Not a preprocessor directive.',
+                    insertText: '.macro ${1:name} = (${2:params})\n{\n\t$0\n}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 2 // adjust whitespace since multi-line completion
+                },
+                {
+                    label: '.hook',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'IMPORTANT: DO NOTE USE.',
+                    documentation: 'Reserved keyword for future language use. IMPORTANT: DO NOT USE.',
+                    insertText: '.hook ${1:name}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: '.unhook',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'IMPORTANT: DO NOTE USE.',
+                    documentation: 'Reserved keyword for future language use. IMPORTANT: DO NOT USE.',
+                    insertText: '.unhook ${1:name}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                }
+
+                // NOTE: EXPLICITLY NOT INCLUDING OPERATORS, ETC.                
             ];
 
-        // IR code
+        // inline assembly code
+        case 'hazea':
+            return [
+                {
+                    label: 'move',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction moving a value from one location to another.',
+                    documentation: 'Moves the specified value from the source location to the destination location.',
+                    insertText: 'move ${1:destination}, ${2:source}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'load',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction loading a value from memory into a register.',
+                    documentation: 'Loads the specified value from the memory address into the specified register.',
+                    insertText: 'load ${1:register}, ${2:address}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'save',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction saving a value from a register to memory.',
+                    documentation: 'Saves the specified value from the register to the specified memory address.',
+                    insertText: 'save ${1:address}, ${2:register}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'copy',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction copying a an immediate value into the specified register.',
+                    documentation: 'Copies the specified immediate value into the specified register.',
+                    insertText: 'copy ${1:register}, ${2:value}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'iadd',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction adding two integer values.',
+                    documentation: 'Adds the two specified integer values and stores the result in the destination register.',
+                    insertText: 'iadd ${1:destination}, ${2:source1}, ${3:source2}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'isub',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction subtracting two integer values.',
+                    documentation: 'Subtracts the second specified integer value from the first and stores the result in the destination register.',
+                    insertText: 'isub ${1:destination}, ${2:source1}, ${3:source2}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'band',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction performing a bitwise AND operation on two integer values.',
+                    documentation: 'Performs a bitwise AND operation on the two specified integer values and stores the result in the destination register.',
+                    insertText: 'band ${1:destination}, ${2:source1}, ${3:source2}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'bior',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction performing a bitwise OR operation on two integer values.',
+                    documentation: 'Performs a bitwise OR operation on the two specified integer values and stores the result in the destination register.',
+                    insertText: 'bior ${1:destination}, ${2:source1}, ${3:source2}',
+                    insertTextFormat: 2, // snippet
+                },
+                {
+                    label: 'bxor',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction performing a bitwise XOR operation on two integer values.',
+                    documentation: 'Performs a bitwise XOR operation on the two specified integer values and stores the result in the destination register.',
+                    insertText: 'bxor ${1:destination}, ${2:source1}, ${3:source2}',
+                    insertTextFormat: 2, // snippet
+                },
+                {
+                    label: 'call',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction calling a function.',
+                    documentation: 'Calls the specified function with any applied arguments.',
+                    insertText: 'call ${1:function}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'exit',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction returning from a function.',
+                    documentation: 'Returns from the current function to the address specified on the stack.',
+                    insertText: 'exit',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'push',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction pushing a value onto the stack.',
+                    documentation: 'Pushes the specified register value onto the stack, decrementing the stack pointer.',
+                    insertText: 'push ${1:source}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'pull',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction pulling a value from the stack.',
+                    documentation: 'Pulls the top value from the stack into the specified register, incrementing the stack pointer.',
+                    insertText: 'pull ${1:destination}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'brnz',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction branching to a label if the specified register is not zero.',
+                    documentation: 'Branches to the specified label if the value in the specified register is not zero.',
+                    insertText: 'brnz ${1:register}, ${2:label}',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                },
+                {
+                    label: 'stop',
+                    kind: lsp.CompletionItemKind.Keyword,
+                    detail: 'Inline assembly instruction immediately stopping execution of the current program.',
+                    documentation: 'Stops the execution of the current program immediately, without returning to the caller.',
+                    insertText: 'stop',
+                    insertTextFormat: 2, // snippet
+                    insertTextMode: 1 // no whitespace adjustment
+                }
+            ];
+
+        // IR code. Haze-specific.
+        // this stage is not editable, so it offers no completion items.
         case 'hazei':
             return [];
 
         // machine code. X86 for now.
+        // this stage is not editable, so it offers no completion items.
         case 'hazes':
             return [];
 
@@ -269,10 +445,36 @@ function getKeywordsForLanguage(languageId: string): lsp.CompletionItem[] {
     }
 }
 
+function logMessage(message: string, type: lsp.MessageKindType = lsp.MessageKind.Log) {
+    switch (type) {
+        case lsp.MessageKind.Error:
+            console.error(`language server error: ${message}`);
+            break;
+        case lsp.MessageKind.Warning:
+            console.warn(`language server warning: ${message}`);
+            break;
+        case lsp.MessageKind.Info:
+            console.info(`language server info: ${message}`);
+            break;
+        case lsp.MessageKind.Log:
+        default:
+            console.log(`language server log: ${message}`);
+    }
+}
+
 export class LanguageServer {
+
     private documentManager: doc.DocumentManager = new doc.DocumentManager();
     private hasInitialized: boolean = false;
     private hasShutdown: boolean = false;
+    private ws: ws.WebSocket | null = null;
+
+    // NOTE: parent must dynamically dependency inject!
+    private compilerDriver: cd.CompilerDriver | null = null;
+
+    injectCompilerDriver(compilerDriver: cd.CompilerDriver) {
+        this.compilerDriver = compilerDriver;
+    }
 
     // dynamic dispatch for onMessage callbacks
     execute(key: MethodNames, ...args: any[]) {
@@ -298,6 +500,7 @@ export class LanguageServer {
 
     onOpen(ws: ws.WebSocket) {
         console.log('clarity haze language server socket opened');
+        this.ws = ws;
     }
 
     onMessage(ws: ws.WebSocket, message: ws.RawData) {
@@ -387,10 +590,15 @@ export class LanguageServer {
                             ],
                         },
                         // for now, synchronize semantic tokens completely to avoid having
-                        // to compute deltas!
+                        // to compute complex deltas;
                         full: true,
                     },
                     workspaceSymbolProvider: true,
+                    workspace: {
+                        // not 100% sure if these are correct?
+                        didChangeConfiguration: true,
+                        didChangeWatchedFiles: true
+                    }
                 }
             })));
     }
@@ -576,7 +784,7 @@ export class LanguageServer {
             return;
         }
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        let existingDocument = this.documentManager.getDocument(uri);
         if (existingDocument) {
             // update the existing document only if the client version is newer
             if (version > existingDocument.version) {
@@ -591,11 +799,12 @@ export class LanguageServer {
             // clears the symbols and diagnostics to empty
             newDocument.invalidateSymbols();
             this.documentManager.createDocument(uri, newDocument);
+            existingDocument = newDocument;
             await this.requestCompleteRefresh(ws, uri, newDocument.lines);
         }
 
         // always the server's responsibility to report diagnostic data
-        this.publishDiagnostics(ws, uri, this.documentManager.getDocument(uri)?.lines.join('\n') ?? '', version);
+        this.publishDiagnostics(ws, existingDocument);
     }
 
     private textDocument_didChange(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
@@ -742,38 +951,57 @@ export class LanguageServer {
         ));
     }
 
+    /////////////////////////////////////////////////////////
+    
     /** Push complete document-wide diagnostic data to the connected client. Does not support pull-mode diagnostics. */
-    private publishDiagnostics(ws: ws.WebSocket, uri: string, text: string, version?: lsp.integer, requestId?: rpc.JSONRPCID) {
-        const existingDocument = this.documentManager.getDocument(uri);
-        if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, requestId)
-            return;
-        }
-
+    private publishDiagnostics(ws: ws.WebSocket, document: doc.LSPDocument) {
         ws.send(JSON.stringify(
             rpc.createRequest("textDocument/publishDiagnostics", {
-                uri: uri,
-                version: version,
-                diagnostics: existingDocument.getDiagnostics() || []
+                uri: document.uri,
+                version: document.version,
+                // will automatically apply editor deltas to show relevant positioning
+                diagnostics: document.getDiagnostics() || []
             }, uuidv4())));
     }
 
-    /////////////////////////////////////////////////////////
-    
-    private async requestCompleteRefresh(ws: ws.WebSocket, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
-        let lines = linesOptional;
-        if (!lines) {
-            const existingDocument = this.documentManager.getDocument(uri);
-            if (!existingDocument) {
-                this.uriDoesNotExist(ws, uri, requestId);
-                return;
+    /** Enqueue a new document diagnostic for recording. Does not send the information to the client */
+    async dispatchDiagnostic(uri: string, diagnostic: lsp.Diagnostic) {
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            if (this.ws) {
+                this.uriDoesNotExist(this.ws, uri);
             }
-            lines = existingDocument.lines;
+            return;
         }
+
+        // add the diagnostic to the document
+        existingDocument.addDiagnostic(diagnostic);
+    }
+
+    logMessage(message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
+        if (this.ws) {
+            this.sendLogToClient(this.ws, message, kind);
+        } 
+        // dispatches the corresponding print type
+        logMessage(message, kind);
+    }
+
+    /** Request a full re-compile of the current document [set]. */
+    private async requestCompleteRefresh(ws: ws.WebSocket, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            this.uriDoesNotExist(ws, uri, requestId);
+            return;
+        }
+        
+        let lines = linesOptional || existingDocument.lines;
+        existingDocument.lines = lines;
+
+        this.compilerDriver?.requestCompile(lines);
 
         // TODO: invoke the compiler driver to perform a full AST rebuild
         // AND inject the new symbols and diagnostics into the DocumentManager-managed document
-        this.publishDiagnostics(ws, uri, lines.join('\n'));
+        this.publishDiagnostics(ws, existingDocument);
     }
     
     /** Send a message of specified kind and text to the connected client. */

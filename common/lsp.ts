@@ -120,7 +120,7 @@ export type Diagnostic = {
     source?: string; // e.g., "haze"
     message: string;
     tags?: integer[]; // DO NOT USE, FOR UNNCESSARY/DEPRECATED ONLY
-    relatedInformation?: {
+    relatedInformation?: { // DO NOT USE
         location: {
             uri: string;
             range: Range;

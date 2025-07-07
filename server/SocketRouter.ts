@@ -2,6 +2,7 @@ import * as ws from 'ws';
 import * as http from 'http';
 
 type EndpointHandlers = {
+    ws?: ws.WebSocket; // optional websocket reference
     onOpen?: (ws: ws.WebSocket, req: any) => void;
     onClose?: (ws: ws.WebSocket, code: number, reason: Buffer) => void;
     onMessage?: (ws: ws.WebSocket, message: ws.RawData) => void;
@@ -28,6 +29,8 @@ export class SocketRouter {
             ws.on('message', (msg) => handlers.onMessage?.(ws, msg));
             ws.on('close', (code, reason) => handlers.onClose?.(ws, code, reason));
             ws.on('error', (err) => handlers.onError?.(ws, err));
+            // NOTE: requires that the handlers be a mutable reference
+            handlers.ws = ws;
         });
 
         this.server.on('upgrade', (request, socket, head) => {
