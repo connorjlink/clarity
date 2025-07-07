@@ -1,42 +1,29 @@
-import { type Point, type Clickspot, type ClickspotInfo } from './TreeNode';
-
-export type Connection = {
-    from: ClickspotInfo;
-    to: ClickspotInfo;
-};
-
-export type NodeData = {
-    id: string;
-    label: string;
-    position: { x: number; y: number };
-    parentId?: string;
-    clickspots: Clickspot[];
-};
+import * as nt from '../common/NodeTypes';
 
 export class NodeManager {
-    private nodes: Map<string, NodeData> = new Map();
+    private nodes: Map<string, nt.NodeData> = new Map();
     // adjacency map: nodeId -> Set of connected nodeIds
-    private connections: Map<string, Set<Connection>> = new Map();
+    private connections: Map<string, Set<nt.Connection>> = new Map();
 
-    private static connectionKey(a: ClickspotInfo, b: ClickspotInfo) {
+    private static connectionKey(a: nt.ClickspotInfo, b: nt.ClickspotInfo) {
         return [a.nodeId, a.clickspotId, b.nodeId, b.clickspotId].sort().join('|');
     }
 
-    constructor(initialNodes: NodeData[] = [], initialConnections: Connection[] = []) {
+    constructor(initialNodes: nt.NodeData[] = [], initialConnections: nt.Connection[] = []) {
         initialNodes.forEach(node => this.nodes.set(node.id, node));
         initialConnections.forEach(conn => this.connect(conn.from, conn.to));
     }
 
-    getNodes(): NodeData[] {
+    getNodes(): nt.NodeData[] {
         return Array.from(this.nodes.values());
     }
 
-    getAllConnections(): Connection[] {
+    getAllConnections(): nt.Connection[] {
         return Array.from(this.connections.values()).flatMap(set => Array.from(set));
     }
 
-    getConnections(nodeId: string): Set<Connection> {
-        const result = new Set<Connection>();
+    getConnections(nodeId: string): Set<nt.Connection> {
+        const result = new Set<nt.Connection>();
         for (const set of this.connections.values()) {
             for (const conn of set) {
                 if (conn.from.nodeId === nodeId || conn.to.nodeId === nodeId) {
@@ -47,7 +34,7 @@ export class NodeManager {
         return result;
     }
 
-    addNode(node: NodeData) {
+    addNode(node: nt.NodeData) {
         this.nodes.set(node.id, node);
     }
 
@@ -65,7 +52,7 @@ export class NodeManager {
         }
     }
 
-    updateNodePosition(nodeId: string, position: Point) {
+    updateNodePosition(nodeId: string, position: nt.Point) {
         const node = this.nodes.get(nodeId);
         if (node) {
             node.position = position;
@@ -79,14 +66,14 @@ export class NodeManager {
         }
     }
 
-    connect(from: ClickspotInfo, to: ClickspotInfo) {
+    connect(from: nt.ClickspotInfo, to: nt.ClickspotInfo) {
         if (from.nodeId === to.nodeId) {
             return;
         }
         // using outbound adjacency lists
         let set = this.connections.get(from.nodeId);
         if (!set) {
-            set = new Set<Connection>();
+            set = new Set<nt.Connection>();
             this.connections.set(from.nodeId, set);
         }
         set.add({ from, to });
@@ -104,7 +91,7 @@ export class NodeManager {
         }
     }
 
-    disconnect(info: ClickspotInfo) {
+    disconnect(info: nt.ClickspotInfo) {
         for (const [nodeId, connections] of this.connections.entries()) {
             for (const connection of connections) {
                 if (
@@ -135,7 +122,7 @@ export class NodeManager {
         }
     }
 
-    load(nodes: NodeData[], connections: Connection[]) {
+    load(nodes: nt.NodeData[], connections: nt.Connection[]) {
         this.nodes.clear();
         this.connections.clear();
         nodes.forEach(node => this.nodes.set(node.id, node));

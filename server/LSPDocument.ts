@@ -1,4 +1,5 @@
 import * as lsp from '../common/LSP';
+import * as nt from '../common/NodeTypes';
 
 export type HazeSymbol = {
     location: {
@@ -14,6 +15,42 @@ export type HazeSymbol = {
     type: string;
     confidence: lsp.integer;
     isDeclaration: boolean;
+}
+
+export type HazeNode = {
+    symbols: lsp.WorkspaceSymbol[] | undefined;
+    nodes: nt.NodeData[] | undefined;
+}
+
+type TaskTime = {
+    task: string; 
+    elapsedMicroseconds: number; 
+}
+
+// NOTE: for data visualization purposes only! TODO: add more statistics as they arise in the compiler
+type InternalStatistic = {
+    memoryUsage: number; // in bytes, probably just allocated through the Tracker
+    trackedEntityInstantiations: number; // number of tracked objects instantiated
+    trackedEntityRetirements: number; // number of tracked objects instantiated
+    trackedEntityDestructions: number; // number of tracked objects destroyed
+    functionCount: number; // number of functions defined
+    statementCount: number; // number of statements executed
+    expressionCount: number; // number of expressions evaluated
+    symbolCount: number; // number of symbols indexed
+    elapsedTime: TaskTime[];
+}
+
+export type HazeStatistic = {
+    stage: string; 
+    filepath: string;
+
+    data: {
+        // detailed performance metrics about the compiler
+        internal: InternalStatistic | undefined;
+
+    }
+
+    
 }
 
 type EditDelta = {

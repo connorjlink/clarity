@@ -1,8 +1,4 @@
-export type Point = { x: number; y: number };
-export type Line = { start: Point; end: Point };
-export type ClickspotLocation = 'left' | 'right' | 'bottom';
-export type Clickspot = { id: string; location: ClickspotLocation, isConnected?: boolean };
-export type ClickspotInfo = { nodeId: string; clickspotId: string; location: ClickspotLocation | null };
+import * as nt from '../common/NodeTypes';
 
 export class TreeNodeElement extends HTMLElement {
     // Observed attributes for attributeChangedCallback
@@ -10,27 +6,27 @@ export class TreeNodeElement extends HTMLElement {
         return ['id', 'x', 'y'];
     }
 
-    // Callbacks set externally!
-    onMove?: (pos: Point) => void;
-    onConnectStart?: (from: ClickspotInfo) => void;
-    onConnectEnd?: (from: ClickspotInfo, to: ClickspotInfo) => void;
-    onDisconnect?: (info: ClickspotInfo) => void;
-    onTempLine?: (info: [Line, ClickspotLocation] | null) => void;
-    isClickspotConnected?: (info: ClickspotInfo) => boolean;
-    screenToWorld?: (screenPoint: Point) => Point;
-    worldToScreen?: (worldPoint: Point) => Point;
+    // NOTE: Parent must set callbacks set externally!
+    onMove?: (pos: nt.Point) => void;
+    onConnectStart?: (from: nt.ClickspotInfo) => void;
+    onConnectEnd?: (from: nt.ClickspotInfo, to: nt.ClickspotInfo) => void;
+    onDisconnect?: (info: nt.ClickspotInfo) => void;
+    onTempLine?: (info: [nt.Line, nt.ClickspotLocation] | null) => void;
+    isClickspotConnected?: (info: nt.ClickspotInfo) => boolean;
+    screenToWorld?: (screenPoint: nt.Point) => nt.Point;
+    worldToScreen?: (worldPoint: nt.Point) => nt.Point;
 
     private _areCallbacksSet = false;
 
     setCallbacks(callbacks: {
-        onMove?: (pos: Point) => void;
-        onConnectStart?: (from: ClickspotInfo) => void;
-        onConnectEnd?: (from: ClickspotInfo, to: ClickspotInfo) => void;
-        onDisconnect?: (info: ClickspotInfo) => void;
-        onTempLine?: (info: [Line, ClickspotLocation] | null) => void;
-        isClickspotConnected?: (info: ClickspotInfo) => boolean;
-        screenToWorld?: (screenPoint: Point) => Point;
-        worldToScreen?: (worldPoint: Point) => Point;
+        onMove?: (pos: nt.Point) => void;
+        onConnectStart?: (from: nt.ClickspotInfo) => void;
+        onConnectEnd?: (from: nt.ClickspotInfo, to: nt.ClickspotInfo) => void;
+        onDisconnect?: (info: nt.ClickspotInfo) => void;
+        onTempLine?: (info: [nt.Line, nt.ClickspotLocation] | null) => void;
+        isClickspotConnected?: (info: nt.ClickspotInfo) => boolean;
+        screenToWorld?: (screenPoint: nt.Point) => nt.Point;
+        worldToScreen?: (worldPoint: nt.Point) => nt.Point;
     }) {
         Object.assign(this, callbacks);
         this._areCallbacksSet = true;
@@ -54,11 +50,11 @@ export class TreeNodeElement extends HTMLElement {
     private _contentRef?: HTMLElement | null;
 
     private _nodeId: string = '';
-    private _position: Point = { x: 0, y: 0 };
-    private _clickspots: Clickspot[] = [];
+    private _position: nt.Point = { x: 0, y: 0 };
+    private _clickspots: nt.Clickspot[] = [];
     private _isDragging: boolean = false;
-    private _dragOffset: Point = { x: 0, y: 0 };
-    set data(val: { nodeId: string; position: Point; clickspots: Clickspot[] }) {
+    private _dragOffset: nt.Point = { x: 0, y: 0 };
+    set data(val: { nodeId: string; position: nt.Point; clickspots: nt.Clickspot[] }) {
         this._nodeId = val.nodeId;
         this._position = val.position;
         this._clickspots = val.clickspots;
@@ -68,7 +64,7 @@ export class TreeNodeElement extends HTMLElement {
         this.render();
     }
 
-    updateTransform(pos: Point) {
+    updateTransform(pos: nt.Point) {
         this._position = pos;
         if (this._contentRef) {
             this._contentRef.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0)`;

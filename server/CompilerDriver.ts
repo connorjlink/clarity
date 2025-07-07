@@ -1,6 +1,7 @@
 import * as ws from 'ws';
 
 import * as ls from './LanguageServer';
+import * as doc from './LSPDocument';
 import * as lsp from '../common/LSP';
 
 export class CompilerDriver {
@@ -44,16 +45,20 @@ export class CompilerDriver {
             }
             // specifies that the compiler has sent symbol information
             else if (result.symbol) {
-                // TODO: parse and update symbol index information with the LanguageServer
-
+                // NOTE: the language server itself will handle translating and serving symbol information
+                const symbol: doc.HazeSymbol = result.symbol;
+                const uri = symbol.location.filepath;
+                this.languageServer?.dispatchSymbol(uri, symbol);
             } 
             // specifies that the compiler has sent internal statistics information (like memory usage, object instantiations)
             else if (result.statistic) {
                 // TODO: probably just pass through to the client since this can be a custom message (perhaps hazeCompiler/statistic)
+                const statistic: doc.HazeStatistic = result.statistic;
 
             }
             // specifies that the compiler has sent a diagnostic message
             else if (result.diagnostic) {
+                // NOTE: requires that the compiler send diagnostics in LSP format
                 const diagnostic: lsp.Diagnostic = {
                     range: {
                         start: { 

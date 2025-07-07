@@ -16,7 +16,7 @@ router.attachEndpoint('/compiler', compilerDriver.getHandlers());
 
 /*
 
-// need to read more about these, used for function signatures
+// TODO: more research; used for function signatures
 textDocument/signatureHelp
 
 // for future real async use only

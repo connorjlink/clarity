@@ -965,7 +965,7 @@ export class LanguageServer {
     }
 
     /** Enqueue a new document diagnostic for recording. Does not send the information to the client */
-    async dispatchDiagnostic(uri: string, diagnostic: lsp.Diagnostic) {
+    dispatchDiagnostic(uri: string, diagnostic: lsp.Diagnostic) {
         const existingDocument = this.documentManager.getDocument(uri);
         if (!existingDocument) {
             if (this.ws) {
@@ -978,6 +978,21 @@ export class LanguageServer {
         existingDocument.addDiagnostic(diagnostic);
     }
 
+    /** Enqueue a new document symbol for processing. Handles translating and tracking the new symbol */
+    dispatchSymbol(uri: string, symbol: doc.HazeSymbol) {
+        const existingDocument = this.documentManager.getDocument(uri);
+        if (!existingDocument) {
+            if (this.ws) {
+                this.uriDoesNotExist(this.ws, uri);
+            }
+            return;
+        }
+
+        // add the symbol to the document
+        existingDocument.upsertSymbol(symbol);
+    }
+
+    /** Record a new message string with the specified kind. Logs on both the client and server side. */
     logMessage(message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
         if (this.ws) {
             this.sendLogToClient(this.ws, message, kind);
@@ -997,10 +1012,8 @@ export class LanguageServer {
         let lines = linesOptional || existingDocument.lines;
         existingDocument.lines = lines;
 
-        this.compilerDriver?.requestCompile(lines);
-
-        // TODO: invoke the compiler driver to perform a full AST rebuild
-        // AND inject the new symbols and diagnostics into the DocumentManager-managed document
+        await this.compilerDriver?.requestCompile(lines);
+        // NOTE: diagnostics will only refresh as often as the document fully recompiles
         this.publishDiagnostics(ws, existingDocument);
     }
     
