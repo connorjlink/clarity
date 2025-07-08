@@ -1,12 +1,9 @@
-import * as ws from 'ws';
-import * as http from 'http';
-
 type EndpointHandlers = {
-    ws?: ws.WebSocket; // optional websocket reference
-    onOpen?: (ws: ws.WebSocket, req: any) => void;
-    onClose?: (ws: ws.WebSocket, code: number, reason: Buffer) => void;
-    onMessage?: (ws: ws.WebSocket, message: ws.RawData) => void;
-    onError?: (ws: ws.WebSocket, error: Error) => void;
+    ws?: WebSocket; // optional websocket reference
+    onOpen?: (ws: WebSocket, req: any) => void;
+    onClose?: (ws: WebSocket, code: number, reason: Buffer) => void;
+    onMessage?: (ws: WebSocket, message: any) => void;
+    onError?: (ws: WebSocket, error: Error) => void;
 };
 
 export class SocketRouter {
@@ -16,9 +13,9 @@ export class SocketRouter {
 
     constructor(port: number) {
         this.server = http.createServer();
-        this.wss = new ws.WebSocketServer({ noServer: true });
+        this.wss = new WebSocketServer({ noServer: true });
 
-        this.wss.on('connection', (ws: ws.WebSocket, request: http.IncomingMessage) => {
+        this.wss.on('connection', (ws: WebSocket, request: http.IncomingMessage) => {
             const url = request.url || '/';
             const handlers = this.endpoints.get(url);
             if (!handlers) {

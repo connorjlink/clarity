@@ -25,14 +25,26 @@ export class PieceTable {
         this.addBuffer += text;   
         let offset = 0;
         let i = 0;    
-
+    
         // find the piece containing the insert position
         for (; i < this.pieces.length; i++) {
             const piece = this.pieces[i];
-            if (offset + piece.length >= position) break;
+            if (offset + piece.length >= position) {
+                break;
+            }
             offset += piece.length;
         }   
-
+    
+        // the position is at the end, the table requires appending a new piece
+        if (i === this.pieces.length) {
+            this.pieces.push({
+                buffer: 'add',
+                start: addStart,
+                length: text.length
+            });
+            return;
+        }
+    
         const piece = this.pieces[i];
         const withinPieceOffset = position - offset;    
         const newPieces: Piece[] = [];    
@@ -60,7 +72,7 @@ export class PieceTable {
         }   
         // splice in affected piece
         this.pieces.splice(i, 1, ...newPieces);
-    }   
+    }      
 
     delete(position: number, length: number) {
         let offset = 0;

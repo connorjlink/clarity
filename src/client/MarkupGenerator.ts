@@ -1,7 +1,7 @@
-import { SymbolDatabase } from './SymbolDatabase';
+import * as sb from './SymbolDatabase';
 
 export class MarkupGenerator {
-    private symbolDatabase: SymbolDatabase;
+    private symbolDatabase: sb.SymbolDatabase;
     private previous: {
         sourceCode: string;
         markup: string;
@@ -13,7 +13,7 @@ export class MarkupGenerator {
     private port: string;
 
     constructor(host: string, port: string, listener: any) {
-        this.symbolDatabase = new SymbolDatabase();
+        this.symbolDatabase = new sb.SymbolDatabase();
         this.listener = listener;
         this.previous = {
             sourceCode: '',
@@ -182,5 +182,3 @@ export class MarkupGenerator {
             .replace(/'/g, '&#39;');
     }
 }
-
-export default MarkupGenerator;

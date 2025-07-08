@@ -71,11 +71,22 @@ export class TreeNodeElement extends HTMLElement {
         }
     }
 
+    // private attachEventListeners() {
+    //     this.querySelector('.node-header')?.addEventListener('mousedown', this.startNodeDrag.bind(this));
+    //     this.querySelectorAll('.node-clickspot')?.forEach(c => {
+    //         c.addEventListener('mousedown', this.onConnectStart!.bind(this))
+    //         c.addEventListener('mousedown', this.handleClickspotMouseDown.bind(this, c.getAttribute('id')!));
+    //     });
+    // }
+
     private attachEventListeners() {
-        this.querySelector('.node-header')?.addEventListener('mousedown', this.startNodeDrag.bind(this));
+        this.querySelector('.node-header')?.addEventListener('mousedown', (event: Event) => {
+            this.startNodeDrag(event as MouseEvent);
+        });
         this.querySelectorAll('.node-clickspot')?.forEach(c => {
-            c.addEventListener('mousedown', this.onConnectStart!.bind(this))
-            c.addEventListener('mousedown', this.handleClickspotMouseDown.bind(this, c.getAttribute('id')!));
+            c.addEventListener('mousedown', (event: Event) => {
+                this.handleClickspotMouseDown(c.getAttribute('id')!, event as MouseEvent);
+            });
         });
     }
 

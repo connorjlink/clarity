@@ -1,5 +1,3 @@
-import * as ws from 'ws';
-
 import * as ls from './LanguageServer';
 import * as doc from './LSPDocument';
 import * as lsp from '../common/LSP';
@@ -7,7 +5,7 @@ import * as lsp from '../common/LSP';
 export class CompilerDriver {
 
     private pendingRequestResolve: (() => void) | null = null;
-    private ws: ws.WebSocket | null = null;
+    private ws: WebSocket | null = null;
 
     // NOTE: parent must dynamically dependency inject!
     private languageServer: ls.LanguageServer | null = null
@@ -28,12 +26,12 @@ export class CompilerDriver {
 
     /////////////////////////////////////////////////////////
 
-    onOpen(ws: ws.WebSocket) {
+    onOpen(ws: WebSocket) {
         this.languageServer?.logMessage(`clarity compiler server socket opened`, lsp.MessageKind.Log);
         this.ws = ws;
     }
 
-    onMessage(ws: ws.WebSocket, message: ws.RawData) {
+    onMessage(ws: WebSocket, message: any) {
         try {
             const result = JSON.parse(message.toString());
             // specifies that the compiler has completed the active job
@@ -94,11 +92,11 @@ export class CompilerDriver {
         }
     }
 
-    onClose(ws: ws.WebSocket) {
+    onClose(ws: WebSocket) {
         this.languageServer?.logMessage(`clarity compiler server socket closed`, lsp.MessageKind.Log);
     }
 
-    onError(ws: ws.WebSocket, error: Error) {
+    onError(ws: WebSocket, error: Error) {
         this.languageServer?.logMessage(`clarity compiler server socket error: ${error}`, lsp.MessageKind.Error);
     }
 

@@ -1,22 +1,23 @@
-import { TreeNodeElement, type Point, type Line, type ClickspotLocation, type ClickspotInfo } from './TreeNode';
-import { NodeManager, type Connection } from './NodeManager';
-import { TransformedViewElement as TransformedViewElement } from './TransformedView';
+import * as nt from '../common/NodeTypes';
+import * as nm from './NodeManager';
+import * as tn from './TreeNode';
+import * as tv from './TransformedView';
 
 export class ProgramTreeElement extends HTMLElement {
     static observedAttributes = [];
 
     // model references
-    private _nodeManager: NodeManager;
+    private _nodeManager: nm.NodeManager;
 
     // DOM references
-    private _transformedViewRef?: TransformedViewElement;
+    private _transformedViewRef?: tv.TransformedViewElement;
     private _contentRef?: HTMLElement;
     private _connectionsCanvas?: HTMLCanvasElement;
     private _canvasRef?: CanvasRenderingContext2D;
 
     constructor() {
         super();
-        this._nodeManager = new NodeManager([
+        this._nodeManager = new nm.NodeManager([
             {
                 id: 'node1',
                 label: 'Hello, 123123',
@@ -69,7 +70,7 @@ export class ProgramTreeElement extends HTMLElement {
         };
     };
 
-    private isClickspotConnected(info: ClickspotInfo) {
+    private isClickspotConnected(info: nt.ClickspotInfo) {
         const connections = this._nodeManager.getConnections(info.nodeId);
         for (const connection of connections) {
             if (connection.from.clickspotId === info.clickspotId || connection.to.clickspotId === info.clickspotId) {
@@ -79,11 +80,11 @@ export class ProgramTreeElement extends HTMLElement {
         return false;
     };
 
-    private handleConnectStart(from: ClickspotInfo) {
+    private handleConnectStart(from: nt.ClickspotInfo) {
         // stub
     };
 
-    private handleConnectEnd(from: ClickspotInfo, to: ClickspotInfo) {
+    private handleConnectEnd(from: nt.ClickspotInfo, to: nt.ClickspotInfo) {
         if (from && (from.nodeId !== to.nodeId || from.clickspotId !== to.clickspotId)) {
             this._nodeManager.connect(from, to);
             this.handleTempLine(null);
@@ -91,7 +92,7 @@ export class ProgramTreeElement extends HTMLElement {
         this.renderLines();
     };
 
-    private handleRemoveLines(tofrom: ClickspotInfo) {
+    private handleRemoveLines(tofrom: nt.ClickspotInfo) {
         this._nodeManager.disconnect(tofrom);
         
         if (!this._connectionsCanvas || !this._canvasRef) {
@@ -101,11 +102,11 @@ export class ProgramTreeElement extends HTMLElement {
         this.renderLines();
     };
 
-    private handleNodeMove(id: string, pos: Point) {
+    private handleNodeMove(id: string, pos: nt.Point) {
         this._nodeManager.updateNodePosition(id, pos);
         
         const nodeElement = this._contentRef?.querySelector(`#${id}`) as HTMLElement;
-        const parentElement = nodeElement.parentElement as TreeNodeElement;
+        const parentElement = nodeElement.parentElement as tn.TreeNodeElement;
         if (parentElement) {
             parentElement.updateTransform(pos);
         }
@@ -148,7 +149,7 @@ export class ProgramTreeElement extends HTMLElement {
         }
     }
 
-    private handleTempLine(line: [Line, ClickspotLocation] | null) {
+    private handleTempLine(line: [nt.Line, nt.ClickspotLocation] | null) {
         this.renderLines();
         if (!line || !this._canvasRef) {
             return;
@@ -168,9 +169,9 @@ export class ProgramTreeElement extends HTMLElement {
     }
 
     private getBezierPath(
-        line: Line,
-        fromLocation: ClickspotLocation,
-        toLocation: ClickspotLocation | null  // inferred if not provided
+        line: nt.Line,
+        fromLocation: nt.ClickspotLocation,
+        toLocation: nt.ClickspotLocation | null  // inferred if not provided
     ) {
         const { start, end } = line;
         // set the curve ratio: a higher value enforces greater curvature 
@@ -243,10 +244,10 @@ export class ProgramTreeElement extends HTMLElement {
     }
 
     private drawBezierPath(
-        start: Point,
-        end: Point,
-        fromLocation: ClickspotLocation,
-        toLocation: ClickspotLocation | null,
+        start: nt.Point,
+        end: nt.Point,
+        fromLocation: nt.ClickspotLocation,
+        toLocation: nt.ClickspotLocation | null,
         strokeStyle: string,
         lineWidth: number,
         dashed: boolean
@@ -288,11 +289,11 @@ export class ProgramTreeElement extends HTMLElement {
             return;
         }
 
-        const nodesById = new Map<string, TreeNodeElement>();
+        const nodesById = new Map<string, tn.TreeNodeElement>();
         this._contentRef.querySelectorAll('tree-node').forEach(node => {
             const id = node.getAttribute('id');
             if (id) {
-                nodesById.set(id, node as TreeNodeElement);
+                nodesById.set(id, node as tn.TreeNodeElement);
             }
         });
 
@@ -302,7 +303,7 @@ export class ProgramTreeElement extends HTMLElement {
             let nodeElement = nodesById.get(node.id);
 
             if (!nodeElement) {
-                nodeElement = document.createElement('tree-node') as TreeNodeElement;
+                nodeElement = document.createElement('tree-node') as tn.TreeNodeElement;
 
                 nodeElement.data = {
                     nodeId: node.id,
@@ -346,7 +347,7 @@ export class ProgramTreeElement extends HTMLElement {
             </transformed-view>
         `;
 
-        this._transformedViewRef = this.querySelector('#program-tree-transformed-view') as TransformedViewElement;
+        this._transformedViewRef = this.querySelector('#program-tree-transformed-view') as tv.TransformedViewElement;
         this._contentRef = this._transformedViewRef.querySelector('div[slot="transformed-view-slot"]') as HTMLDivElement;
         this._connectionsCanvas = this._contentRef.querySelector('#connections-canvas') as HTMLCanvasElement;
         this._canvasRef = this._connectionsCanvas.getContext('2d')!;

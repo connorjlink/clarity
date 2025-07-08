@@ -1,4 +1,4 @@
-import { type Point } from './TreeNode';
+import * as nt from '../common/NodeTypes';
 
 export class TransformedViewElement extends HTMLElement {
     static minScale = 0.2;
@@ -8,8 +8,8 @@ export class TransformedViewElement extends HTMLElement {
     private _scale = 1;
     
     private _isPanning = false;
-    private _position: Point = { x: 0, y: 0 };
-    private _lastPosition: Point = { x: 0, y: 0 };
+    private _position: nt.Point = { x: 0, y: 0 };
+    private _lastPosition: nt.Point = { x: 0, y: 0 };
 
     constructor() {
         super();
@@ -34,14 +34,14 @@ export class TransformedViewElement extends HTMLElement {
         window.removeEventListener('mouseup', this.onMouseUp);
     }
 
-    screenToWorld(point: Point): Point {
+    screenToWorld(point: nt.Point): nt.Point {
         return {
             x: (point.x - this._position.x) / this._scale,
             y: (point.y - this._position.y) / this._scale
         };
     }
 
-    worldToScreen(point: Point): Point {
+    worldToScreen(point: nt.Point): nt.Point {
         return {
             x: point.x * this._scale + this._position.x,
             y: point.y * this._scale + this._position.y
@@ -113,6 +113,7 @@ export class TransformedViewElement extends HTMLElement {
         if (!this.shadowRoot) {
             return;
         }
+        // NOTE: ABSOLUTELY HAS TO BE SHADOW ROOT FOR NOW BECAUSE IT USES THE SLOT ELEMENT!
         this.shadowRoot.innerHTML = `
             <link rel="stylesheet" href="./TransformedView.css">
             <div class="container">

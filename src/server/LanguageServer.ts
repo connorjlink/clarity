@@ -1,6 +1,3 @@
-import * as ws from 'ws';
-import {v4 as uuidv4} from 'uuid';
-
 import * as rpc from '../common/JSONRPC';
 import * as lsp from '../common/LSP';
 import * as doc from './LSPDocument';
@@ -10,6 +7,36 @@ type MethodNames = Exclude<{
     [K in keyof LanguageServer]: LanguageServer[K] extends Function ? K : never }[keyof LanguageServer],
     'execute'
 >
+
+// the crypo API might not be available, so a random-based fallback provided for safety
+function uuidv4(): string {
+    // NOTE: the random fallback produces HORRIBLE randomness and should ideally never be used. 
+    // The chance of collision is astronomically high relative to this output size!!!
+    const getRandomValues = typeof crypto !== "undefined" && crypto.getRandomValues
+        ? crypto.getRandomValues.bind(crypto)
+        : (arr: Uint8Array) => {
+                for (let i = 0; i < arr.length; i++) {
+                    arr[i] = Math.floor(Math.random() * 256);
+                }
+                return arr;
+            };
+    
+    const bytes = getRandomValues(new Uint8Array(16));
+
+    // RFC 4122: set bits for version and "clock_seq_hi_and_reserved"
+    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version ~= 4
+    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant ~= 10xxxxxx
+
+    const hex = [...bytes].map(b => b.toString(16).padStart(2, '0'));
+
+    return (
+        hex.slice(0, 4).join('') + '-' +
+        hex.slice(4, 6).join('') + '-' +
+        hex.slice(6, 8).join('') + '-' +
+        hex.slice(8, 10).join('') + '-' +
+        hex.slice(10, 16).join('')
+    );
+}
 
 function getKeywordsForLanguage(languageId: string): lsp.CompletionItem[] {
     switch (languageId) {
@@ -467,7 +494,7 @@ export class LanguageServer {
     private documentManager: doc.DocumentManager = new doc.DocumentManager();
     private hasInitialized: boolean = false;
     private hasShutdown: boolean = false;
-    private ws: ws.WebSocket | null = null;
+    private ws: WebSocket | null = null;
 
     // NOTE: parent must dynamically dependency inject!
     private compilerDriver: cd.CompilerDriver | null = null;
@@ -498,12 +525,12 @@ export class LanguageServer {
 
     /////////////////////////////////////////////////////////
 
-    onOpen(ws: ws.WebSocket) {
+    onOpen(ws: WebSocket) {
         console.log('clarity haze language server socket opened');
         this.ws = ws;
     }
 
-    onMessage(ws: ws.WebSocket, message: ws.RawData) {
+    onMessage(ws: WebSocket, message: any) {
         try {
             var request: rpc.JSONRPCRequest = JSON.parse(message.toString());
 
@@ -547,17 +574,17 @@ export class LanguageServer {
         }
     }
 
-    onClose(ws: ws.WebSocket) {
+    onClose(ws: WebSocket) {
         console.log('clarity haze language server socket closed');
     }
 
-    onError(ws: ws.WebSocket, error: Error) {
+    onError(ws: WebSocket, error: Error) {
         console.error('clarity haze language server socket error:', error);
     }
 
     /////////////////////////////////////////////////////////
 
-    private async initialize(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async initialize(ws: WebSocket, request: rpc.JSONRPCRequest) {
         // the client has initialized, now the server can register capabilities
         ws.send(JSON.stringify(
             rpc.createSuccessResponse(request.id, {
@@ -603,11 +630,11 @@ export class LanguageServer {
             })));
     }
     
-    private async initialized(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async initialized(ws: WebSocket, request: rpc.JSONRPCRequest) {
         this.hasInitialized = true;
     }
 
-    private async shutdown(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async shutdown(ws: WebSocket, request: rpc.JSONRPCRequest) {
         // the client has requested a shutdown, the server should respond with success
         this.hasShutdown = true;
         ws.send(JSON.stringify(
@@ -615,7 +642,7 @@ export class LanguageServer {
         ));
     }
 
-    private async exit(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async exit(ws: WebSocket, request: rpc.JSONRPCRequest) {
         ws.close();
         if (this.hasShutdown) {
             throw new Error('Exit Code 0: OK');
@@ -623,7 +650,7 @@ export class LanguageServer {
         throw new Error('Exit Code 1: Not Shut Down');
     }
 
-    private async textDocument_definition(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_definition(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
 
@@ -669,7 +696,7 @@ export class LanguageServer {
         }
     }
 
-    public async textDocument_completion(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    public async textDocument_completion(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
         const context = request.params.context;
@@ -693,7 +720,7 @@ export class LanguageServer {
         }
     }
 
-    private async textDocument_highlight(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_highlight(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
 
@@ -725,7 +752,7 @@ export class LanguageServer {
         ));
     }
 
-    private async textDocument_references(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_references(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
         const includeDeclaration = request.params.context?.includeDeclaration ?? false;
@@ -756,7 +783,7 @@ export class LanguageServer {
         ));
     }
 
-    private async textDocument_didOpen(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_didOpen(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const languageId = request.params.textDocument.languageId;
         const version = request.params.textDocument.version;
@@ -807,7 +834,7 @@ export class LanguageServer {
         this.publishDiagnostics(ws, existingDocument);
     }
 
-    private textDocument_didChange(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChange(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const version = request.params.textDocument.version;
         const contentChanges = request.params.contentChanges;
@@ -840,7 +867,7 @@ export class LanguageServer {
         this.requestCompleteRefresh(ws, uri, lines);
     }
 
-    private textDocument_didClose(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didClose(ws: WebSocket, request: rpc.JSONRPCRequest) {
         // retains symbol and diagnostic data because the server must continue to 
         // be able to respond to symbol and diagnostic requests
         const uri = request.params.textDocument.uri;
@@ -851,7 +878,7 @@ export class LanguageServer {
         }
     }
 
-    private textDocument_didSave(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didSave(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
 
         let text: string | undefined = request.params.text;
@@ -871,7 +898,7 @@ export class LanguageServer {
         }
     }
 
-    private textDocument_didChangeConfiguration(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChangeConfiguration(ws: WebSocket, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
         this.sendMessageToClient(
             ws, 
@@ -879,7 +906,7 @@ export class LanguageServer {
             lsp.MessageKind.Info);
     }
 
-    private textDocument_didChangeWatchedFiles(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChangeWatchedFiles(ws: WebSocket, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
         this.sendMessageToClient(
             ws, 
@@ -887,7 +914,7 @@ export class LanguageServer {
             lsp.MessageKind.Info);
     }
 
-    private textDocument_hover(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_hover(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument;
         const position = request.params.position;
 
@@ -916,7 +943,7 @@ export class LanguageServer {
     //private textDocument_diagnostic(ws: ws.WebSocket, request: rpc.JSONRPCRequest);
 
     /** Document-specific symbol search. Requires valid document identification. */
-    private textDocument_documentSymbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_documentSymbol(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
 
         const existingDocument = this.documentManager.getDocument(uri);
@@ -933,7 +960,7 @@ export class LanguageServer {
     }
 
     /** Project-wide symbol search. Does not require a specific document URI. */
-    private workspace_symbol(ws: ws.WebSocket, request: rpc.JSONRPCRequest) {
+    private workspace_symbol(ws: WebSocket, request: rpc.JSONRPCRequest) {
         const query = request.params.query;
         const queryResult: lsp.WorkspaceSymbol[] = [];
         
@@ -954,7 +981,7 @@ export class LanguageServer {
     /////////////////////////////////////////////////////////
     
     /** Push complete document-wide diagnostic data to the connected client. Does not support pull-mode diagnostics. */
-    private publishDiagnostics(ws: ws.WebSocket, document: doc.LSPDocument) {
+    private publishDiagnostics(ws: WebSocket, document: doc.LSPDocument) {
         ws.send(JSON.stringify(
             rpc.createRequest("textDocument/publishDiagnostics", {
                 uri: document.uri,
@@ -1002,7 +1029,7 @@ export class LanguageServer {
     }
 
     /** Request a full re-compile of the current document [set]. */
-    private async requestCompleteRefresh(ws: ws.WebSocket, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
+    private async requestCompleteRefresh(ws: WebSocket, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
         const existingDocument = this.documentManager.getDocument(uri);
         if (!existingDocument) {
             this.uriDoesNotExist(ws, uri, requestId);
@@ -1018,7 +1045,7 @@ export class LanguageServer {
     }
     
     /** Send a message of specified kind and text to the connected client. */
-    private sendMessageToClient(ws: ws.WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Info) {
+    private sendMessageToClient(ws: WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Info) {
         ws.send(JSON.stringify(
             rpc.createRequest("window/showMessage", {
                 type: kind,
@@ -1028,7 +1055,7 @@ export class LanguageServer {
     }
 
     /** Send an invisible text message to the connected client for logging. */
-    private sendLogToClient(ws: ws.WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
+    private sendLogToClient(ws: WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
         ws.send(JSON.stringify(
             rpc.createRequest("window/logMessage", {
                 type: kind,
@@ -1037,7 +1064,7 @@ export class LanguageServer {
     }
 
     /** Error-notify the connected client that the server has no active information about a specified document. */
-    private uriDoesNotExist(ws: ws.WebSocket, uri: string, requestId?: rpc.JSONRPCID) {
+    private uriDoesNotExist(ws: WebSocket, uri: string, requestId?: rpc.JSONRPCID) {
         ws.send(JSON.stringify(
             rpc.createErrorResponse(
                 requestId || null,

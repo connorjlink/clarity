@@ -1,5 +1,5 @@
-import { PieceTable } from './PieceTable';
-import { MarkupGenerator } from './MarkupGenerator';
+import * as pt from './PieceTable';
+import * as mg from './MarkupGenerator';
 
 function getTextWithLineBreaks(element: HTMLElement): string {
     let text = '';
@@ -67,8 +67,8 @@ function setCaretPosition(element: HTMLElement, offset: number) {
 }
 
 export class SourceEditorElement extends HTMLElement {
-    private _pieceTable: PieceTable;
-    private _markupGenerator?: MarkupGenerator;
+    private _pieceTable: pt.PieceTable;
+    private _markupGenerator?: mg.MarkupGenerator;
     private _consoleListener: any = null;
 
     private _inputRef: HTMLDivElement | null = null;
@@ -78,25 +78,25 @@ export class SourceEditorElement extends HTMLElement {
 
     constructor() {
         super();
-        this._pieceTable = new PieceTable('function nvr main = () {}');
+        this._pieceTable = new pt.PieceTable('function nvr main = () {}');
     }
 
     connectedCallback() {
         this.render();
     }
 
-    private attachEventListeners(consoleListener?: any) {
+    attachEventListeners(consoleListener?: any) {
         this._inputRef?.addEventListener('input', (e) => this.handleInputChange(e));
         this._inputRef?.addEventListener('scroll', () => this.syncScroll());
         this._inputRef?.addEventListener('keydown', (e) => this.handleKeyDown(e));
         if (!this._consoleListener) {
             this._consoleListener = consoleListener;
             //this._markupGenerator = new MarkupGenerator('localhost', '8080', this._consoleListener);
-            this._markupGenerator = new MarkupGenerator('localhost', '8080', null);
+            this._markupGenerator = new mg.MarkupGenerator('localhost', '8080', null);
         }
     }
 
-    /*private handleInputChange(e: Event) {
+    private handleInputChange(e: Event) {
         if (!this._inputRef) {
             return;
         }
@@ -133,16 +133,16 @@ export class SourceEditorElement extends HTMLElement {
         this.renderHighlight();
 
         setCaretPosition(this._inputRef, caret);
-    }*/
+    }
 
     // NOTE: TERRIBLE PERFORMNANCE!!!
-    private handleInputChange(e: Event) {
-        const target = e.target as HTMLTextAreaElement;
-        this._pieceTable = new PieceTable(target.textContent ?? '');
-        const newText = this._inputRef?.textContent ?? '';
-        this._lastText = newText;
-        this.renderHighlight();
-    }
+    // private handleInputChange(e: Event) {
+    //     const target = e.target as HTMLTextAreaElement;
+    //     this._pieceTable = new PieceTable(target.textContent ?? '');
+    //     const newText = this._inputRef?.textContent ?? '';
+    //     this._lastText = newText;
+    //     this.renderHighlight();
+    // }
 
     private handleKeyDown(e: KeyboardEvent) {
         if (e.key === 'Tab') {
@@ -155,19 +155,6 @@ export class SourceEditorElement extends HTMLElement {
         }
     }
 
-    /*private renderHighlight() {
-        if (this._highlightRef && this._markupGenerator) {
-            const text = this._pieceTable.getText();
-            let response = this._markupGenerator.handleGenerateRequest(text);
-            if (!response) {
-                response = '';
-            }
-            if (!response.includes('<br')) {
-                response = response.replace(/\n/g, '<br>');
-            }
-            this._highlightRef.innerHTML = response;
-        }
-    }*/
     private renderHighlight() {
         if (this._highlightRef) {
             const text = this._pieceTable.getText();
@@ -177,7 +164,6 @@ export class SourceEditorElement extends HTMLElement {
             }
         }
     }
-
 
     private syncScroll() {
         if (this._inputRef && this._highlightRef) {
@@ -190,45 +176,7 @@ export class SourceEditorElement extends HTMLElement {
         const text = this._pieceTable.getText();
         this.innerHTML = `
             <style>
-                .editor-shell {
-                    position: relative;
-                    font-family: Consolas;
-                    height: 300px;
-                    * {
-                        font-size: 14pt;
-                    }
-                }
-                .highlight-layer, .input-layer {
-                    white-space: pre-wrap;
-                    word-break: break-word;
-                    padding: 8px;
-                    line-height: 1.5;
-                    height: 100%;
-                    min-height: 100%;
-                    box-sizing: border-box;
-                }
-                .highlight-layer {
-                    position: absolute;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    pointer-events: none;
-                    z-index: 1;
-                    color: #ccc; /* color de resaltado */
-                    margin: 0;
-                    padding: 0;
-                }
-                .input-layer {
-                    position: absolute;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    margin: 0 0 0 2rem;
-                    padding: 0;
-                    background: transparent;
-                    color: transparent;
-                    caret-color: var(--accent);
-                    z-index: 2;
-                    outline: none;
-                    user-select: none;
-                    /* El truco para ver el cursor y selección */
-                }
+                
             </style>
             <div class="editor-shell">
                 <pre class="highlight-layer"></pre>
