@@ -1,4 +1,5 @@
-import * as lsp from '../common/LSP'
+import * as lsp from './LSP'
+import * as cd from './compiler_driver'
 
 export const TypeStorages = ['value', 'ptr'];
 export const TypeSpecifiers = ['byte', 'word', 'dword', 'qword', 'string', 'struct', 'nvr'];
@@ -7,28 +8,14 @@ export const TypeSignedness = ['signed', 'unsigned'];
 export const TypeStages = ['source', 'ast', 'ir', 'asm', 'o'];
 
 export class SymbolDatabase {
+    
     // maps identifier names as searchable entities
     private symbols: Map<string, lsp.WorkspaceSymbol>;
-    // relational db
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private tree: any;
 
     public lastSynchronized: Date | null = null;
     
     constructor() {
         this.symbols = new Map<string, lsp.WorkspaceSymbol>();
-    }
-
-    notifyListener(listener: any, message: string): void {
-        if (listener) {
-            try {
-                listener.notify(message);
-            } catch (error) {
-                console.error('Error notifying listener:', error);
-            }
-        } else {
-            console.warn('No listener to notify of message `' + message + '`');
-        }
     }
 
     lookup(name: string, line: number, column: number): lsp.WorkspaceSymbol | undefined {

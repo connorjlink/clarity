@@ -1,7 +1,7 @@
-import * as rpc from '../common/JSONRPC';
-import * as lsp from '../common/LSP';
-import * as doc from './LSPDocument';
-import * as cd from './CompilerDriver';
+import * as rpc from './JSONRPC';
+import * as lsp from './LSP';
+import * as doc from './LSP_document';
+import * as cd from './compiler_driver';
 
 type MethodNames = Exclude<{
     [K in keyof LanguageServer]: LanguageServer[K] extends Function ? K : never }[keyof LanguageServer],

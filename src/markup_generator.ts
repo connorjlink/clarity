@@ -1,4 +1,74 @@
-import * as sb from './SymbolDatabase';
+import * as sb from './symbol_database';
+import * as lsp from './LSP';
+
+function convertKindToClass(kind: lsp.SymbolKind): string {
+    switch (kind) {
+        case lsp.SymbolKind.File:
+        case lsp.SymbolKind.String:
+        case lsp.SymbolKind.Package:
+            return 'string';
+
+        case lsp.SymbolKind.Module:
+        case lsp.SymbolKind.Array:
+            return 'plain-text';
+
+        case lsp.SymbolKind.Namespace:
+            return 'namespace';
+
+        case lsp.SymbolKind.Class:
+        case lsp.SymbolKind.Struct:
+            return 'class-type';
+
+        case lsp.SymbolKind.Method:
+            return 'function-templated';
+
+        case lsp.SymbolKind.Property:
+        case lsp.SymbolKind.Field:
+            return 'field';
+
+        case lsp.SymbolKind.Constructor:
+            return 'function-templated';
+
+        case lsp.SymbolKind.Enum:
+        case lsp.SymbolKind.Interface:
+            return 'class-type-templated';
+
+        case lsp.SymbolKind.Function:
+            return 'function';
+
+        case lsp.SymbolKind.Variable:
+            return 'local-variable';
+
+        case lsp.SymbolKind.Constant:
+            return 'static-field';
+
+        case lsp.SymbolKind.Number:
+            return 'integer-literal';
+
+        case lsp.SymbolKind.Boolean:
+        case lsp.SymbolKind.Null:
+            return 'keyword';
+
+        case lsp.SymbolKind.Object:
+            return 'global-variable';
+
+        case lsp.SymbolKind.Key:
+        case lsp.SymbolKind.EnumMember:
+            return 'enum-member';
+
+        case lsp.SymbolKind.Event:
+            return 'static-method';
+
+        case lsp.SymbolKind.Operator:
+            return 'operator';
+
+        case lsp.SymbolKind.TypeParameter:
+            return 'template-parameter';
+
+        default:
+            return 'plain-text';
+    }
+}
 
 export class MarkupGenerator {
     private symbolDatabase: sb.SymbolDatabase;
@@ -6,21 +76,13 @@ export class MarkupGenerator {
         sourceCode: string;
         markup: string;
     };
-    private listener: any; // observable
 
-    // network connectivity--will probably change per client!
-    private host: string;
-    private port: string;
-
-    constructor(host: string, port: string, listener: any) {
+    constructor(listener: any) {
         this.symbolDatabase = new sb.SymbolDatabase();
-        this.listener = listener;
         this.previous = {
             sourceCode: '',
             markup: ''
         };
-        this.host = host;
-        this.port = port;
     }
 
     // ui connection
@@ -49,7 +111,10 @@ export class MarkupGenerator {
         // short circuits over length comparison :)
         if (this.previous.sourceCode !== sourceCode) {
             this.invalidate(sourceCode);
-            this.symbolDatabase.notifyListener(this.listener, 'markup cache invalidation completed');
+            postMessage({
+                type: 'output',
+                content: 'markup cache invalidation complete',
+            });
         }
 
         return this.previous.markup;
@@ -66,10 +131,12 @@ export class MarkupGenerator {
         if (!this.symbolDatabase.lastSynchronized || diff > 1500) {
             // throttle database updates to minimum 1.5 seconds because of compiler subprocessing overhead
             this.symbolDatabase.synchronize_from(sourceCode, this.host, this.port, this.listener);
+
         }
         this.previous.markup = this.generateMarkup(sourceCode);
     }
 
+    // TODO: analyze for and update only the changed lines
     private generateMarkup(sourceCode: string): string {
         type Token = {
             text: string;
@@ -137,7 +204,7 @@ export class MarkupGenerator {
             if (token.isSymbol) {
                 const symbol = this.symbolDatabase.lookup(token.text, token.line, token.column);
                 if (symbol) {
-                    html = `<span class="${symbol.type}">${MarkupGenerator.escapeHtml(token.text)}</span>`;
+                    html = `<span class="${convertKindToClass(symbol.kind)}">${MarkupGenerator.escapeHtml(token.text)}</span>`;
                 } else {
                     html = MarkupGenerator.escapeHtml(token.text);
                 }

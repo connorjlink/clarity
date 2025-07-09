@@ -1,4 +1,4 @@
-import * as nt from '../common/NodeTypes';
+import * as nt from './node_types';
 
 export class TransformedViewElement extends HTMLElement {
     static minScale = 0.2;

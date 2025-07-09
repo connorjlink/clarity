@@ -1,4 +1,5 @@
-import * as nt from '../common/NodeTypes';
+import * as nt from './node_types';
+import styles from './tree_node.css' with { type: 'css' };
 
 export class TreeNodeElement extends HTMLElement {
     // Observed attributes for attributeChangedCallback
@@ -234,8 +235,10 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     private render() {
-        this.innerHTML = `
-            <link rel="stylesheet" href="./TreeNode.css" />
+        if (!this.shadowRoot) {
+            return;
+        }
+        this.shadowRoot.innerHTML = `
             <div
                 id="${this._nodeId}"
                 class="node shadowed"
@@ -262,6 +265,7 @@ export class TreeNodeElement extends HTMLElement {
                 </div>
             </div>
         `;
+        this.shadowRoot.adoptedStyleSheets = [styles];
 
         this._contentRef = this.querySelector(`#${this._nodeId}`);
         this.updateTransform(this._position);

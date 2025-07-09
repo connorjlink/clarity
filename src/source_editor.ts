@@ -1,5 +1,5 @@
-import * as pt from './PieceTable';
-import * as mg from './MarkupGenerator';
+import * as pt from './piece_table';
+import styles from './source_editor.css';
 
 function getTextWithLineBreaks(element: HTMLElement): string {
     let text = '';
@@ -68,7 +68,6 @@ function setCaretPosition(element: HTMLElement, offset: number) {
 
 export class SourceEditorElement extends HTMLElement {
     private _pieceTable: pt.PieceTable;
-    private _markupGenerator?: mg.MarkupGenerator;
     private _consoleListener: any = null;
 
     private _inputRef: HTMLDivElement | null = null;
@@ -82,6 +81,7 @@ export class SourceEditorElement extends HTMLElement {
     }
 
     connectedCallback() {
+        this.attachShadow({ mode: 'open' });
         this.render();
     }
 
@@ -91,8 +91,6 @@ export class SourceEditorElement extends HTMLElement {
         this._inputRef?.addEventListener('keydown', (e) => this.handleKeyDown(e));
         if (!this._consoleListener) {
             this._consoleListener = consoleListener;
-            //this._markupGenerator = new MarkupGenerator('localhost', '8080', this._consoleListener);
-            this._markupGenerator = new mg.MarkupGenerator('localhost', '8080', null);
         }
     }
 
@@ -158,6 +156,8 @@ export class SourceEditorElement extends HTMLElement {
     private renderHighlight() {
         if (this._highlightRef) {
             const text = this._pieceTable.getText();
+
+
             const response = this._markupGenerator?.handleGenerateRequest(text);
             if (response) {
                 this._highlightRef.innerHTML = response;
@@ -173,18 +173,18 @@ export class SourceEditorElement extends HTMLElement {
     }
 
     private render() {
+        if (!this.shadowRoot) {
+            return;
+        }
         const text = this._pieceTable.getText();
-        this.innerHTML = `
-            <style>
-                
-            </style>
+        this.shadowRoot.innerHTML = `
             <div class="editor-shell">
                 <pre class="highlight-layer"></pre>
                 <div class="input-layer" contenteditable="true" spellcheck="false"></div>
             </div>
         `;
-        this._highlightRef = this.querySelector('.highlight-layer');
-        this._inputRef = this.querySelector('.input-layer');
+        this._highlightRef = this.shadowRoot.querySelector('.highlight-layer');
+        this._inputRef = this.shadowRoot.querySelector('.input-layer');
         if (this._inputRef) {
             this._inputRef.textContent = text;
             this._lastText = text;

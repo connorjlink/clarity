@@ -1,7 +1,7 @@
-import * as nt from '../common/NodeTypes';
-import * as nm from './NodeManager';
-import * as tn from './TreeNode';
-import * as tv from './TransformedView';
+import * as nt from './node_types';
+import * as nm from './node_manager';
+import * as tn from './tree_node';
+import * as tv from './transformed_view';
 
 export class ProgramTreeElement extends HTMLElement {
     static observedAttributes = [];

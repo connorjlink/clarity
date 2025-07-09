@@ -12,20 +12,18 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
+    "moduleDetection": "auto",
     "noEmit": true,
 
     /* Linting */
     "strict": true,
-    "noUnusedLocals": false,
+    "noUnusedLocals": true,
     "noUnusedParameters": false,
     "erasableSyntaxOnly": false,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
   "include": [
-    "./client/*.ts",
-    "./server/*.ts",
-    "./common/*.ts",
+    "./src/*.ts",
   ],
 }

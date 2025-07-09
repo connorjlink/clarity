@@ -1,5 +1,5 @@
-import * as lsp from '../common/LSP';
-import * as nt from '../common/NodeTypes';
+import * as lsp from './LSP';
+import * as nt from './node_types';
 
 export type HazeSymbol = {
     location: {

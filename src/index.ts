@@ -1,7 +1,7 @@
-import { OutputWindowElement } from './OutputWindow';
-import { SourceEditorElement } from './SourceEditor';
+import * as ow from './output_window';
+import * as se from './source_editor';
 
-const languageClientWorker = new Worker(new URL('./LanguageClientWorker.ts', import.meta.url), { type: 'module' });
+const languageClientWorker = new Worker(new URL('./Worker.ts', import.meta.url), { type: 'module' });
 
 languageClientWorker.onerror = (error) => {
     consoleListener.notify(`Worker error: ${error.message}`);
@@ -23,9 +23,7 @@ languageClientWorker.onmessageerror = (event) => {
     consoleListener.notify(`Message error: ${event.data}`);
 }
 
-
-
-const outputWindow = document.getElementById('output-window') as OutputWindowElement;
+const outputWindow = document.getElementById('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [
     { id: '1', text: 'Hola mundo', visible: true },
     { id: '2', text: 'Mensaje 2', visible: true }
@@ -51,6 +49,5 @@ const consoleListener = {
     }
 };
 
-const sourceEditor = document.querySelector('#main-editor') as SourceEditorElement;
+const sourceEditor = document.querySelector('#main-editor') as se.SourceEditorElement;
 sourceEditor.attachEventListeners(consoleListener);
-
