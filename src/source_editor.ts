@@ -3,7 +3,7 @@ import styles from './source_editor.css';
 
 function getTextWithLineBreaks(element: HTMLElement): string {
     let text = '';
-    // stupid
+    // stupid!
     element.childNodes.forEach((node, idx, arr) => {
         if (node.nodeType === Node.TEXT_NODE) {
             text += (node as Text).data;
@@ -11,7 +11,9 @@ function getTextWithLineBreaks(element: HTMLElement): string {
             text += '\n';
         } else if ((node as HTMLElement).tagName === 'DIV') {
             text += getTextWithLineBreaks(node as HTMLElement);
-            if (idx < arr.length - 1) text += '\n';
+            if (idx < arr.length - 1) {
+                text += '\n';
+            }
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             text += getTextWithLineBreaks(node as HTMLElement);
         }
@@ -156,8 +158,9 @@ export class SourceEditorElement extends HTMLElement {
     private renderHighlight() {
         if (this._highlightRef) {
             const text = this._pieceTable.getText();
-
-
+            // TODO: get the LanguageClient running on the "frontend" insofar as running on the main thread
+            // it should communicate with the languageserver using the message passing system and then the language server
+            // can communicate with the compiler using websockets.!
             const response = this._markupGenerator?.handleGenerateRequest(text);
             if (response) {
                 this._highlightRef.innerHTML = response;

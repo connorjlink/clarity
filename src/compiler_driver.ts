@@ -1,3 +1,4 @@
+import * as lc from './language_client';
 import * as ls from './language_server';
 import * as doc from './LSP_document';
 import * as lsp from './LSP';
@@ -8,20 +9,27 @@ export class CompilerDriver {
     private ws: WebSocket | null = null;
 
     // NOTE: parent must dynamically dependency inject!
-    private languageServer: ls.LanguageServer | null = null
+    private languageClient: lc.LanguageClient | null = null;
+    private languageServer: ls.LanguageServer | null = null;
 
-    injectLanguageServer(languageServer: ls.LanguageServer) {
+    injectDependencies(languageClient: lc.LanguageClient, languageServer: ls.LanguageServer) {
+        this.languageClient = languageClient;
         this.languageServer = languageServer;
     }
 
-    // NOTE: parent must call to register handlers with the correct WebSocket route first!
-    getHandlers() {
-        return {
-            onOpen: this.onOpen.bind(this),
-            onMessage: this.onMessage.bind(this),
-            onClose: this.onClose.bind(this),
-            onError: this.onError.bind(this),
-        };
+    constructor(host: string, port: string) {
+        this.ws = new WebSocket(`ws://${host}:${port}`);
+
+        this.ws.onopen = () => this.onOpen(this.ws!);
+        this.ws.onmessage = (event) => this.onMessage(this.ws!, event.data);
+        this.ws.onclose = () => this.onClose(this.ws!);
+        this.ws.onerror = (error) => this.onError(this.ws!, error);
+    }
+
+    /////////////////////////////////////////////////////////
+
+    send(data: any) {
+        this.ws?.send(JSON.stringify(data));
     }
 
     /////////////////////////////////////////////////////////
@@ -96,7 +104,7 @@ export class CompilerDriver {
         this.languageServer?.logMessage(`clarity compiler server socket closed`, lsp.MessageKind.Log);
     }
 
-    onError(ws: WebSocket, error: Error) {
+    onError(ws: WebSocket, error: Event) {
         this.languageServer?.logMessage(`clarity compiler server socket error: ${error}`, lsp.MessageKind.Error);
     }
 

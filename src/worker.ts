@@ -1,29 +1,35 @@
 import * as ls from './language_server';
-import * as mg from './markup_generator';
+import * as lc from './language_client';
 import * as cd from './compiler_driver';
+import * as sd from './symbol_database';
+import * as doc from './LSP_document';
 
+const HOST = 'localhost';
+const PORT = '8080';
+
+var compilerDriver = new cd.CompilerDriver(HOST, PORT);
+var symbolDatabase = new sd.SymbolDatabase();
+var documentManager = new doc.DocumentManager();
+var languageClient = new lc.LanguageClient(symbolDatabase);
 var languageServer = new ls.LanguageServer();
-var compilerDriver = new cd.CompilerDriver();
-var markupGenerator = new mg.MarkupGenerator();
+
+languageServer.injectDependencies(compilerDriver, documentManager);
+compilerDriver.injectDependencies(languageClient, languageServer);
 
 // main-thead communication
 
-onmessage = (event: MessageEvent) => {
+self.onmessage = (event: MessageEvent) => {
     const data = event.data;
 
 }
 
-onmessageerror = (event: MessageEvent) => {
+self.onmessageerror = (event: MessageEvent) => {
     console.error('Message error:', event.data);
-
 }
 
-onerror = (error: ErrorEvent) => {
-    console.error('Worker error:', error);
-
+self.onerror = (error: any) => {
+    console.error('Worker error:', error.toString());
 }
-
-
 
 /*
 

@@ -8,36 +8,6 @@ type MethodNames = Exclude<{
     'execute'
 >
 
-// the crypo API might not be available, so a random-based fallback provided for safety
-function uuidv4(): string {
-    // NOTE: the random fallback produces HORRIBLE randomness and should ideally never be used. 
-    // The chance of collision is astronomically high relative to this output size!!!
-    const getRandomValues = typeof crypto !== "undefined" && crypto.getRandomValues
-        ? crypto.getRandomValues.bind(crypto)
-        : (arr: Uint8Array) => {
-                for (let i = 0; i < arr.length; i++) {
-                    arr[i] = Math.floor(Math.random() * 256);
-                }
-                return arr;
-            };
-    
-    const bytes = getRandomValues(new Uint8Array(16));
-
-    // RFC 4122: set bits for version and "clock_seq_hi_and_reserved"
-    bytes[6] = (bytes[6] & 0x0f) | 0x40; // version ~= 4
-    bytes[8] = (bytes[8] & 0x3f) | 0x80; // variant ~= 10xxxxxx
-
-    const hex = [...bytes].map(b => b.toString(16).padStart(2, '0'));
-
-    return (
-        hex.slice(0, 4).join('') + '-' +
-        hex.slice(4, 6).join('') + '-' +
-        hex.slice(6, 8).join('') + '-' +
-        hex.slice(8, 10).join('') + '-' +
-        hex.slice(10, 16).join('')
-    );
-}
-
 function getKeywordsForLanguage(languageId: string): lsp.CompletionItem[] {
     switch (languageId) {
         // standard compiler set
@@ -491,16 +461,17 @@ function logMessage(message: string, type: lsp.MessageKindType = lsp.MessageKind
 
 export class LanguageServer {
 
-    private documentManager: doc.DocumentManager = new doc.DocumentManager();
     private hasInitialized: boolean = false;
     private hasShutdown: boolean = false;
-    private ws: WebSocket | null = null;
+    private worker: Worker | null = null;
 
     // NOTE: parent must dynamically dependency inject!
     private compilerDriver: cd.CompilerDriver | null = null;
+    private documentManager: doc.DocumentManager | null = null;
 
-    injectCompilerDriver(compilerDriver: cd.CompilerDriver) {
+    injectDependencies(compilerDriver: cd.CompilerDriver, documentManager: doc.DocumentManager) {
         this.compilerDriver = compilerDriver;
+        this.documentManager = documentManager;
     }
 
     // dynamic dispatch for onMessage callbacks
@@ -525,19 +496,19 @@ export class LanguageServer {
 
     /////////////////////////////////////////////////////////
 
-    onOpen(ws: WebSocket) {
+    onOpen(worker: Worker) {
         console.log('clarity haze language server socket opened');
-        this.ws = ws;
+        this.worker = worker;
     }
 
-    onMessage(ws: WebSocket, message: any) {
+    onMessage(worker: Worker, message: any) {
         try {
             var request: rpc.JSONRPCRequest = JSON.parse(message.toString());
 
             if (!this.hasInitialized) {
                 // the server should exlicitly error requests but ignore notifications
                 if (request.id) {
-                    ws.send(JSON.stringify(
+                    worker.postMessage(JSON.stringify(
                         rpc.createErrorResponse(
                             request.id, 
                             rpc.JSONRPC_ERRORS.SERVER_NOT_INITIALIZED.code, 
@@ -551,11 +522,11 @@ export class LanguageServer {
                 // dynamically dispatch the request handler
                 const method = request.method.replace('/', '_');
                 const key = method as MethodNames;
-                this.execute(key, ws, request);
+                this.execute(key, worker, request);
 
             } catch (error) {
                 // invalid method (or not supported by the server)
-                ws.send(JSON.stringify(
+                worker.postMessage(JSON.stringify(
                     rpc.createErrorResponse(
                         request.id || null, // null for notifications, specified Id for requests
                         rpc.JSONRPC_ERRORS.METHOD_NOT_FOUND.code, 
@@ -565,7 +536,7 @@ export class LanguageServer {
 
         } catch (error) {
             // generic JSONRPC parse error
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createErrorResponse(
                     null,  // null id for fully invalid request per JSONRPC spec
                     rpc.JSONRPC_ERRORS.PARSE_ERROR.code, 
@@ -574,19 +545,19 @@ export class LanguageServer {
         }
     }
 
-    onClose(ws: WebSocket) {
+    onClose(worker: Worker) {
         console.log('clarity haze language server socket closed');
     }
 
-    onError(ws: WebSocket, error: Error) {
+    onError(worker: Worker, error: Error) {
         console.error('clarity haze language server socket error:', error);
     }
 
     /////////////////////////////////////////////////////////
 
-    private async initialize(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private async initialize(worker: Worker, request: rpc.JSONRPCRequest) {
         // the client has initialized, now the server can register capabilities
-        ws.send(JSON.stringify(
+        worker.postMessage(JSON.stringify(
             rpc.createSuccessResponse(request.id, {
                 capabilities: {
                     textDocumentSync: lsp.TextDocumentSyncKind.Incremental,
@@ -630,33 +601,32 @@ export class LanguageServer {
             })));
     }
     
-    private async initialized(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private async initialized(worker: Worker, request: rpc.JSONRPCRequest) {
         this.hasInitialized = true;
     }
 
-    private async shutdown(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private async shutdown(worker: Worker, request: rpc.JSONRPCRequest) {
         // the client has requested a shutdown, the server should respond with success
         this.hasShutdown = true;
-        ws.send(JSON.stringify(
+        worker.postMessage(JSON.stringify(
             rpc.createSuccessResponse(request.id, null)
         ));
     }
 
-    private async exit(ws: WebSocket, request: rpc.JSONRPCRequest) {
-        ws.close();
+    private async exit(worker: Worker, request: rpc.JSONRPCRequest) {
         if (this.hasShutdown) {
             throw new Error('Exit Code 0: OK');
         }
         throw new Error('Exit Code 1: Not Shut Down');
     }
 
-    private async textDocument_definition(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_definition(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, request.id);
+            this.uriDoesNotExist(worker, uri, request.id);
             return;
         }
 
@@ -677,33 +647,33 @@ export class LanguageServer {
                 }
 
                 if (locations.length > 0) {
-                    ws.send(JSON.stringify(
+                    worker.postMessage(JSON.stringify(
                         rpc.createSuccessResponse(request.id, locations)
                     ));
                     return;
                 }
             }
             // fallack to the current symbol if no original declaration is found
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createSuccessResponse(request.id, [{
                     uri: internal.symbol.location.uri,
                     range: internal.symbol.location.range
                 }])));
         } else {
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createSuccessResponse(request.id, null)
             ));
         }
     }
 
-    public async textDocument_completion(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    public async textDocument_completion(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
         const context = request.params.context;
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, request.id);
+            this.uriDoesNotExist(worker, uri, request.id);
             return;
         }
 
@@ -711,28 +681,29 @@ export class LanguageServer {
         if (fragment) {
             const allSymbols = existingDocument.getSymbolsByNamePrefix(fragment);
             const allKeywords = getKeywordsForLanguage(existingDocument.languageId);
+            // TODO: connect with the remainder of completion list items code!!!
 
         } else {
             // no symbol found, return empty completion list
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createSuccessResponse(request.id, [])
             ));
         }
     }
 
-    private async textDocument_highlight(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_highlight(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, request.id);
+            this.uriDoesNotExist(worker, uri, request.id);
             return;
         }
 
         const internal = existingDocument.getSymbolAroundPosition(position);
         if (!internal) {
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createSuccessResponse(request.id, null)
             ));
             return;
@@ -747,25 +718,25 @@ export class LanguageServer {
             kind: s.isDeclaration ? undefined : lsp.DocumentHighlightKind.Write
         }));
 
-        ws.send(JSON.stringify(
+        worker.postMessage(JSON.stringify(
             rpc.createSuccessResponse(request.id, highlights)
         ));
     }
 
-    private async textDocument_references(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_references(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const position = request.params.position;
         const includeDeclaration = request.params.context?.includeDeclaration ?? false;
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, request.id);
+            this.uriDoesNotExist(worker, uri, request.id);
             return;
         }
 
         const internal = existingDocument.getSymbolAroundPosition(position);
         if (!internal) {
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createSuccessResponse(request.id, [])
             ));
             return;
@@ -775,7 +746,7 @@ export class LanguageServer {
         const internalSymbols = existingDocument.getSymbolsByName(internal.symbol.name);
         const filteredSymbols = internalSymbols.filter(s => includeDeclaration || !s.isDeclaration);
 
-        ws.send(JSON.stringify(
+        worker.postMessage(JSON.stringify(
             rpc.createSuccessResponse(request.id, filteredSymbols.map(s => ({
                 uri: s.symbol.location.uri,
                 range: s.symbol.location.range
@@ -783,7 +754,7 @@ export class LanguageServer {
         ));
     }
 
-    private async textDocument_didOpen(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private async textDocument_didOpen(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const languageId = request.params.textDocument.languageId;
         const version = request.params.textDocument.version;
@@ -792,7 +763,7 @@ export class LanguageServer {
         // for simplicity, the language server ONLY checks the URI and document language upon opening
 
         if (!LanguageServer.validateDocumentUri(request)) {
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createErrorResponse(
                     request.id, 
                     rpc.JSONRPC_ERRORS.INVALID_PARAMS.code, 
@@ -802,7 +773,7 @@ export class LanguageServer {
         }
 
         if (!LanguageServer.validateLanguage(languageId)) {
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createErrorResponse(
                     request.id, 
                     rpc.JSONRPC_ERRORS.INVALID_PARAMS.code, 
@@ -811,13 +782,13 @@ export class LanguageServer {
             return;
         }
 
-        let existingDocument = this.documentManager.getDocument(uri);
+        let existingDocument = this.documentManager?.getDocument(uri);
         if (existingDocument) {
             // update the existing document only if the client version is newer
             if (version > existingDocument.version) {
                 existingDocument.version = version;
                 existingDocument.lines = text.split('\n');
-                await this.requestCompleteRefresh(ws, uri, existingDocument.lines);
+                await this.requestCompleteRefresh(worker, uri, existingDocument.lines);
             }
         } else {
             // did not exist, create a new document
@@ -825,21 +796,21 @@ export class LanguageServer {
             newDocument.lines = text.split('\n');
             // clears the symbols and diagnostics to empty
             newDocument.invalidateSymbols();
-            this.documentManager.createDocument(uri, newDocument);
+            this.documentManager?.createDocument(uri, newDocument);
             existingDocument = newDocument;
-            await this.requestCompleteRefresh(ws, uri, newDocument.lines);
+            await this.requestCompleteRefresh(worker, uri, newDocument.lines);
         }
 
         // always the server's responsibility to report diagnostic data
-        this.publishDiagnostics(ws, existingDocument);
+        this.publishDiagnostics(worker, existingDocument);
     }
 
-    private textDocument_didChange(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChange(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
         const version = request.params.textDocument.version;
         const contentChanges = request.params.contentChanges;
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
             // document does not exist, cannot change it
             return;
@@ -864,27 +835,27 @@ export class LanguageServer {
         existingDocument.lines = lines;
         existingDocument.version = version;
 
-        this.requestCompleteRefresh(ws, uri, lines);
+        this.requestCompleteRefresh(worker, uri, lines);
     }
 
-    private textDocument_didClose(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didClose(worker: Worker, request: rpc.JSONRPCRequest) {
         // retains symbol and diagnostic data because the server must continue to 
         // be able to respond to symbol and diagnostic requests
         const uri = request.params.textDocument.uri;
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (existingDocument) {
             // purge document text only, will refresh upon re-open
             existingDocument.lines = [];
         }
     }
 
-    private textDocument_didSave(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didSave(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
 
         let text: string | undefined = request.params.text;
         if (text) {
             // if the text is provided, it is the complete text of the document
-            const existingDocument = this.documentManager.getDocument(uri);
+            const existingDocument = this.documentManager?.getDocument(uri);
             if (existingDocument) {
                 existingDocument.lines = text.split('\n');
             }
@@ -892,79 +863,79 @@ export class LanguageServer {
 
         // if the text is not provided, the server has to assume it has the latest version already
 
-        const existingLines = this.documentManager.getDocument(uri)?.lines;
+        const existingLines = this.documentManager?.getDocument(uri)?.lines;
         if (existingLines) {
-            this.requestCompleteRefresh(ws, uri, existingLines);
+            this.requestCompleteRefresh(worker, uri, existingLines);
         }
     }
 
-    private textDocument_didChangeConfiguration(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChangeConfiguration(worker: Worker, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
         this.sendMessageToClient(
-            ws, 
+            worker, 
             'The client configuration has changed on disk. Please reload the editor to apply the new settings.', 
             lsp.MessageKind.Info);
     }
 
-    private textDocument_didChangeWatchedFiles(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_didChangeWatchedFiles(worker: Worker, request: rpc.JSONRPCRequest) {
         // this should never arise in the Web context, but provide a meaningful error anyway
         this.sendMessageToClient(
-            ws, 
+            worker, 
             'One or more workspace files has been changed on disk. Please reload the document to prevent a loss of data.', 
             lsp.MessageKind.Info);
     }
 
-    private textDocument_hover(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_hover(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument;
         const position = request.params.position;
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, request.id);
+            this.uriDoesNotExist(worker, uri, request.id);
             return;
         }
 
         const hoveredInternal = existingDocument.getSymbolAroundPosition(position);
         if (hoveredInternal) {
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createSuccessResponse(request.id, {
                     contents: hoveredInternal.symbol.name,
                     range: hoveredInternal.symbol.location.range
                 })
             ));
         } else {
-            ws.send(JSON.stringify(
+            worker.postMessage(JSON.stringify(
                 rpc.createSuccessResponse(request.id, null)
             ));
         }
     }
 
     // NOTE: NOT SUPPORTING PULL DIAGNOSTICS. RELY ON textDocument/publishDiagnostics INSTEAD.
-    //private textDocument_diagnostic(ws: ws.WebSocket, request: rpc.JSONRPCRequest);
+    //private textDocument_diagnostic(worker: Worker, request: rpc.JSONRPCRequest);
 
     /** Document-specific symbol search. Requires valid document identification. */
-    private textDocument_documentSymbol(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private textDocument_documentSymbol(worker: Worker, request: rpc.JSONRPCRequest) {
         const uri = request.params.textDocument.uri;
 
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, request.id);
+            this.uriDoesNotExist(worker, uri, request.id);
             return;
         }
 
         const symbols = existingDocument?.getAllSymbols();
 
-        ws.send(JSON.stringify(
+        worker.postMessage(JSON.stringify(
             rpc.createSuccessResponse(request.id, symbols)
         ));
     }
 
     /** Project-wide symbol search. Does not require a specific document URI. */
-    private workspace_symbol(ws: WebSocket, request: rpc.JSONRPCRequest) {
+    private workspace_symbol(worker: Worker, request: rpc.JSONRPCRequest) {
         const query = request.params.query;
         const queryResult: lsp.WorkspaceSymbol[] = [];
         
-        for (const [uri, doc] of this.documentManager.zipAllDocuments()) {
+        for (const [uri, doc] of this.documentManager?.zipAllDocuments() || []) {
             for (const internal of doc.getAllSymbols()) {
                 // empty == every symbol, otherwise LIKE (case-sensitive)
                 if (query === "" || internal.symbol.name.includes(query)) {
@@ -973,7 +944,7 @@ export class LanguageServer {
             }
         }
     
-        ws.send(JSON.stringify(
+        worker.postMessage(JSON.stringify(
             rpc.createSuccessResponse(request.id, queryResult)
         ));
     }
@@ -981,22 +952,22 @@ export class LanguageServer {
     /////////////////////////////////////////////////////////
     
     /** Push complete document-wide diagnostic data to the connected client. Does not support pull-mode diagnostics. */
-    private publishDiagnostics(ws: WebSocket, document: doc.LSPDocument) {
-        ws.send(JSON.stringify(
+    private publishDiagnostics(worker: Worker, document: doc.LSPDocument) {
+        worker.postMessage(JSON.stringify(
             rpc.createRequest("textDocument/publishDiagnostics", {
                 uri: document.uri,
                 version: document.version,
                 // will automatically apply editor deltas to show relevant positioning
                 diagnostics: document.getDiagnostics() || []
-            }, uuidv4())));
+            }, crypto.randomUUID())));
     }
 
     /** Enqueue a new document diagnostic for recording. Does not send the information to the client */
     dispatchDiagnostic(uri: string, diagnostic: lsp.Diagnostic) {
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            if (this.ws) {
-                this.uriDoesNotExist(this.ws, uri);
+            if (this.worker) {
+                this.uriDoesNotExist(this.worker, uri);
             }
             return;
         }
@@ -1007,10 +978,10 @@ export class LanguageServer {
 
     /** Enqueue a new document symbol for processing. Handles translating and tracking the new symbol */
     dispatchSymbol(uri: string, symbol: doc.HazeSymbol) {
-        const existingDocument = this.documentManager.getDocument(uri);
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            if (this.ws) {
-                this.uriDoesNotExist(this.ws, uri);
+            if (this.worker) {
+                this.uriDoesNotExist(this.worker, uri);
             }
             return;
         }
@@ -1021,18 +992,18 @@ export class LanguageServer {
 
     /** Record a new message string with the specified kind. Logs on both the client and server side. */
     logMessage(message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
-        if (this.ws) {
-            this.sendLogToClient(this.ws, message, kind);
+        if (this.worker) {
+            this.sendLogToClient(this.worker, message, kind);
         } 
         // dispatches the corresponding print type
         logMessage(message, kind);
     }
 
     /** Request a full re-compile of the current document [set]. */
-    private async requestCompleteRefresh(ws: WebSocket, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
-        const existingDocument = this.documentManager.getDocument(uri);
+    private async requestCompleteRefresh(worker: Worker, uri: string, linesOptional?: string[], requestId?: rpc.JSONRPCID) {
+        const existingDocument = this.documentManager?.getDocument(uri);
         if (!existingDocument) {
-            this.uriDoesNotExist(ws, uri, requestId);
+            this.uriDoesNotExist(worker, uri, requestId);
             return;
         }
         
@@ -1041,31 +1012,31 @@ export class LanguageServer {
 
         await this.compilerDriver?.requestCompile(lines);
         // NOTE: diagnostics will only refresh as often as the document fully recompiles
-        this.publishDiagnostics(ws, existingDocument);
+        this.publishDiagnostics(worker, existingDocument);
     }
     
     /** Send a message of specified kind and text to the connected client. */
-    private sendMessageToClient(ws: WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Info) {
-        ws.send(JSON.stringify(
+    private sendMessageToClient(worker: Worker, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Info) {
+        worker.postMessage(JSON.stringify(
             rpc.createRequest("window/showMessage", {
                 type: kind,
                 message: message
                 // not support action items for now
-            }, uuidv4())));
+            }, crypto.randomUUID())));
     }
 
     /** Send an invisible text message to the connected client for logging. */
-    private sendLogToClient(ws: WebSocket, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
-        ws.send(JSON.stringify(
+    private sendLogToClient(worker: Worker, message: string, kind: lsp.MessageKindType = lsp.MessageKind.Log) {
+        worker.postMessage(JSON.stringify(
             rpc.createRequest("window/logMessage", {
                 type: kind,
                 message: message
-            }, uuidv4())));
+            }, crypto.randomUUID())));
     }
 
     /** Error-notify the connected client that the server has no active information about a specified document. */
-    private uriDoesNotExist(ws: WebSocket, uri: string, requestId?: rpc.JSONRPCID) {
-        ws.send(JSON.stringify(
+    private uriDoesNotExist(worker: Worker, uri: string, requestId?: rpc.JSONRPCID) {
+        worker.postMessage(JSON.stringify(
             rpc.createErrorResponse(
                 requestId || null,
                 rpc.JSONRPC_ERRORS.INVALID_PARAMS.code, 

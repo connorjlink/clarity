@@ -1,5 +1,8 @@
-import * as sb from './symbol_database';
 import * as lsp from './LSP';
+import * as rpc from './JSONRPC';
+import * as ls from './language_server';
+import * as sb from './symbol_database';
+import * as cd from './compiler_driver';
 
 function convertKindToClass(kind: lsp.SymbolKind): string {
     switch (kind) {
@@ -70,15 +73,19 @@ function convertKindToClass(kind: lsp.SymbolKind): string {
     }
 }
 
-export class MarkupGenerator {
-    private symbolDatabase: sb.SymbolDatabase;
+
+
+export class LanguageClient {
+
+    private database: sb.SymbolDatabase;
+    private languageServer: ls.LanguageServer;
     private previous: {
         sourceCode: string;
         markup: string;
     };
 
-    constructor(listener: any) {
-        this.symbolDatabase = new sb.SymbolDatabase();
+    constructor(database: sb.SymbolDatabase) {
+        this.database = database;
         this.previous = {
             sourceCode: '',
             markup: ''
@@ -107,11 +114,12 @@ export class MarkupGenerator {
         document.body.removeChild(fileInput);
     }
 
-    public handleGenerateRequest(sourceCode: string): string {
+    public handleGenerateRequest(sourceCode: string, ): string {
         // short circuits over length comparison :)
         if (this.previous.sourceCode !== sourceCode) {
             this.invalidate(sourceCode);
             postMessage({
+                destination: 'client',
                 type: 'output',
                 content: 'markup cache invalidation complete',
             });
@@ -124,14 +132,54 @@ export class MarkupGenerator {
         this.invalidate(this.previous.sourceCode);
     }
 
-    private invalidate(sourceCode: string): void {
+    private invalidate(sourceCode: string, fullRefresh: boolean): void {
         this.previous.sourceCode = sourceCode;
         const now = new Date();
-        const diff = this.symbolDatabase.lastSynchronized ? now.getTime() - this.symbolDatabase.lastSynchronized.getTime() : 0;
-        if (!this.symbolDatabase.lastSynchronized || diff > 1500) {
-            // throttle database updates to minimum 1.5 seconds because of compiler subprocessing overhead
-            this.symbolDatabase.synchronize_from(sourceCode, this.host, this.port, this.listener);
+        const delta = this.database.lastSynchronized ? now.getTime() - this.database.lastSynchronized.getTime() : 0;
+        if (!this.database.lastSynchronized || delta > 1500) {
+            // throttle database updates to minimum 1.5 seconds because of compiler overhead
+            postMessage({
+                destination: 'client',
+                type: 'output',
+                content: `synchronizing symbol database... (${delta}ms since last refresh)`
+            });
 
+            // invalidate all of the source code and invoke the compiler for a complete re-processing
+            if (fullRefresh) {
+                postMessage({
+                    destination: 'server',
+                    type: 'request',
+                    content: rpc.createRequest(
+                        'textDocument/didSave', 
+                        {
+                            textDocument: {
+                                uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
+                            },
+                            text: sourceCode,
+                        },
+                        crypto.randomUUID()
+                    ) 
+                });
+
+            // post an incremental update; the language server will compute deltas and only call the compiler as necessary
+            } else {
+                postMessage({
+                    destination: 'server',
+                    type: 'request',
+                    content: rpc.createRequest(
+                        'textDocument/didChange', 
+                        {
+                            textDocument: {
+                                uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
+                                version: 1 // TODO: increment this properly 
+                            }
+                        },
+                        crypto.randomUUID()
+                    )
+                });
+
+                this.languageServer.documentManager.getDocument()
+            }
         }
         this.previous.markup = this.generateMarkup(sourceCode);
     }
@@ -204,12 +252,12 @@ export class MarkupGenerator {
             if (token.isSymbol) {
                 const symbol = this.symbolDatabase.lookup(token.text, token.line, token.column);
                 if (symbol) {
-                    html = `<span class="${convertKindToClass(symbol.kind)}">${MarkupGenerator.escapeHtml(token.text)}</span>`;
+                    html = `<span class="${convertKindToClass(symbol.kind)}">${LanguageClient.escapeHtml(token.text)}</span>`;
                 } else {
-                    html = MarkupGenerator.escapeHtml(token.text);
+                    html = LanguageClient.escapeHtml(token.text);
                 }
             } else {
-                html = MarkupGenerator.escapeHtml(token.text);
+                html = LanguageClient.escapeHtml(token.text);
             }
 
             // split across newlines if necessary to avoid rendering issues
@@ -228,7 +276,7 @@ export class MarkupGenerator {
             .map((line, i) => `<code id="line${i}">${line}</code>`)
             .join('');
 
-        return MarkupGenerator.formatMarkup(formatted);
+        return LanguageClient.formatMarkup(formatted);
     }
 
     private static formatMarkup(sourceMarkup: string): string {
