@@ -91,8 +91,10 @@ export class LanguageClient {
     // map document URI -> real EditorDocument references
     private documents: Map<string, EditorDocument> = new Map<string, EditorDocument>();
 
-    // map request ID -> promise resolution function
-    private promises: Map<string, (value: any) => void> = new Map<string, (value: any) => void>();
+    // map request ID -> promise resolution function (timeout in milliseconds)
+    private promises: Map<string, { resolve: (value: any) => void, reject: (reason?: any) => void, timeout: number }> = new Map();
+
+    private static readonly REQUEST_TIMEOUT: number = 5000;
 
     private database: sb.SymbolDatabase;
     private server: Worker;
@@ -200,7 +202,53 @@ export class LanguageClient {
                 }
             }
         ));
+
+        this.server.onmessage = this.onMessage.bind(this);
+        this.server.onerror = this.onError.bind(this);
+        this.server.onmessageerror = this.onMessageError.bind(this);
     }
+
+    /////////////////////////////////////////////////////////
+
+    private onMessage(event: MessageEvent): void {
+        const data = event.data as rpc.JSONRPCResponse;
+        // handle JSON-RPC messages
+        if (data.jsonrpc === '2.0') {
+            if (data.error) {
+                postMessage({
+                    type: 'error',
+                    message: `language server error: ${data.error.message} (code: ${data.error.code})`
+                });
+                return;
+        
+            } // otherwise okay
+            else {
+
+            }
+        }
+
+        // invalid JSONRPC message format from server
+        postMessage({
+            type: 'error',
+            message: `language client error: invalid server response`,
+        });
+    }
+
+    private onError(event: ErrorEvent): void {
+        postMessage({
+            type: 'error',
+            message: `language server error: ${event.message}`
+        });
+    }
+
+    private onMessageError(event: MessageEvent): void {
+        postMessage({
+            type: 'error',
+            message: `language server message error: ${event.data}`
+        });
+    }
+
+    /////////////////////////////////////////////////////////
 
     // ui connection
     public async requestFileDialog(targetElement: HTMLElement): Promise<void> {
@@ -226,9 +274,10 @@ export class LanguageClient {
 
     private async openDocument(uri: string, languageId: string = 'haze', sourceCode: string): Promise<void> {
         // open a document in the language server
-        postMessage(
-            `initializing document "${uri}"...`
-        );
+        postMessage({
+            type: 'log',
+            message: `initializing document "${uri}"...`,
+        });
         const newDocument: EditorDocument = {
             uri,
             languageId,
@@ -247,11 +296,12 @@ export class LanguageClient {
         this.documents.set(uri, newDocument);
     }
 
-    private async closeDocument(uri: string): Promise<void> {
+    private closeDocument(uri: string): void {
         // close a document in the language server
-        postMessage(
-            `closing document "${uri}"...`
-        );
+        postMessage({
+            type: 'log',
+            message: `closing document "${uri}"...`
+        });
         this.server.postMessage(rpc.createRequest(
             'textDocument/didClose', {
                 textDocument: {
@@ -260,18 +310,35 @@ export class LanguageClient {
             },
             null, // notification
         ));
+        // remove the document from the client. can discard return value
+        this.documents.delete(uri);
     }
 
-    private async composite(deltas: EditorDelta[]): Promise<void> {
+    // NOTE: the client will also have to call for a symbol request after this is sent!
+    private async recycle(uri: string, deltas: EditorDelta[]): Promise<void> {
         const now = new Date();
         const delta = this.database.lastRecycled ? now.getTime() - this.database.lastRecycled.getTime() : 0;
-        // throttle database updates to minimum 1.5 seconds because of compiler overhead
         if (!this.database.lastRecycled || delta > 1500) {
-            postMessage(
-                `synchronizing symbol database... (${delta}ms since last recycle)`
-            );
+            postMessage({
+                type: 'log',
+                message: `synchronizing symbol database... (${delta}ms since last recycle)`
+            });
 
-            // post an incremental update; the language server will compute deltas and only call the compiler as necessary
+            const requestId = crypto.randomUUID();
+            const promise = new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    this.promises.delete(requestId);
+                    postMessage({
+                        type: 'error',
+                        message: `Timeout waiting for recycle response`
+                    });
+                    reject(new Error('Timeout waiting for recycle response'));
+                }, LanguageClient.REQUEST_TIMEOUT);
+                this.promises.set(requestId, { resolve, reject, timeout });
+            });
+
+            const existingDocument = this.documents.get()
+
             this.server.postMessage(rpc.createRequest(
                 'textDocument/didChange', {
                     textDocument: {
@@ -280,11 +347,11 @@ export class LanguageClient {
                     },
                     contentChanges: deltas
                 },
-                null, // notification
+                requestId
             ));
+
+            await promise; // Espera la respuesta o timeout
         }
-        
-        this.previous.markup = this.generateMarkup(sourceCode);
     }
 
     private async invalidate(sourceCode: string): Promise<void> {
@@ -292,24 +359,34 @@ export class LanguageClient {
         const delta = this.database.lastSynchronized ? now.getTime() - this.database.lastSynchronized.getTime() : 0;
         const requestId = crypto.randomUUID();
         if (!this.database.lastSynchronized || delta > 1500) {
-            // throttle database updates to minimum 1.5 seconds because of compiler overhead
             postMessage(
                 `synchronizing symbol database... (${delta}ms since last refresh)`
             );
 
-            // invalidate all of the source code and invoke the compiler for a complete re-processing
-            postMessage(rpc.createRequest(
-                    'textDocument/didSave', {
-                        textDocument: {
-                            uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
-                        },
-                        text: sourceCode,
-                    },
-                    requestId,
-                ));
-        }
+            const promise = new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    this.promises.delete(requestId);
+                    postMessage({
+                        type: 'error',
+                        message: `Timeout waiting for invalidate response`
+                    });
+                    reject(new Error('Timeout waiting for invalidate response'));
+                }, 5000);
+                this.promises.set(requestId, { resolve, reject, timeout });
+            });
 
-        this.previous.markup = this.generateMarkup(sourceCode);
+            this.server.postMessage(rpc.createRequest(
+                'textDocument/didSave', {
+                    textDocument: {
+                        uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
+                    },
+                    text: sourceCode,
+                },
+                requestId,
+            ));
+
+            await promise; // Espera la respuesta o timeout
+        }
     }
 
     // TODO: analyze for and update only the changed lines
