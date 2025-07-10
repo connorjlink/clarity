@@ -2,7 +2,6 @@ import * as lsp from './LSP';
 import * as rpc from './JSONRPC';
 import * as ls from './language_server';
 import * as sb from './symbol_database';
-import * as cd from './compiler_driver';
 
 function convertKindToClass(kind: lsp.SymbolKind): string {
     switch (kind) {
@@ -73,27 +72,138 @@ function convertKindToClass(kind: lsp.SymbolKind): string {
     }
 }
 
+export type EditorDelta = {
+    range: lsp.Range;
+    rangeLength?: lsp.uinteger; // DEPRECATED, DO NOT USE!!!
+    text: string; // new text to insert
+}
 
+export type EditorDocument = {
+    uri: string;
+    languageId: string;
+    version: lsp.uinteger;
+    sourceCode: string; // contents the last time the document was entirely refreshed/synchronized
+    deltas: EditorDelta[]; // incremental changes to the document
+}
 
 export class LanguageClient {
 
-    private database: sb.SymbolDatabase;
-    private languageServer: ls.LanguageServer;
-    private previous: {
-        sourceCode: string;
-        markup: string;
-    };
+    // map document URI -> real EditorDocument references
+    private documents: Map<string, EditorDocument> = new Map<string, EditorDocument>();
 
-    constructor(database: sb.SymbolDatabase) {
+    // map request ID -> promise resolution function
+    private promises: Map<string, (value: any) => void> = new Map<string, (value: any) => void>();
+
+    private database: sb.SymbolDatabase;
+    private server: Worker;
+
+    constructor(database: sb.SymbolDatabase, server: Worker) {
         this.database = database;
-        this.previous = {
-            sourceCode: '',
-            markup: ''
-        };
+
+        this.server = server;
+        this.server.postMessage(rpc.createRequest(
+            'initialize', {
+                processId: null, 
+                clientInfo: {
+                    name: 'clarity',
+                },
+                capabilities: {
+                    textDocument: {
+                        synchronization: {
+                            dynamicRegistration: false,
+                            willSave: false,
+                            willSaveWaitUntil: false,
+                            didSave: true
+                        },
+                        definition: {
+                            dynamicRegistration: false
+                        },
+                        typeDefinition: {
+                            dynamicRegistration: false
+                        },
+                        hover: {
+                            dynamicRegistration: false,
+                            contentFormat: ["plaintext", "markdown"]
+                        },
+                        completion: {
+                            dynamicRegistration: false,
+                            completionItem: {
+                                snippetSupport: true,
+                                commitCharactersSupport: true,
+                                documentationFormat: ["plaintext", "markdown"],
+                                deprecatedSupport: true,
+                                preselectSupport: true,
+                                insertReplaceSupport: true,
+                                resolveSupport: {
+                                    properties: ["documentation", "detail", "additionalTextEdits"]
+                                }
+                            },
+                            contextSupport: true,
+                            completionItemKind: {
+                                valueSet: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+                            },
+                            triggerCharacters: [".", "(", "[", "{"]
+                        },
+                        documentSymbol: {
+                            dynamicRegistration: false,
+                            symbolKind: {
+                                "valueSet": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+                            }
+                        },
+                        documentHighlight: {
+                            "dynamicRegistration": false
+                        },
+                        references: {
+                            "dynamicRegistration": false
+                        },
+                        semanticTokens: {
+                            dynamicRegistration: false,
+                            requests: {
+                                "range": false,
+                                "full": true
+                            },
+                            tokenTypes: [
+                                "file", "module", "namespace", "package",
+                                "class", "method", "property", "field", "constructor",
+                                "enum", "interface", "function", "variable",
+                                "constant", "string", "number", "boolean",
+                                "array", "object", "key", "null", "enumMember",
+                                "struct", "event", "operator", "typeParameter"
+                            ],
+                            tokenModifiers: [
+                                "signed", "unsigned", "mutable", "immutable", 
+                                "value", "ptr", "nvr", "struct", "string",
+                                "qword", "dword", "word", "byte"
+                            ]
+                        }
+                    },
+                    workspace: {
+                        workspaceFolders: true,
+                        symbol: {
+                            dynamicRegistration: false
+                        },
+                        didChangeConfiguration: {
+                            dynamicRegistration: false
+                        },
+                        didChangeWatchedFiles: {
+                            dynamicRegistration: false
+                        }
+                    },
+                    window: {
+                        showMessage: {
+                            messageActionItem: {
+                                additionalPropertiesSupport: false
+                            }
+                        },
+                        logMessage: {}
+                    }
+                }
+            }
+        ));
     }
 
     // ui connection
-    public requestFileDialog(targetElement: HTMLElement): void {
+    public async requestFileDialog(targetElement: HTMLElement): Promise<void> {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = '.hz';
@@ -104,7 +214,7 @@ export class LanguageClient {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const content = e.target?.result as string;
-                    targetElement.innerHTML = this.handleGenerateRequest(content);
+                    targetElement.innerHTML = await this.handleGenerateRequest(content);
                 };
                 reader.readAsText(files[0]);
             }
@@ -114,73 +224,91 @@ export class LanguageClient {
         document.body.removeChild(fileInput);
     }
 
-    public handleGenerateRequest(sourceCode: string, ): string {
-        // short circuits over length comparison :)
-        if (this.previous.sourceCode !== sourceCode) {
-            this.invalidate(sourceCode);
-            postMessage({
-                destination: 'client',
-                type: 'output',
-                content: 'markup cache invalidation complete',
-            });
-        }
-
-        return this.previous.markup;
+    private async openDocument(uri: string, languageId: string = 'haze', sourceCode: string): Promise<void> {
+        // open a document in the language server
+        postMessage(
+            `initializing document "${uri}"...`
+        );
+        const newDocument: EditorDocument = {
+            uri,
+            languageId,
+            version: 1, // all begins here. each letter typed will increment this
+            sourceCode: sourceCode,
+            deltas: []
+        };
+        this.server.postMessage(rpc.createRequest(
+            'textDocument/didOpen', {
+                textDocument: newDocument,
+            },
+            null, // notification
+        ));
+        // could overwrite an existing document. if it does, however, the server has no way to handle this,
+        // so the client will just treat it as the users fault for opening a dupliate and proceed anyway.
+        this.documents.set(uri, newDocument);
     }
 
-    public refresh(): void {
-        this.invalidate(this.previous.sourceCode);
+    private async closeDocument(uri: string): Promise<void> {
+        // close a document in the language server
+        postMessage(
+            `closing document "${uri}"...`
+        );
+        this.server.postMessage(rpc.createRequest(
+            'textDocument/didClose', {
+                textDocument: {
+                    uri: uri,
+                },
+            },
+            null, // notification
+        ));
     }
 
-    private invalidate(sourceCode: string, fullRefresh: boolean): void {
-        this.previous.sourceCode = sourceCode;
+    private async composite(deltas: EditorDelta[]): Promise<void> {
         const now = new Date();
-        const delta = this.database.lastSynchronized ? now.getTime() - this.database.lastSynchronized.getTime() : 0;
-        if (!this.database.lastSynchronized || delta > 1500) {
-            // throttle database updates to minimum 1.5 seconds because of compiler overhead
-            postMessage({
-                destination: 'client',
-                type: 'output',
-                content: `synchronizing symbol database... (${delta}ms since last refresh)`
-            });
-
-            // invalidate all of the source code and invoke the compiler for a complete re-processing
-            if (fullRefresh) {
-                postMessage({
-                    destination: 'server',
-                    type: 'request',
-                    content: rpc.createRequest(
-                        'textDocument/didSave', 
-                        {
-                            textDocument: {
-                                uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
-                            },
-                            text: sourceCode,
-                        },
-                        crypto.randomUUID()
-                    ) 
-                });
+        const delta = this.database.lastRecycled ? now.getTime() - this.database.lastRecycled.getTime() : 0;
+        // throttle database updates to minimum 1.5 seconds because of compiler overhead
+        if (!this.database.lastRecycled || delta > 1500) {
+            postMessage(
+                `synchronizing symbol database... (${delta}ms since last recycle)`
+            );
 
             // post an incremental update; the language server will compute deltas and only call the compiler as necessary
-            } else {
-                postMessage({
-                    destination: 'server',
-                    type: 'request',
-                    content: rpc.createRequest(
-                        'textDocument/didChange', 
-                        {
-                            textDocument: {
-                                uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
-                                version: 1 // TODO: increment this properly 
-                            }
-                        },
-                        crypto.randomUUID()
-                    )
-                });
-
-                this.languageServer.documentManager.getDocument()
-            }
+            this.server.postMessage(rpc.createRequest(
+                'textDocument/didChange', {
+                    textDocument: {
+                        uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
+                        version: 1 // TODO: increment this properly 
+                    },
+                    contentChanges: deltas
+                },
+                null, // notification
+            ));
         }
+        
+        this.previous.markup = this.generateMarkup(sourceCode);
+    }
+
+    private async invalidate(sourceCode: string): Promise<void> {
+        const now = new Date();
+        const delta = this.database.lastSynchronized ? now.getTime() - this.database.lastSynchronized.getTime() : 0;
+        const requestId = crypto.randomUUID();
+        if (!this.database.lastSynchronized || delta > 1500) {
+            // throttle database updates to minimum 1.5 seconds because of compiler overhead
+            postMessage(
+                `synchronizing symbol database... (${delta}ms since last refresh)`
+            );
+
+            // invalidate all of the source code and invoke the compiler for a complete re-processing
+            postMessage(rpc.createRequest(
+                    'textDocument/didSave', {
+                        textDocument: {
+                            uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
+                        },
+                        text: sourceCode,
+                    },
+                    requestId,
+                ));
+        }
+
         this.previous.markup = this.generateMarkup(sourceCode);
     }
 
@@ -250,7 +378,7 @@ export class LanguageClient {
         for (const token of tokens) {
             let html = '';
             if (token.isSymbol) {
-                const symbol = this.symbolDatabase.lookup(token.text, token.line, token.column);
+                const symbol = this.database.lookup(token.text, token.line, token.column);
                 if (symbol) {
                     html = `<span class="${convertKindToClass(symbol.kind)}">${LanguageClient.escapeHtml(token.text)}</span>`;
                 } else {

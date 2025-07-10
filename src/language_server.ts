@@ -1056,9 +1056,12 @@ export class LanguageServer {
         if (!uri || typeof uri !== 'string') {
             return false;
         }
-        if (!uri.startsWith('file://')) {
-            return false;
-        }
+        // NOTE: since the web language server client does not access the file system, it makes more sense to just
+        // pass whatever the user has named each document as the URI rather than faking a resource. Thus the file://
+        // checks would fail. Commenting this check out for now.
+        //if (!uri.startsWith('file://')) {
+        //    return false;
+        //}
         return true;
     }    
 }

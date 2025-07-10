@@ -46,7 +46,9 @@ function setCaretPosition(element: HTMLElement, offset: number) {
 
     while (nodeStack.length && !found) {
         node = nodeStack.pop();
-        if (!node) break;
+        if (!node) {
+            break;
+        }
         if (node.nodeType === Node.TEXT_NODE) {
             const textLength = (node as Text).length;
             if (currentOffset + textLength >= offset) {

@@ -40,6 +40,7 @@ type InternalStatistic = {
     elapsedTime: TaskTime[];
 }
 
+// TODO: finish the statistics structure and parsing
 export type HazeStatistic = {
     stage: string; 
     filepath: string;
@@ -49,8 +50,6 @@ export type HazeStatistic = {
         internal: InternalStatistic | undefined;
 
     }
-
-    
 }
 
 type EditDelta = {

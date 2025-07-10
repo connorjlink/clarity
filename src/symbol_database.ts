@@ -13,6 +13,7 @@ export class SymbolDatabase {
     private symbols: Map<string, lsp.WorkspaceSymbol>;
 
     public lastSynchronized: Date | null = null;
+    public lastRecycled: Date | null = null;
     
     constructor() {
         this.symbols = new Map<string, lsp.WorkspaceSymbol>();
