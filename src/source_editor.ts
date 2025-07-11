@@ -1,5 +1,4 @@
 import * as pt from './piece_table';
-import styles from './source_editor.css';
 
 function getTextWithLineBreaks(element: HTMLElement): string {
     let text = '';
@@ -77,7 +76,9 @@ export class SourceEditorElement extends HTMLElement {
     private _inputRef: HTMLDivElement | null = null;
     private _highlightRef: HTMLPreElement | null = null;
 
+    private _sourceUri: string = '';
     private _lastText: string = '';
+    private _clientPort: MessagePort | null = null;
 
     constructor() {
         super();
@@ -89,12 +90,40 @@ export class SourceEditorElement extends HTMLElement {
         this.render();
     }
 
-    attachEventListeners(consoleListener?: any) {
+    attachEventListeners(uri: string, consoleListener?: any, clientPort?: MessagePort) {
         this._inputRef?.addEventListener('input', (e) => this.handleInputChange(e));
         this._inputRef?.addEventListener('scroll', () => this.syncScroll());
         this._inputRef?.addEventListener('keydown', (e) => this.handleKeyDown(e));
         if (!this._consoleListener) {
             this._consoleListener = consoleListener;
+        }
+        if (clientPort) {
+            // TODO: probably fix this? not sure if this is the proper way to handle the onmessage? is it already set somewhere else?
+            this._clientPort = clientPort;
+            this._clientPort.onmessage = (e) => {
+                if (e.data.type === 'log') {
+                    this._consoleListener?.notify(e.data.message);
+                } else if (e.data.type === 'error') {
+                    this._consoleListener?.notify(`Error: ${e.data.message}`);
+                } else if (e.data.type === 'compileResult') {
+                    // Handle compile result
+                    this._consoleListener?.notify(`Compile result: ${JSON.stringify(e.data.result)}`);
+                }
+            };
+            this._clientPort.onmessageerror = (e) => {
+                this._consoleListener?.notify(`Worker error: ${e.data}`);
+            };
+
+            this._sourceUri = uri;
+            // NOTE: see LanguageClient.openDocument active reflection target
+            this._clientPort.postMessage({
+                type: 'execute',
+                method: 'openDocument',
+                params: {
+                    uri: this._sourceUri,
+                    sourceCode: this._pieceTable.getText(),
+                }
+            });
         }
     }
 
@@ -160,10 +189,9 @@ export class SourceEditorElement extends HTMLElement {
     private renderHighlight() {
         if (this._highlightRef) {
             const text = this._pieceTable.getText();
-            // TODO: get the LanguageClient running on the "frontend" insofar as running on the main thread
-            // it should communicate with the languageserver using the message passing system and then the language server
-            // can communicate with the compiler using websockets.!
-            const response = this._markupGenerator?.handleGenerateRequest(text);
+            // TODO: get the editor deltas system working to send to the language client worker
+            const response = this._clientPort?.postMessage
+            handleGenerateRequest(text);
             if (response) {
                 this._highlightRef.innerHTML = response;
             }
@@ -182,7 +210,10 @@ export class SourceEditorElement extends HTMLElement {
             return;
         }
         const text = this._pieceTable.getText();
+        // TODO: fix the source_editor stylesheet because this might require the browser to reload the file. possible
+        // async load from disk and the use a constructible stylesheet to eagerly load the stylesheet upon startup?
         this.shadowRoot.innerHTML = `
+            <link rel="stylesheet" href="./source_editor.css">
             <div class="editor-shell">
                 <pre class="highlight-layer"></pre>
                 <div class="input-layer" contenteditable="true" spellcheck="false"></div>

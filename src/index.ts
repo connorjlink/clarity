@@ -8,7 +8,6 @@ outputWindow.messages = [
 ];
 outputWindow.visible = true;
 
-
 var fadeTimeout: any;
 const showConsole = () => {
     outputWindow.visible = true;
@@ -32,11 +31,15 @@ sourceEditor.attachEventListeners(consoleListener);
 
 /////////////////////////////////////////////////////////
 
-const languageClientWorker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+const languageServerWorker = new Worker(new URL('./language_server_worker.ts', import.meta.url), { type: 'module' });
+const languageClientWorker = new Worker(new URL('./language_client_worker.ts', import.meta.url), { type: 'module' });
 
-languageClientWorker.onerror = (error) => {
-    consoleListener.notify(`Worker error: ${error.message}`);
-}
+const channel = new MessageChannel();
+
+// Identify a message port over which to pass messages. This can be slow, which is why each component runs in its own worker.
+languageServerWorker.postMessage({ type: 'connect', port: channel.port1 }, [channel.port1]);
+languageClientWorker.postMessage({ type: 'connect', port: channel.port2 }, [channel.port2]);
+
 
 languageClientWorker.onmessage = (event) => {
     const data = event.data;
@@ -50,6 +53,10 @@ languageClientWorker.onmessage = (event) => {
     }
 };
 
+languageClientWorker.onerror = (error) => {
+    consoleListener.notify(`Worker error: ${error.message}`);
+};
+
 languageClientWorker.onmessageerror = (event) => {
     consoleListener.notify(`Message error: ${event.data}`);
-}
+};

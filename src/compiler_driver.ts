@@ -1,4 +1,3 @@
-import * as lc from './language_client';
 import * as ls from './language_server';
 import * as doc from './LSP_document';
 import * as lsp from './LSP';
@@ -9,11 +8,9 @@ export class CompilerDriver {
     private ws: WebSocket | null = null;
 
     // NOTE: parent must dynamically dependency inject!
-    private languageClient: lc.LanguageClient | null = null;
     private languageServer: ls.LanguageServer | null = null;
 
-    injectDependencies(languageClient: lc.LanguageClient, languageServer: ls.LanguageServer) {
-        this.languageClient = languageClient;
+    injectDependencies(languageServer: ls.LanguageServer) {
         this.languageServer = languageServer;
     }
 

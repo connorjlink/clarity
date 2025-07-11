@@ -72,6 +72,21 @@ function convertKindToClass(kind: lsp.SymbolKind): string {
     }
 }
 
+function convertExtensionToLanguageId(extension: string): string {
+    switch (extension.toLowerCase()) {
+        case 'hz':
+            return 'haze';
+        case 'hza':
+            return 'hazea';
+        case 'hzi':
+            return 'hazei';
+        case 'hzs':
+            return 'hazes';
+        default:
+            return 'plaintext'; // default to plain text for unknown extensions
+    }
+}
+
 export type EditorDelta = {
     range: lsp.Range;
     rangeLength?: lsp.uinteger; // DEPRECATED, DO NOT USE!!!
@@ -97,13 +112,13 @@ export class LanguageClient {
     private static readonly REQUEST_TIMEOUT: number = 5000;
 
     private database: sb.SymbolDatabase;
-    private server: Worker;
+    private serverPort: MessagePort | null;
 
-    constructor(database: sb.SymbolDatabase, server: Worker) {
+    constructor(database: sb.SymbolDatabase, serverPort: MessagePort | null) {
         this.database = database;
 
-        this.server = server;
-        this.server.postMessage(rpc.createRequest(
+        this.serverPort = serverPort;
+        this.serverPort?.postMessage(rpc.createRequest(
             'initialize', {
                 processId: null, 
                 clientInfo: {
@@ -202,46 +217,81 @@ export class LanguageClient {
                 }
             }
         ));
-
-        this.server.onmessage = this.onMessage.bind(this);
-        this.server.onerror = this.onError.bind(this);
-        this.server.onmessageerror = this.onMessageError.bind(this);
     }
 
     /////////////////////////////////////////////////////////
 
-    private onMessage(event: MessageEvent): void {
-        const data = event.data as rpc.JSONRPCResponse;
-        // handle JSON-RPC messages
+    onMessage(event: MessageEvent): void {
+        const data = event.data as rpc.JSONRPCResponse | rpc.JSONRPCRequest;
+
         if (data.jsonrpc === '2.0') {
-            if (data.error) {
+            // in case of error, notify the frontend
+            if ('error' in data && data.error) {
                 postMessage({
                     type: 'error',
                     message: `language server error: ${data.error.message} (code: ${data.error.code})`
                 });
                 return;
-        
-            } // otherwise okay
-            else {
-
             }
-        }
 
-        // invalid JSONRPC message format from server
+            // might be a 
+            if ('method' in data) {
+                switch (data.method) {
+                    case 'window/showMessage':
+                        // Ejemplo: mostrar mensaje al usuario
+                        postMessage({
+                            type: 'info',
+                            message: data.params?.message || 'Mensaje del servidor'
+                        });
+                        break;
+                    case 'textDocument/publishDiagnostics':
+                        // Ejemplo: manejar diagnósticos
+                        postMessage({
+                            type: 'diagnostics',
+                            diagnostics: data.params
+                        });
+                        break;
+
+                    default:
+                        // unknown notification method; just log to prevent error
+                        postMessage({
+                            type: 'log',
+                            message: `notification received: ${data.method}`
+                        });
+                        break;
+                }
+                return;
+            }
+
+            // might be a response to a previous request
+            const requestId = data.id?.toString();
+            if (requestId && 'result' in data) {
+                const promise = this.promises.get(requestId);
+                if (promise) {
+                    // if it was, resolve the promise with the provided result and unregister it
+                    clearTimeout(promise.timeout);
+                    promise.resolve(data.result);
+                    this.promises.delete(requestId);
+                    return;
+                }
+            }
+            return;
+        }
+        // otherwise, invalid JSON-RPC response
         postMessage({
             type: 'error',
             message: `language client error: invalid server response`,
         });
     }
 
-    private onError(event: ErrorEvent): void {
+    onError(event: ErrorEvent): void {
         postMessage({
             type: 'error',
             message: `language server error: ${event.message}`
         });
     }
 
-    private onMessageError(event: MessageEvent): void {
+    onMessageError(event: MessageEvent): void {
         postMessage({
             type: 'error',
             message: `language server message error: ${event.data}`
@@ -251,7 +301,7 @@ export class LanguageClient {
     /////////////////////////////////////////////////////////
 
     // ui connection
-    public async requestFileDialog(targetElement: HTMLElement): Promise<void> {
+    public async requestFileDialog(uri: string): Promise<void> {
         const fileInput = document.createElement('input');
         fileInput.type = 'file';
         fileInput.accept = '.hz';
@@ -262,7 +312,7 @@ export class LanguageClient {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const content = e.target?.result as string;
-                    targetElement.innerHTML = await this.handleGenerateRequest(content);
+                    this.invalidate(content, uri);
                 };
                 reader.readAsText(files[0]);
             }
@@ -272,12 +322,20 @@ export class LanguageClient {
         document.body.removeChild(fileInput);
     }
 
-    private async openDocument(uri: string, languageId: string = 'haze', sourceCode: string): Promise<void> {
+    private async openDocument(uri: string, sourceCode: string): Promise<void> {
         // open a document in the language server
         postMessage({
             type: 'log',
             message: `initializing document "${uri}"...`,
         });
+        const url = new URL(uri);
+        const path = decodeURIComponent(url.pathname);
+        const segments = path.split('/');
+        const basename = segments.pop() ?? '';
+        const lastDot = basename.lastIndexOf('.');
+        const extension = lastDot !== -1 ? basename.substring(lastDot + 1) : '';
+        const languageId = convertExtensionToLanguageId(extension);
+
         const newDocument: EditorDocument = {
             uri,
             languageId,
@@ -285,7 +343,7 @@ export class LanguageClient {
             sourceCode: sourceCode,
             deltas: []
         };
-        this.server.postMessage(rpc.createRequest(
+        this.serverPort?.postMessage(rpc.createRequest(
             'textDocument/didOpen', {
                 textDocument: newDocument,
             },
@@ -302,7 +360,7 @@ export class LanguageClient {
             type: 'log',
             message: `closing document "${uri}"...`
         });
-        this.server.postMessage(rpc.createRequest(
+        this.serverPort?.postMessage(rpc.createRequest(
             'textDocument/didClose', {
                 textDocument: {
                     uri: uri,
@@ -326,7 +384,7 @@ export class LanguageClient {
 
             const requestId = crypto.randomUUID();
             const promise = new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(() => {
+                const timeout = window.setTimeout(() => {
                     this.promises.delete(requestId);
                     postMessage({
                         type: 'error',
@@ -337,24 +395,36 @@ export class LanguageClient {
                 this.promises.set(requestId, { resolve, reject, timeout });
             });
 
-            const existingDocument = this.documents.get()
-
-            this.server.postMessage(rpc.createRequest(
-                'textDocument/didChange', {
-                    textDocument: {
-                        uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
-                        version: 1 // TODO: increment this properly 
+            const existingDocument = this.documents.get(uri);
+            if (existingDocument) {
+                postMessage({
+                    type: 'log',
+                    message: `recycling document "${uri}"...`
+                });
+                // Update the existing document with the latest deltas. This is always relative to the last time the document was
+                // synchronized, not the last time it was recycled.
+                existingDocument.deltas = deltas;
+                this.serverPort?.postMessage(rpc.createRequest(
+                    'textDocument/didChange', {
+                        textDocument: {
+                            uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
+                            version: existingDocument.version++
+                        },
+                        contentChanges: deltas
                     },
-                    contentChanges: deltas
-                },
-                requestId
-            ));
+                    requestId
+                ));
+            } else {
+                // If the document does not exist, the client will open it to be helpful to the source editor.
+                // This is technically not conformant to LSP, but is a nice convenience for the user in some circumstances.
+                this.openDocument(uri, '');
+            }
 
-            await promise; // Espera la respuesta o timeout
+            await promise;
         }
     }
 
-    private async invalidate(sourceCode: string): Promise<void> {
+    private async invalidate(uri: string, sourceCode: string): Promise<void> {
         const now = new Date();
         const delta = this.database.lastSynchronized ? now.getTime() - this.database.lastSynchronized.getTime() : 0;
         const requestId = crypto.randomUUID();
@@ -363,29 +433,30 @@ export class LanguageClient {
                 `synchronizing symbol database... (${delta}ms since last refresh)`
             );
 
+            const errorMessage = 'Timeout waiting for invalidate() response';
             const promise = new Promise<void>((resolve, reject) => {
-                const timeout = setTimeout(() => {
+                const timeout = window.setTimeout(() => {
                     this.promises.delete(requestId);
                     postMessage({
                         type: 'error',
-                        message: `Timeout waiting for invalidate response`
+                        message: errorMessage
                     });
-                    reject(new Error('Timeout waiting for invalidate response'));
-                }, 5000);
+                    reject(new Error(errorMessage));
+                }, LanguageClient.REQUEST_TIMEOUT);
                 this.promises.set(requestId, { resolve, reject, timeout });
             });
 
-            this.server.postMessage(rpc.createRequest(
+            this.serverPort?.postMessage(rpc.createRequest(
                 'textDocument/didSave', {
                     textDocument: {
-                        uri: 'file:///c:/Users/Connor/Desktop/clarity/src/markup_generator.ts',
+                        uri: uri,
                     },
                     text: sourceCode,
                 },
                 requestId,
             ));
 
-            await promise; // Espera la respuesta o timeout
+            await promise;
         }
     }
 
