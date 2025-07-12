@@ -2,21 +2,6 @@
     --node-border: var(--dark-background-ll);
 }
 
-button {
-    appearance: none;
-    padding: 5px;
-    background: var(--accent);
-    transition: filter 100ms ease-in-out;
-    border-radius: var(--corner-radius);
-    border: 1px solid var(--dark-background-l);
-}
-    button:hover {
-        filter: brightness(80%);
-    }
-    button:active {
-        filter: brightness(60%);
-    }
-
 .node {
     margin: 1rem;
     height: 100px;

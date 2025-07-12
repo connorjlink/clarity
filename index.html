@@ -12,6 +12,7 @@
         <link rel="stylesheet" href="./src/program_tree.css" />
         <link rel="stylesheet" href="./src/output_window.css" />
         <link rel="stylesheet" href="./src/source_editor.css" />
+        <link rel="stylesheet" href="./src/TabView.css" />
     </head>
     <body>
         <style>
@@ -28,9 +29,19 @@
             </div>
         </div>
 
-        <program-tree></program-tree>
-        <source-editor id="main-editor" class="shadowed"></source-editor>
-        <output-window id="output-window"></output-window>
+        <my-tabview>
+            <my-tab label="Home">
+                <program-tree></program-tree>
+                <source-editor id="main-editor" class="shadowed"></source-editor>
+                <output-window id="output-window"></output-window>
+            </my-tab>
+            <my-tab label="Learn">
+                <h1>Hello from the learn page</h1>
+            </my-tab>
+            <my-tab label="About">
+                <h1>Hello from the about page</h1>
+            </my-tab>
+        </tabbed-layout>
         
         <script type="module" src="./src/index.ts"></script>
     </body>

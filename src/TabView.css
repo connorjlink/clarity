@@ -1,0 +1,13 @@
+.tabs {
+    display: flex;
+    gap: 10px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.page {
+    display: none;
+}
+    .page.active {
+        display: block;
+    }

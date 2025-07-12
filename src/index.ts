@@ -1,5 +1,6 @@
 import * as ow from './output_window';
 import * as se from './source_editor';
+import * as tv from './TabView';
 
 const outputWindow = document.getElementById('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [];
@@ -46,3 +47,6 @@ const sourceEditor = document.querySelector('#main-editor') as se.SourceEditorEl
 sourceEditor.attachEventListeners();
 // the source editor in this case is mocking the language server so that it can communicate with the client through the same channel
 sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+
+//const tabView = document.querySelector('my-tabview') as tv.TabHostElement;
+//tabView.render();
