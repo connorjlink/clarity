@@ -3,6 +3,12 @@ import * as rpc from './JSONRPC';
 import * as ls from './language_server';
 import * as sb from './symbol_database';
 
+// TODO: structure this method to be a mixin class that implements the execute method since it useful for both the language server client and server
+type MethodNames = Exclude<{
+    [K in keyof LanguageClient]: LanguageClient[K] extends Function ? K : never }[keyof LanguageClient],
+    'execute'
+>
+
 function convertKindToClass(kind: lsp.SymbolKind): string {
     switch (kind) {
         case lsp.SymbolKind.File:
@@ -84,6 +90,17 @@ function convertExtensionToLanguageId(extension: string): string {
             return 'hazes';
         default:
             return 'plaintext'; // default to plain text for unknown extensions
+    }
+}
+
+function convertMessageTypeToLogLevel(type: lsp.MessageKindType): string {
+    switch (type) {
+        case lsp.MessageKind.Error: return 'error';
+        case lsp.MessageKind.Warning: return 'warning';
+        case lsp.MessageKind.Info: return 'info';
+        case lsp.MessageKind.Log: return 'log';
+        case lsp.MessageKind.Debug: return 'debug';
+        default: return 'log';
     }
 }
 
@@ -219,6 +236,15 @@ export class LanguageClient {
         ));
     }
 
+    execute(key: MethodNames, ...args: any[]) {
+        const property = (this as any)[key];
+        if (typeof property === 'function') {
+            // property is a valid function
+            return property.apply(this, args);
+        }
+        throw new Error(`Method \"${key}\" does not exist on type LanguageClient.`);
+    }
+
     /////////////////////////////////////////////////////////
 
     onMessage(event: MessageEvent): void {
@@ -234,18 +260,39 @@ export class LanguageClient {
                 return;
             }
 
-            // might be a 
             if ('method' in data) {
                 switch (data.method) {
                     case 'window/showMessage':
-                        // Ejemplo: mostrar mensaje al usuario
-                        postMessage({
-                            type: 'info',
-                            message: data.params?.message || 'Mensaje del servidor'
-                        });
+                        // notification from server to show a UI message (will just use the output window for this)
+                        const messageType = data.params?.type;
+                        const messageCandidate = data.params?.message;
+                        if (messageType && messageCandidate) {
+                            const logLevel = convertMessageTypeToLogLevel(messageType);
+                            postMessage({
+                                type: logLevel,
+                                message: messageCandidate
+                            });
+                        }
+                        break;  
+
+                    case 'window/logMessage':
+                        // notification from server to log a message (will just use the console for this)
+                        const logType = data.params?.type;
+                        const logCandidate = data.params?.message;
+                        if (logType && logCandidate) {
+                            switch (logType) {
+                                case lsp.MessageKind.Error: console.error(logCandidate); break;
+                                case lsp.MessageKind.Warning: console.warn(logCandidate); break;
+                                case lsp.MessageKind.Info: console.info(logCandidate); break;
+                                case lsp.MessageKind.Log: console.log(logCandidate); break
+                                case lsp.MessageKind.Debug: console.debug(logCandidate); break;
+                                // otherwise unknown, don't show anything since it is invalid
+                            }
+                        }
                         break;
+
                     case 'textDocument/publishDiagnostics':
-                        // Ejemplo: manejar diagnósticos
+                        // diagnostics refresh for the specified document
                         postMessage({
                             type: 'diagnostics',
                             diagnostics: data.params

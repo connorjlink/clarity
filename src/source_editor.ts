@@ -80,20 +80,20 @@ export class SourceEditorElement extends HTMLElement {
     private _lastText: string = '';
     private _clientPort: MessagePort | null = null;
 
+    private _hasInitialized: boolean = false;
+
     constructor() {
         super();
         this._pieceTable = new pt.PieceTable('function nvr main = () {}');
     }
 
     connectedCallback() {
-        this.attachShadow({ mode: 'open' });
         this.render();
     }
 
-    attachEventListeners(uri: string, consoleListener?: any, clientPort?: MessagePort) {
-        this._inputRef?.addEventListener('input', (e) => this.handleInputChange(e));
-        this._inputRef?.addEventListener('scroll', () => this.syncScroll());
-        this._inputRef?.addEventListener('keydown', (e) => this.handleKeyDown(e));
+    // NOTE: the parent MUST call this prior to utilizing the editor
+    initialize(uri: string, consoleListener?: any, clientPort?: MessagePort) {
+        this._hasInitialized = true;
         if (!this._consoleListener) {
             this._consoleListener = consoleListener;
         }
@@ -125,6 +125,12 @@ export class SourceEditorElement extends HTMLElement {
                 }
             });
         }
+    }
+
+    attachEventListeners() {
+        this._inputRef?.addEventListener('input', (e) => this.handleInputChange(e));
+        this._inputRef?.addEventListener('scroll', () => this.syncScroll());
+        this._inputRef?.addEventListener('keydown', (e) => this.handleKeyDown(e));
     }
 
     private handleInputChange(e: Event) {
@@ -190,7 +196,9 @@ export class SourceEditorElement extends HTMLElement {
         if (this._highlightRef) {
             const text = this._pieceTable.getText();
             // TODO: get the editor deltas system working to send to the language client worker
-            const response = this._clientPort?.postMessage
+            const response = this._clientPort?.postMessage({
+                type: ''
+            })
             handleGenerateRequest(text);
             if (response) {
                 this._highlightRef.innerHTML = response;
@@ -206,21 +214,18 @@ export class SourceEditorElement extends HTMLElement {
     }
 
     private render() {
-        if (!this.shadowRoot) {
-            return;
+        if (!this._hasInitialized) {
+            throw new Error('call initialize() on SourceEditorElement before rendering.');
         }
         const text = this._pieceTable.getText();
-        // TODO: fix the source_editor stylesheet because this might require the browser to reload the file. possible
-        // async load from disk and the use a constructible stylesheet to eagerly load the stylesheet upon startup?
-        this.shadowRoot.innerHTML = `
-            <link rel="stylesheet" href="./source_editor.css">
+        this.innerHTML = `
             <div class="editor-shell">
                 <pre class="highlight-layer"></pre>
                 <div class="input-layer" contenteditable="true" spellcheck="false"></div>
             </div>
         `;
-        this._highlightRef = this.shadowRoot.querySelector('.highlight-layer');
-        this._inputRef = this.shadowRoot.querySelector('.input-layer');
+        this._highlightRef = this.querySelector('.highlight-layer');
+        this._inputRef = this.querySelector('.input-layer');
         if (this._inputRef) {
             this._inputRef.textContent = text;
             this._lastText = text;

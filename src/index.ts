@@ -26,9 +26,6 @@ const consoleListener = {
     }
 };
 
-const sourceEditor = document.querySelector('#main-editor') as se.SourceEditorElement;
-sourceEditor.attachEventListeners(consoleListener);
-
 /////////////////////////////////////////////////////////
 
 const languageServerWorker = new Worker(new URL('./language_server_worker.ts', import.meta.url), { type: 'module' });
@@ -60,3 +57,9 @@ languageClientWorker.onerror = (error) => {
 languageClientWorker.onmessageerror = (event) => {
     consoleListener.notify(`Message error: ${event.data}`);
 };
+
+/////////////////////////////////////////////////////////
+
+const sourceEditor = document.querySelector('#main-editor') as se.SourceEditorElement;
+sourceEditor.attachEventListeners();
+sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, channel.port2);

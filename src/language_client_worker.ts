@@ -15,13 +15,23 @@ self.onmessage = (event) => {
             };
             serverPort.onmessageerror = (e) => {
                 // route message errors from the language server to the client port
-                console.error('Error en el mensaje del servidor:', e);
+                console.error('language client message receive error:', e);
                 languageClient?.onError(e.data);
             };
         }
         // NOTE: choosing not to the client that the server is ready, since this is implied if the server
         // responds successfully to the initialize and initialized requests from the client.
         //clientPort.postMessage({ type: 'ready' });
+    } else if (event.data?.type === 'execute') {
+        const method = event.data.method;
+        const params = event.data.params;
+        if (languageClient && method && params) {
+            languageClient.execute(method, params);
+            
+
+        } else {
+            console.error('invalid client execute method request:', event.data);
+        }
     }
 };
 
