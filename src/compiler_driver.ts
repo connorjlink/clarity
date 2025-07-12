@@ -56,7 +56,7 @@ export class CompilerDriver {
             // specifies that the compiler has sent internal statistics information (like memory usage, object instantiations)
             else if (result.statistic) {
                 // TODO: probably just pass through to the client since this can be a custom message (perhaps hazeCompiler/statistic)
-                const statistic: doc.HazeStatistic = result.statistic;
+                const statistic = result.statistic;
 
             }
             // specifies that the compiler has sent a diagnostic message

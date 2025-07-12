@@ -26,9 +26,8 @@ self.onmessage = (event) => {
         const method = event.data.method;
         const params = event.data.params;
         if (languageClient && method && params) {
-            languageClient.execute(method, params);
+            languageClient.execute(method, ...Object.values(params));
             
-
         } else {
             console.error('invalid client execute method request:', event.data);
         }

@@ -22,36 +22,6 @@ export type HazeNode = {
     nodes: nt.NodeData[] | undefined;
 }
 
-type TaskTime = {
-    task: string; 
-    elapsedMicroseconds: number; 
-}
-
-// NOTE: for data visualization purposes only! TODO: add more statistics as they arise in the compiler
-type InternalStatistic = {
-    memoryUsage: number; // in bytes, probably just allocated through the Tracker
-    trackedEntityInstantiations: number; // number of tracked objects instantiated
-    trackedEntityRetirements: number; // number of tracked objects instantiated
-    trackedEntityDestructions: number; // number of tracked objects destroyed
-    functionCount: number; // number of functions defined
-    statementCount: number; // number of statements executed
-    expressionCount: number; // number of expressions evaluated
-    symbolCount: number; // number of symbols indexed
-    elapsedTime: TaskTime[];
-}
-
-// TODO: finish the statistics structure and parsing
-export type HazeStatistic = {
-    stage: string; 
-    filepath: string;
-
-    data: {
-        // detailed performance metrics about the compiler
-        internal: InternalStatistic | undefined;
-
-    }
-}
-
 type EditDelta = {
     range: lsp.Range;
     lineDelta: number;

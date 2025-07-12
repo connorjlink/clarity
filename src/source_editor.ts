@@ -1,4 +1,5 @@
 import * as pt from './piece_table';
+import * as lc from './language_client';
 
 function getTextWithLineBreaks(element: HTMLElement): string {
     let text = '';
@@ -78,7 +79,7 @@ export class SourceEditorElement extends HTMLElement {
 
     private _sourceUri: string = '';
     private _lastText: string = '';
-    private _clientPort: MessagePort | null = null;
+    private _client: Worker | null = null;
 
     private _hasInitialized: boolean = false;
 
@@ -88,49 +89,80 @@ export class SourceEditorElement extends HTMLElement {
     }
 
     connectedCallback() {
-        this.render();
+        //this.render();
+    }
+
+    disconnectedCallback() {
+        this._client?.postMessage({
+            type: 'execute',
+            method: 'closeDocument',
+            params: {
+                uri: this._sourceUri,
+            }
+        });
     }
 
     // NOTE: the parent MUST call this prior to utilizing the editor
-    initialize(uri: string, consoleListener?: any, clientPort?: MessagePort) {
+    initialize(uri: string, consoleListener: any, client: Worker) {
         this._hasInitialized = true;
         if (!this._consoleListener) {
             this._consoleListener = consoleListener;
         }
-        if (clientPort) {
-            // TODO: probably fix this? not sure if this is the proper way to handle the onmessage? is it already set somewhere else?
-            this._clientPort = clientPort;
-            this._clientPort.onmessage = (e) => {
+        if (client) {
+            this._client = client;
+            this._client.addEventListener('message', (e) => {
                 if (e.data.type === 'log') {
                     this._consoleListener?.notify(e.data.message);
                 } else if (e.data.type === 'error') {
-                    this._consoleListener?.notify(`Error: ${e.data.message}`);
+                    this._consoleListener?.notify(e.data.message);
                 } else if (e.data.type === 'compileResult') {
-                    // Handle compile result
-                    this._consoleListener?.notify(`Compile result: ${JSON.stringify(e.data.result)}`);
-                }
-            };
-            this._clientPort.onmessageerror = (e) => {
-                this._consoleListener?.notify(`Worker error: ${e.data}`);
-            };
-
-            this._sourceUri = uri;
-            // NOTE: see LanguageClient.openDocument active reflection target
-            this._clientPort.postMessage({
-                type: 'execute',
-                method: 'openDocument',
-                params: {
-                    uri: this._sourceUri,
-                    sourceCode: this._pieceTable.getText(),
+                    this._consoleListener?.notify(JSON.stringify(e.data.result));
                 }
             });
+            this._client.addEventListener('messageerror', (e) => {
+                this._consoleListener?.notify(e.data);
+            });
+
+            this._sourceUri = uri;
         }
+        // NOTE: see LanguageClient.openDocument active reflection target
+        this._client?.postMessage({
+            type: 'execute',
+            method: 'openDocument',
+            params: {
+                uri: this._sourceUri,
+                sourceCode: this._pieceTable.getText(),
+            }
+        });
+        this.render();
+    }
+
+    private _boundInputCallback: (event: Event) => void = this.inputCallback.bind(this);
+    private _boundScrollCallback: (event: Event) => void = this.scrollCallback.bind(this);
+    private _boundKeydownCallback: (event: KeyboardEvent) => void = this.keydownCallback.bind(this);
+
+    inputCallback(event: Event) {
+        this.handleInputChange(event);
+    }
+
+    scrollCallback(event: Event) {
+        this.syncScroll();
+    }
+
+    keydownCallback(event: KeyboardEvent) {
+        this.handleKeyDown(event);
     }
 
     attachEventListeners() {
-        this._inputRef?.addEventListener('input', (e) => this.handleInputChange(e));
-        this._inputRef?.addEventListener('scroll', () => this.syncScroll());
-        this._inputRef?.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        this._inputRef?.addEventListener('input', this._boundInputCallback);
+        this._inputRef?.addEventListener('scroll', this._boundScrollCallback);
+        this._inputRef?.addEventListener('keydown', this._boundKeydownCallback);
+    }
+
+    detachEventListeners() {
+        this._inputRef?.removeEventListener('input', this._boundInputCallback);
+        this._inputRef?.removeEventListener('scroll', this._boundScrollCallback);
+        this._inputRef?.removeEventListener('keydown', this._boundKeydownCallback);
     }
 
     private handleInputChange(e: Event) {
@@ -166,20 +198,13 @@ export class SourceEditorElement extends HTMLElement {
             this._pieceTable.insert(start, newText.slice(start, endNew + 1));
         }
 
+        // TODO: compute editor deltas
+
         this._lastText = newText;
-        this.renderHighlight();
+        this.renderHighlight([]);
 
         setCaretPosition(this._inputRef, caret);
     }
-
-    // NOTE: TERRIBLE PERFORMNANCE!!!
-    // private handleInputChange(e: Event) {
-    //     const target = e.target as HTMLTextAreaElement;
-    //     this._pieceTable = new PieceTable(target.textContent ?? '');
-    //     const newText = this._inputRef?.textContent ?? '';
-    //     this._lastText = newText;
-    //     this.renderHighlight();
-    // }
 
     private handleKeyDown(e: KeyboardEvent) {
         if (e.key === 'Tab') {
@@ -192,17 +217,17 @@ export class SourceEditorElement extends HTMLElement {
         }
     }
 
-    private renderHighlight() {
+    private renderHighlight(deltas: lc.EditorDelta[]) {
         if (this._highlightRef) {
             const text = this._pieceTable.getText();
-            // TODO: get the editor deltas system working to send to the language client worker
-            const response = this._clientPort?.postMessage({
-                type: ''
-            })
-            handleGenerateRequest(text);
-            if (response) {
-                this._highlightRef.innerHTML = response;
-            }
+            this._client?.postMessage({
+                type: 'execute',
+                method: 'recycle',
+                params: {
+                    uri: this._sourceUri,
+                    deltas: deltas,
+                }
+            });
         }
     }
 
@@ -230,8 +255,8 @@ export class SourceEditorElement extends HTMLElement {
             this._inputRef.textContent = text;
             this._lastText = text;
         }
-        this.renderHighlight();
         this.attachEventListeners();
+        this.renderHighlight();
     }
 }
 

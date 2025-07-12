@@ -248,9 +248,9 @@ export class LanguageClient {
     /////////////////////////////////////////////////////////
 
     onMessage(event: MessageEvent): void {
-        const data = event.data as rpc.JSONRPCResponse | rpc.JSONRPCRequest;
-
-        if (data.jsonrpc === '2.0') {
+        const data = JSON.parse(event.toString()) as rpc.JSONRPCResponse | rpc.JSONRPCRequest;
+        //console.log('language client received message:', data);
+        if ('jsonrpc' in data && data.jsonrpc === '2.0') {
             // in case of error, notify the frontend
             if ('error' in data && data.error) {
                 postMessage({
@@ -281,11 +281,11 @@ export class LanguageClient {
                         const logCandidate = data.params?.message;
                         if (logType && logCandidate) {
                             switch (logType) {
-                                case lsp.MessageKind.Error: console.error(logCandidate); break;
-                                case lsp.MessageKind.Warning: console.warn(logCandidate); break;
-                                case lsp.MessageKind.Info: console.info(logCandidate); break;
-                                case lsp.MessageKind.Log: console.log(logCandidate); break
-                                case lsp.MessageKind.Debug: console.debug(logCandidate); break;
+                                case lsp.MessageKind.Error: console.error(`server error: ${logCandidate}`); break;
+                                case lsp.MessageKind.Warning: console.warn(`server warning: ${logCandidate}`); break;
+                                case lsp.MessageKind.Info: console.info(`server info: ${logCandidate}`); break;
+                                case lsp.MessageKind.Log: console.log(`server log: ${logCandidate}`); break
+                                case lsp.MessageKind.Debug: console.debug(`server debug: ${logCandidate}`); break;
                                 // otherwise unknown, don't show anything since it is invalid
                             }
                         }
@@ -431,14 +431,14 @@ export class LanguageClient {
 
             const requestId = crypto.randomUUID();
             const promise = new Promise<void>((resolve, reject) => {
-                const timeout = window.setTimeout(() => {
+                const timeout = setTimeout(() => {
                     this.promises.delete(requestId);
                     postMessage({
                         type: 'error',
-                        message: `Timeout waiting for recycle response`
+                        message: `timeout waiting for recycle response`
                     });
-                    reject(new Error('Timeout waiting for recycle response'));
                 }, LanguageClient.REQUEST_TIMEOUT);
+                // NOTE: this error is OK since the code is running in browser context, not Node.js
                 this.promises.set(requestId, { resolve, reject, timeout });
             });
 
@@ -462,9 +462,8 @@ export class LanguageClient {
                     requestId
                 ));
             } else {
-                // If the document does not exist, the client will open it to be helpful to the source editor.
-                // This is technically not conformant to LSP, but is a nice convenience for the user in some circumstances.
-                this.openDocument(uri, '');
+                // If the document does not already exist, the client should not register it with the server per LSP.
+                throw new Error(`document "${uri}" does not exist in the client.`);
             }
 
             await promise;
@@ -476,9 +475,10 @@ export class LanguageClient {
         const delta = this.database.lastSynchronized ? now.getTime() - this.database.lastSynchronized.getTime() : 0;
         const requestId = crypto.randomUUID();
         if (!this.database.lastSynchronized || delta > 1500) {
-            postMessage(
-                `synchronizing symbol database... (${delta}ms since last refresh)`
-            );
+            postMessage({
+                type: 'log',
+                message: `synchronizing symbol database... (${delta}ms since last invalidation)`
+            });
 
             const errorMessage = 'Timeout waiting for invalidate() response';
             const promise = new Promise<void>((resolve, reject) => {

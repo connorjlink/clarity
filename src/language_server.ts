@@ -527,23 +527,6 @@ function convertSymbolKindToCompletionItemKind(symbolKind: lsp.SymbolKind): lsp.
     }
 }
 
-function logMessage(message: string, type: lsp.MessageKindType = lsp.MessageKind.Log) {
-    switch (type) {
-        case lsp.MessageKind.Error:
-            console.error(`language server error: ${message}`);
-            break;
-        case lsp.MessageKind.Warning:
-            console.warn(`language server warning: ${message}`);
-            break;
-        case lsp.MessageKind.Info:
-            console.info(`language server info: ${message}`);
-            break;
-        case lsp.MessageKind.Log:
-        default:
-            console.log(`language server log: ${message}`);
-    }
-}
-
 export class LanguageServer {
 
     private hasInitialized: boolean = false;
@@ -1094,8 +1077,6 @@ export class LanguageServer {
         if (this.client) {
             this.sendLogToClient(this.client, message, kind);
         } 
-        // dispatches the corresponding print type
-        logMessage(message, kind);
     }
 
     /** Request a full re-compile of the current document [set]. */
@@ -1130,7 +1111,7 @@ export class LanguageServer {
             rpc.createRequest("window/logMessage", {
                 type: kind,
                 message: message
-            }, crypto.randomUUID())));
+            }, null)));
     }
 
     /** Error-notify the connected client that the server has no active information about a specified document. */
