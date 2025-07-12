@@ -198,9 +198,8 @@ export class SourceEditorElement extends HTMLElement {
             this._pieceTable.insert(start, newText.slice(start, endNew + 1));
         }
 
-        // TODO: compute editor deltas
-
         this._lastText = newText;
+        // TODO: compute editor deltas
         this.renderHighlight([]);
 
         setCaretPosition(this._inputRef, caret);
@@ -256,7 +255,7 @@ export class SourceEditorElement extends HTMLElement {
             this._lastText = text;
         }
         this.attachEventListeners();
-        this.renderHighlight();
+        this.renderHighlight([]);
     }
 }
 
