@@ -41,6 +41,20 @@ button {
         background: var(--accent-selected);
     }
 
+a {
+    color: var(--secondary);
+    text-decoration: none;
+}
+    a:hover {
+        color: var(--secondary-hovered);
+    }
+    a:hover:visited {
+        color: var(--accent-hovered);
+    }
+    a:visited {
+        color: var(--accent);
+    }
+
 svg {
     fill: var(--dark-foreground) !important;
 }

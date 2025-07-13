@@ -1,8 +1,6 @@
 .tabs {
     display: flex;
     gap: 10px;
-    cursor: pointer;
-    margin-bottom: 10px;
 }
 
 .page {
@@ -10,4 +8,16 @@
 }
     .page.active {
         display: block;
+    }
+
+.tab-radio-wrapper label {
+    background: var(--accent);
+    transition: background-color 100ms ease-in-out;
+    padding: 5px;
+}
+    .tab-radio-wrapper label:hover {
+        background: var(--accent-hovered);
+    }
+    .tab-radio-wrapper input[type="radio"]:checked~label {
+        background: var(--accent-selected);
     }
