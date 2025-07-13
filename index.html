@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="utf-8" />
@@ -21,8 +21,6 @@
             }
         </style>
 
-        
-
         <my-tabview>
             <my-header>
                 <div class="title-container">
@@ -33,16 +31,36 @@
                     </div>
                 </div>
             </my-header>
-            <my-tab label="Home">
+            <my-tab label="Home" route="home">
                 <program-tree></program-tree>
                 <source-editor id="main-editor" class="shadowed"></source-editor>
                 <output-window id="output-window"></output-window>
             </my-tab>
-            <my-tab label="Learn">
-                <h1>Hello from the learn page</h1>
+            <my-tab label="Learn" route="learn">
+                <h1>Learn</h1>
+                <body>
+                    <header>
+                        <nav>
+                        </nav>
+                    </header>
+                    <section>
+                        <main>
+                            <article>
+                                <!-- blog content goes here -->
+                            </article>
+                        </main>
+                        <aside>
+                            <div></div>
+                        </aside>
+                    </section>
+                    <footer>
+                        <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
+                    </footer>
+                </body>
             </my-tab>
-            <my-tab label="About">
+            <my-tab label="About" route="about">
                 <h1>Hello from the about page</h1>
+                <h2>Technical Details</h2>
             </my-tab>
         </tabbed-layout>
         

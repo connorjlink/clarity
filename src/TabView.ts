@@ -4,8 +4,36 @@ class MyTabViewElement extends HTMLElement {
 
     connectedCallback() {
         this.render();
+
+        window.addEventListener('popstate', (event) => {
+            const tabIndex = event.state?.tab ?? this.getTabIndexFromUrl();
+            if (typeof tabIndex === 'number' && tabIndex >= 0 && tabIndex < this.pages.length) {
+                this.activatePage(tabIndex, false);
+            }
+        });
+
+        const initialTab = this.getTabIndexFromUrl();
+        if (typeof initialTab === 'number' && initialTab >= 0 && initialTab < this.pages.length) {
+            this.activatePage(initialTab, false);
+        }
     }   
-    private activatePage(index: number) {
+
+    private getTabIndexFromUrl(): number | null {
+        let path = window.location.pathname.replace(/^\//, '');
+        if (path.startsWith('clarity/')) {
+            path = path.substring('clarity/'.length);
+        }
+        const children = Array.from(this.querySelectorAll('my-tab'));
+        for (let i = 0; i < children.length; i++) {
+            const route = children[i].getAttribute('route');
+            if (route === path) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    private activatePage(index: number, pushHistory: boolean = true) {
         this.pages.forEach((page, i) => {
             const radios = this.tabsContent.querySelectorAll('input');
             const selected = i === index;
@@ -14,6 +42,14 @@ class MyTabViewElement extends HTMLElement {
                 radios[i].checked = selected;
             }
         });
+
+        if (pushHistory) {
+            const children = Array.from(this.querySelectorAll('my-tab'));
+            const route = children[index].getAttribute('route') || '';
+            const base = '/clarity/';
+            const url = `${window.location.origin}${base}${route}`;
+            history.pushState({ tab: index }, '', url);
+        }
     }
 
     private render() {
@@ -51,7 +87,7 @@ class MyTabViewElement extends HTMLElement {
             inputElement.type = 'radio';
             inputElement.id = tabId;
             inputElement.checked = index === 0;
-            inputElement.addEventListener('change', () => this.activatePage(index));
+            inputElement.addEventListener('change', () => this.activatePage(index, true));
 
             const labelElement = document.createElement('label');
             labelElement.htmlFor = tabId;
