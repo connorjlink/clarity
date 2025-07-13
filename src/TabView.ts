@@ -1,5 +1,5 @@
 class MyTabViewElement extends HTMLElement {
-    private tabHeaders!: HTMLDivElement;
+    private tabsContent!: HTMLDivElement;
     private pages: HTMLElement[] = [];  
 
     connectedCallback() {
@@ -7,7 +7,7 @@ class MyTabViewElement extends HTMLElement {
     }   
     private activatePage(index: number) {
         this.pages.forEach((page, i) => {
-            const radios = this.tabHeaders.querySelectorAll('input');
+            const radios = this.tabsContent.querySelectorAll('input');
             const selected = i === index;
             page.classList.toggle('active', selected);
             if (radios[i]) {
@@ -17,21 +17,41 @@ class MyTabViewElement extends HTMLElement {
     }
 
     private render() {
-        this.tabHeaders = document.createElement('div');
-        this.tabHeaders.className = 'tabs';
-        this.prepend(this.tabHeaders);
+        const header = this.querySelector('my-header');
+        if (header) {
+            const child = header.children[0];
+            if (child) {
+                let wrapper = document.createElement('div');
+                wrapper.className = 'tabs-bar';
+                child.classList.add('tabs-header');
+                wrapper.appendChild(child);
+                this.prepend(wrapper);
+            }
+            header.remove();
+        }
+
+        this.tabsContent = document.createElement('div');
+        this.tabsContent.className = 'tabs-content';
+        
+        const tabsHeader = this.querySelector('.tabs-bar') as HTMLDivElement | null;
+        console.log(tabsHeader);
+        if (tabsHeader) {
+            tabsHeader.append(this.tabsContent);
+        } else {
+            this.prepend(this.tabsContent);
+        }
 
         const children = Array.from(this.querySelectorAll('my-tab'));
-        children.forEach((el, idx) => {
-            const label = el.getAttribute('label') || `Tab ${idx + 1}`;
-            const tabId = `tab-${idx}`;
-            const panelId = `tabpanel-${idx}`;
+        children.forEach((element, index) => {
+            const label = element.getAttribute('label') || `Tab ${index + 1}`;
+            const tabId = `tab-${index}`;
+            const panelId = `tabpanel-${index}`;
 
             const inputElement = document.createElement('input');
             inputElement.type = 'radio';
             inputElement.id = tabId;
-            inputElement.checked = idx === 0;
-            inputElement.addEventListener('change', () => this.activatePage(idx));
+            inputElement.checked = index === 0;
+            inputElement.addEventListener('change', () => this.activatePage(index));
 
             const labelElement = document.createElement('label');
             labelElement.htmlFor = tabId;
@@ -42,15 +62,15 @@ class MyTabViewElement extends HTMLElement {
             wrapper.appendChild(inputElement);
             wrapper.appendChild(labelElement);
 
-            this.tabHeaders.appendChild(wrapper);
+            this.tabsContent.appendChild(wrapper);
 
-            el.classList.add('page');
-            el.setAttribute('id', panelId);
+            element.classList.add('page');
+            element.setAttribute('id', panelId);
 
-            if (idx === 0) {
-                el.classList.add('active');
+            if (index === 0) {
+                element.classList.add('active');
             }
-            this.pages.push(el);
+            this.pages.push(element);
         });
     }
 }
@@ -59,3 +79,6 @@ customElements.define('my-tabview', MyTabViewElement);
 
 class MyTabElement extends HTMLElement {}
 customElements.define('my-tab', MyTabElement);
+
+class MyHeaderElement extends HTMLElement {}
+customElements.define('my-header', MyHeaderElement);

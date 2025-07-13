@@ -1,7 +1,25 @@
-.tabs {
+.tabs-bar {
     display: flex;
-    gap: 10px;
+    flex-direction: row;
+    align-items: center;
+    position: relative;
+    gap: 5rem;
+    width: 100%;
 }
+
+.tabs-content {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+
+    position: absolute;
+    width: 100%;
+}
+
+.tabs-header {
+    flex-shrink: 0;
+}
+
 
 .page {
     display: none;
@@ -11,13 +29,22 @@
     }
 
 .tab-radio-wrapper label {
-    background: var(--accent);
-    transition: background-color 100ms ease-in-out;
+    color: var(--accent-selectable);
+    transition: color 100ms ease-in-out;
     padding: 5px;
+    font-size: 24pt;
+    font-weight: bold;
 }
     .tab-radio-wrapper label:hover {
-        background: var(--accent-hovered);
+        color: var(--accent-hovered);
+        cursor: pointer;
     }
     .tab-radio-wrapper input[type="radio"]:checked~label {
-        background: var(--accent-selected);
+        color: var(--accent-selected);
+        text-decoration: underline;
+    }
+    .tab-radio-wrapper input[type="radio"]:checked~label:hover {
+        color: var(--accent-hovered);
+        text-decoration: underline;
+        cursor: pointer;
     }

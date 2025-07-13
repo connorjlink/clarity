@@ -42,12 +42,14 @@
     --blue: rgb(56, 114, 186);
 
     --secondary: var(--blue);
-    --secondary-hovered: color-mix(in srgb, var(--blue) 80%, white);
-    --secondary-selected: color-mix(in srgb, var(--blue) 80%, black);
-    
+    --secondary-hovered: color-mix(in srgb, var(--blue) 80%, black);
+    --secondary-selected: color-mix(in srgb, var(--blue) 80%, white);
+    --secondary-selectable: color-mix(in srgb, var(--blue) 50%, white);
+
     --accent: var(--purple);
-    --accent-hovered: color-mix(in srgb, var(--purple) 80%, white);
-    --accent-selected: color-mix(in srgb, var(--purple) 80%, black);
+    --accent-hovered: color-mix(in srgb, var(--purple) 80%, black);
+    --accent-selected: color-mix(in srgb, var(--purple) 80%, white);
+    --accent-selectable: color-mix(in srgb, var(--purple) 50%, white);
 }
 
 .keyword {

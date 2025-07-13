@@ -97,6 +97,7 @@ body {
     text-align: left;
     gap: 1rem;
     padding: 1rem;
+    width: fit-content;
 }
 
 .title-container h1, span {
