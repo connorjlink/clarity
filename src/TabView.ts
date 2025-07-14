@@ -105,7 +105,7 @@ class MyTabViewElement extends HTMLElement {
             if (index === 0) {
                 element.classList.add('active');
             }
-            this.pages.push(element);
+            this.pages.push(element as HTMLElement);
         });
     }
 }
