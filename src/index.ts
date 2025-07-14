@@ -1,6 +1,8 @@
 import * as ow from './output_window';
 import * as se from './source_editor';
 import * as tv from './TabView';
+import * as as from './ArticleSelector';
+import * as ci from './CustomIcon';
 
 const outputWindow = document.getElementById('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [];

@@ -13,18 +13,20 @@
         <link rel="stylesheet" href="./src/output_window.css" />
         <link rel="stylesheet" href="./src/source_editor.css" />
         <link rel="stylesheet" href="./src/TabView.css" />
-    </head>
-    <body>
+        <link rel="stylesheet" href="./src/ArticleSelector.css" />
+
         <style>
             body { 
                 background: rgb(30, 30, 30);
             }
         </style>
+    </head>
 
+    <body>
         <my-tabview>
             <my-header>
                 <div class="title-container">
-                    <a href="./"><img src="./res/haze.svg" class="logo shadowed" alt="clarityLogo" /></a>
+                    <a href="./"><custom-icon text="Hz" size="128" radius="1.5rem"></custom-icon></a>
                     <div>
                         <h1><a class="emphasis" href="https://github.com/connorjlink/haze">Haze</a> Clarity</h1>
                         <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
@@ -37,32 +39,108 @@
                 <output-window id="output-window"></output-window>
             </my-tab>
             <my-tab label="Learn" route="learn">
-                <h1>Learn</h1>
-                <body>
-                    <header>
-                        <nav>
-                        </nav>
-                    </header>
-                    <section>
-                        <main>
-                            <article>
-                                <!-- blog content goes here -->
-                            </article>
-                        </main>
-                        <aside>
-                            <div></div>
-                        </aside>
-                    </section>
-                    <footer>
-                        <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
-                    </footer>
-                </body>
+                <my-articleselector>
+                    <my-article 
+                        article-title="Preprocessing" 
+                        article-description="An example article about the frontend source preprocessor."
+                        article-image-color-shadow="rgb(35, 40, 255)"
+                        article-image-color-top-left="rgb(190, 225, 255)"
+                        article-image-color-top-right="rgb(100, 180, 255)"
+                        article-image-color-bottom-left="rgb(90, 100, 255)"
+                        article-image-color-bottom-right="rgb(50, 60, 255)"
+                        article-image-text="Pp"
+                        article-image-size="64"
+                        article-route="preprocessor">
+                        <iframe src="./lexer.html"></iframe>
+                    </my-article>
+                    <my-article 
+                        article-title="Lexical Analysis" 
+                        article-description="An example article about the lexer."
+                        article-image-color-shadow="rgb(130, 60, 40)"
+                        article-image-color-top-left="rgb(255, 183, 77)"
+                        article-image-color-top-right="rgb(255, 138, 101)"
+                        article-image-color-bottom-left="rgb(255, 112, 155)"
+                        article-image-color-bottom-right="rgb(255, 204, 128)"
+                        article-image-text="Lx"
+                        article-image-size="64"
+                        article-route="lexer">
+                        <iframe src="./lexer.html"></iframe>
+                    </my-article>
+                    <my-article 
+                        article-title="Parsing" 
+                        article-description="An example article about the frontend parser."
+                        article-image-color-shadow="rgb(60, 40, 75)"
+                        article-image-color-top-left="rgb(230, 180, 240)"
+                        article-image-color-top-right="rgb(180, 135, 200)"
+                        article-image-color-bottom-left="rgb(140, 110, 170)"
+                        article-image-color-bottom-right="rgb(100, 80, 140)"
+                        article-image-text="Pa"
+                        article-image-size="64"
+                        article-route="parser">
+                        <iframe src="./lexer.html"></iframe>
+                    </my-article>
+                    <my-article 
+                        article-title="IR Generation" 
+                        article-description="An example article about the frontend parser."
+article-image-color-shadow="rgb(35, 40, 65)"
+article-image-color-top-left="rgb(220, 225, 255)"
+article-image-color-top-right="rgb(170, 180, 250)"
+article-image-color-bottom-left="rgb(90, 100, 160)"
+article-image-color-bottom-right="rgb(50, 60, 150)"
+                        article-image-text="Ir"
+                        article-image-size="64"
+                        article-route="ir">
+                        <iframe src="./lexer.html"></iframe>
+                    </my-article>
+
+                    <my-article 
+                        article-title="Peephole Optimization" 
+                        article-description="An example article about the backend peephole optimizer."
+article-image-color-shadow="rgb(70, 90, 80)"
+article-image-color-top-left="rgb(225, 235, 225)"
+article-image-color-top-right="rgb(195, 215, 205)"
+article-image-color-bottom-left="rgb(165, 185, 170)"
+article-image-color-bottom-right="rgb(140, 160, 150)"
+                        article-image-text="Po"
+                        article-image-size="64"
+                        article-route="peephole">
+                        <iframe src="./lexer.html"></iframe>
+                    </my-article>
+                    <my-article 
+                        article-title="Code Generation" 
+                        article-description="An example article about the backend code generator."
+                        article-image-color-shadow="rgb(60, 80, 50)"
+                        article-image-color-shadow="rgb(0, 96, 100)"
+                        article-image-color-top-left="rgb(178, 235, 242)"
+                        article-image-color-top-right="rgb(77, 182, 172)"
+                        article-image-color-bottom-left="rgb(128, 222, 234)"
+                        article-image-color-bottom-right="rgb(129, 212, 250)"
+                        article-image-text="Cg"
+                        article-image-size="64"
+                        article-route="codegen">
+                        <iframe src="./lexer.html"></iframe>
+                    </my-article>
+                    <my-article 
+                        article-title="Titanium" 
+                        article-description="An example article about the former Titanium compiler implementation."
+                        article-image-color-shadow="rgb(60, 90, 95)"
+article-image-color-top-left="rgb(210, 225, 210)"
+article-image-color-top-right="rgb(170, 235, 210)"
+article-image-color-bottom-left="rgb(170, 230, 215)"
+article-image-color-bottom-right="rgb(130, 180, 190)"
+                        article-image-text="Ti"
+                        article-image-size="64"
+                        article-route="titanium">
+                        <iframe src="./lexer.html"></iframe>
+                    </my-article>
+                    
+                </my-articleselector>
             </my-tab>
             <my-tab label="About" route="about">
                 <h1>Hello from the about page</h1>
                 <h2>Technical Details</h2>
             </my-tab>
-        </tabbed-layout>
+        </my-tabview>
         
         <script type="module" src="./src/index.ts"></script>
     </body>

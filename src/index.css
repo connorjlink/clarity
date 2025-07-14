@@ -4,11 +4,13 @@
 
     --corner-radius: 5px;
     --clickspot-width: 10px;
+
+    --global-font: 'Consolas', 'Menlo', 'Cascadia Mono', monospace;
 }
 
 /* NOTE: supposedly, this is the highest-performance method to set global defaults for these rules */ 
 html {
-    font-family: 'Consolas', 'Menlo', 'Cascadia Mono', monospace !important;
+    font-family: var(--global-font) !important;
     box-sizing: border-box;
 }
 
@@ -54,10 +56,6 @@ a {
     a:visited {
         color: var(--accent);
     }
-
-svg {
-    fill: var(--dark-foreground) !important;
-}
 
 
 .logo {

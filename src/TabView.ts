@@ -70,7 +70,6 @@ class MyTabViewElement extends HTMLElement {
         this.tabsContent.className = 'tabs-content';
         
         const tabsHeader = this.querySelector('.tabs-bar') as HTMLDivElement | null;
-        console.log(tabsHeader);
         if (tabsHeader) {
             tabsHeader.append(this.tabsContent);
         } else {
