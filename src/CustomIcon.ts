@@ -11,12 +11,11 @@ class CustomIconElement extends HTMLElement {
         const radius = this.getAttribute('radius');
         const radiusStyle = radius ? `border-radius: ${radius};` : '';
 
-        const topRightColor = this.getAttribute('top-right-color') || 'rgb(103, 154, 209)';
-        const topLeftColor = this.getAttribute('top-left-color') || 'rgb(50, 100, 160)';
-        const bottomLeftColor = this.getAttribute('bottom-left-color') || 'rgb(143, 132, 213)';
-        const bottomRightColor = this.getAttribute('bottom-right-color') || 'rgb(150, 197, 219)';
-
-        const dropShadowColor = this.getAttribute('shadow-color') || 'rgb(40, 80, 130)';
+        const shadowColor = this.getAttribute('shadow-color') || 'var(--haze-color-shadow)';
+        const foregroundTopColor = this.getAttribute('foreground-top-color') || 'var(--haze-color-foreground-top)';
+        const foregroundBottomColor = this.getAttribute('foreground-bottom-color') || 'var(--haze-color-foreground-bottom)';
+        const backgroundTopColor = this.getAttribute('background-top-color') || 'var(--haze-color-background-top)';
+        const backgroundBottomColor = this.getAttribute('background-bottom-color') || 'var(--haze-color-background-bottom)';
 
         const uid = (Math.random() + 1).toString(36).substring(7);
 
@@ -29,13 +28,13 @@ class CustomIconElement extends HTMLElement {
             <svg class="custom-icon" style="${radiusStyle}" width="${size}" height="${size}" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
             	<defs>
             		<linearGradient id="${bgGradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
-            			<stop offset="0%" stop-color="${topRightColor}" />
-            			<stop offset="100%" stop-color="${bottomLeftColor}" />
+            			<stop offset="0%" stop-color="${backgroundTopColor}" />
+            			<stop offset="100%" stop-color="${backgroundBottomColor}" />
             		</linearGradient>
 
             		<linearGradient id="${textGradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
-            			<stop offset="0%" stop-color="${bottomRightColor}" />
-            			<stop offset="100%" stop-color="${topLeftColor}" />
+            			<stop offset="0%" stop-color="${foregroundTopColor}" />
+            			<stop offset="100%" stop-color="${foregroundBottomColor}" />
             		</linearGradient>
 
             		<linearGradient id="highlight" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -43,8 +42,8 @@ class CustomIconElement extends HTMLElement {
             			<stop offset="100%" stop-color="white" stop-opacity="0.4" />
             		</linearGradient>
 
-            		<filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
-            			<feDropShadow dx="5" dy="5" stdDeviation="5" flood-color="rgba(0,0,0,0.5)" />
+            		<filter id="${dropShadowId}" x="-20%" y="-20%" width="140%" height="140%">
+            			<feDropShadow dx="5" dy="5" stdDeviation="10" flood-color="rgba(0,0,0,0.5)" />
             		</filter>
             	</defs>
 
@@ -55,7 +54,7 @@ class CustomIconElement extends HTMLElement {
 
             	<text x="155" y="170" text-anchor="middle" dominant-baseline="middle"
             		  font-size="180"
-            		  fill="${dropShadowColor}" opacity="1.0">
+            		  fill="${shadowColor}" opacity="1.0">
             		${text}
             	</text>
 

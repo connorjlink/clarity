@@ -50,6 +50,61 @@
     --accent-hovered: color-mix(in srgb, var(--purple) 80%, black);
     --accent-selected: color-mix(in srgb, var(--purple) 80%, white);
     --accent-selectable: color-mix(in srgb, var(--purple) 50%, white);
+
+
+    --haze-color-shadow: rgb(40, 80, 130);
+    --haze-color-foreground-top: rgb(150, 197, 219);
+    --haze-color-foreground-bottom: rgb(50, 100, 160);
+    --haze-color-background-top: rgb(103, 154, 209);
+    --haze-color-background-bottom: rgb(143, 132, 213);
+
+    --preprocessor-color-shadow: rgb(23, 26, 176);
+    --preprocessor-color-foreground-top: rgb(156, 209, 255);
+    --preprocessor-color-foreground-bottom: rgb(87, 31, 255);
+    --preprocessor-color-background-top: rgb(90, 100, 255);
+    --preprocessor-color-background-bottom: rgb(50, 107, 206);
+
+    --lexer-color-shadow: rgb(130, 60, 40);
+    --lexer-color-foreground-top: rgb(255, 204, 128);
+    --lexer-color-foreground-bottom: rgb(255, 183, 77);
+    --lexer-color-background-top: rgb(255, 112, 155);
+    --lexer-color-background-bottom: rgb(255, 138, 101);
+
+    --parser-color-shadow: rgb(60, 40, 75);
+    --parser-color-foreground-top: #b68ce0;
+    --parser-color-foreground-bottom: #8e65f5;
+    --parser-color-background-top: #8221EB;
+    --parser-color-background-bottom: #472087;
+
+    --ir-color-shadow: rgb(35, 40, 65);
+    --ir-color-foreground-top: rgb(220, 225, 255);
+    --ir-color-foreground-bottom: rgb(170, 180, 250);
+    --ir-color-background-top: rgb(90, 100, 160);
+    --ir-color-background-bottom: rgb(50, 60, 150);
+
+    --peephole-color-shadow: rgb(70, 90, 80);
+    --peephole-color-foreground-top: rgb(225, 235, 225);
+    --peephole-color-foreground-bottom: rgb(195, 215, 205);
+    --peephole-color-background-top: rgb(165, 185, 170);
+    --peephole-color-background-bottom: rgb(140, 160, 150);
+
+    --codegen-color-shadow: rgb(0, 96, 100);
+    --codegen-color-foreground-top: rgb(178, 235, 242);
+    --codegen-color-foreground-bottom: rgb(77, 182, 172);
+    --codegen-color-background-top: rgb(128, 222, 234);
+    --codegen-color-background-bottom: rgb(129, 212, 250);
+
+    --executable-color-shadow: rgb(60, 90, 95);
+    --executable-color-foreground-top: rgb(0, 139, 73);
+    --executable-color-foreground-bottom: rgb(0, 188, 130);
+    --executable-color-background-top: rgb(55, 116, 55);
+    --executable-color-background-bottom: rgb(69, 90, 43);
+
+    --titanium-color-shadow: rgb(60, 90, 95);
+    --titanium-color-foreground-top: rgb(210, 225, 210);
+    --titanium-color-foreground-bottom: rgb(170, 235, 210);
+    --titanium-color-background-top: rgb(170, 230, 215);
+    --titanium-color-background-bottom: rgb(130, 180, 190);
 }
 
 .keyword {
