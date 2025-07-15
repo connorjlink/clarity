@@ -94,11 +94,11 @@
     --codegen-color-background-top: rgb(128, 222, 234);
     --codegen-color-background-bottom: rgb(129, 212, 250);
 
-    --executable-color-shadow: rgb(60, 90, 95);
-    --executable-color-foreground-top: rgb(0, 139, 73);
-    --executable-color-foreground-bottom: rgb(0, 188, 130);
-    --executable-color-background-top: rgb(55, 116, 55);
-    --executable-color-background-bottom: rgb(69, 90, 43);
+    --executable-color-shadow: rgb(59, 60, 6);
+    --executable-color-foreground-top: rgb(182, 214, 37);
+    --executable-color-foreground-bottom: rgb(159, 169, 31);
+    --executable-color-background-top: rgb(85, 107, 47);
+    --executable-color-background-bottom: rgb(69, 77, 29);
 
     --titanium-color-shadow: rgb(60, 90, 95);
     --titanium-color-foreground-top: rgb(210, 225, 210);
