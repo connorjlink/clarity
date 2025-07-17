@@ -79,8 +79,11 @@ a {
 }
 
 .shadowed {
-    box-shadow: 0 0 1em #000a;
+    box-shadow: 0 0 1em #0008;
 }
+    .shadowed.hoverable:hover {
+        box-shadow: 0 0 1em #000c;
+    }
 
 body {
     background: var(--dark-background);

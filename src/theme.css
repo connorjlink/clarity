@@ -31,6 +31,7 @@
     --dark-background-l: rgb(69, 69, 69);
     --dark-background-ll: rgb(80, 80, 80);
     --dark-foreground: rgb(230, 230, 230);
+    --dark-foreground-l: rgb(180, 180, 180);
     --light-background-d: rgb(220, 220, 220);
     --light-background: rgb(240, 240, 240);
     --light-background-e: rgb(250, 250, 250);
@@ -59,8 +60,8 @@
     --haze-color-background-bottom: rgb(143, 132, 213);
 
     --preprocessor-color-shadow: rgb(23, 26, 176);
-    --preprocessor-color-foreground-top: rgb(156, 209, 255);
-    --preprocessor-color-foreground-bottom: rgb(112, 65, 255);
+    --preprocessor-color-foreground-top: rgb(181, 221, 255);
+    --preprocessor-color-foreground-bottom: #6890ff;
     --preprocessor-color-background-top: rgb(90, 100, 255);
     --preprocessor-color-background-bottom: rgb(10, 51, 123);
 
@@ -71,14 +72,26 @@
     --lexer-color-background-bottom: rgb(255, 138, 101);
 
     --parser-color-shadow: rgb(60, 40, 75);
-    --parser-color-foreground-top: #b68ce0;
-    --parser-color-foreground-bottom: #8e65f5;
+    --parser-color-foreground-top: #bd9bdf;
+    --parser-color-foreground-bottom: #9e7fea;
     --parser-color-background-top: #8221EB;
     --parser-color-background-bottom: #341664;
 
+    --ast-color-shadow: rgb(36, 66, 40);
+    --ast-color-foreground-top: rgb(193, 236, 200);
+    --ast-color-foreground-bottom: rgb(129, 196, 142);
+    --ast-color-background-top: rgb(90, 160, 102);
+    --ast-color-background-bottom: rgb(25, 81, 37);
+
+    --tac-color-shadow: rgb(89, 89, 41);
+    --tac-color-foreground-top: rgb(215, 197, 167);
+    --tac-color-foreground-bottom: rgb(255, 193, 107);
+    --tac-color-background-top: rgb(255, 172, 70);
+    --tac-color-background-bottom: rgb(111, 57, 14);
+
     --ir-color-shadow: rgb(35, 40, 65);
-    --ir-color-foreground-top: rgb(220, 225, 255);
-    --ir-color-foreground-bottom: rgb(170, 180, 250);
+    --ir-color-foreground-top: rgb(160, 174, 255);
+    --ir-color-foreground-bottom: rgb(198, 205, 255);
     --ir-color-background-top: rgb(90, 100, 160);
     --ir-color-background-bottom: rgb(39, 48, 124);
 
@@ -89,42 +102,16 @@
     --peephole-color-background-bottom: rgb(56, 69, 63);
 
     --codegen-color-shadow: rgb(0, 96, 100);
-    --codegen-color-foreground-top: rgb(178, 235, 242);
-    --codegen-color-foreground-bottom: rgb(77, 182, 172);
-    --codegen-color-background-top: rgb(112, 231, 255);
-    --codegen-color-background-bottom: rgb(79, 114, 198);
+    --codegen-color-foreground-top: rgb(181, 225, 245);
+    --codegen-color-foreground-bottom: rgb(124, 190, 196);
+    --codegen-color-background-top: rgb(69, 194, 219);
+    --codegen-color-background-bottom: rgb(40, 74, 153);
 
---executable-color-shadow: rgb(129, 40, 98);
---executable-color-foreground-top: rgb(255, 199, 59);
---executable-color-foreground-bottom: rgb(251, 137, 51);
---executable-color-background-top: rgb(231, 112, 255);
---executable-color-background-bottom: rgb(255, 102, 199);
-
-
---testing-color-shadow: rgb(129, 129, 40);
---testing-color-foreground-top: rgb(206, 255, 128);
---testing-color-foreground-bottom: rgb(187, 255, 77);
---testing-color-background-top: rgb(255, 181, 112);
---testing-color-background-bottom: rgb(252, 255, 102);
-
---hello-color-shadow: rgb(40, 129, 129);
---hello-color-foreground-top: rgb(149, 219, 202);
---hello-color-foreground-bottom: rgb(50, 159, 159);
---hello-color-background-top: rgb(102, 209, 206);
---hello-color-background-bottom: rgb(133, 167, 213);
-
-/* TODO: need to fix the foreground to have better contrast, background is okAY! */
---example-color-shadow: rgb(129, 129, 40);
---example-color-foreground-top: rgb(219, 202, 149);
---example-color-foreground-bottom: rgb(159, 159, 50);
---example-color-background-top: rgb(209, 206, 102);
---example-color-background-bottom: rgb(167, 213, 133);
-
-    --titanium-color-shadow: rgb(60, 90, 95);
-    --titanium-color-foreground-top: rgb(210, 225, 210);
-    --titanium-color-foreground-bottom: rgb(170, 235, 210);
-    --titanium-color-background-top: rgb(170, 230, 215);
-    --titanium-color-background-bottom: rgb(77, 108, 114);
+    --executable-color-shadow: rgb(60, 90, 95);
+    --executable-color-foreground-top: rgb(210, 225, 210);
+    --executable-color-foreground-bottom: rgb(170, 235, 210);
+    --executable-color-background-top: rgb(170, 230, 215);
+    --executable-color-background-bottom: rgb(77, 108, 114);
 }
 
 .keyword {

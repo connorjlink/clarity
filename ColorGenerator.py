@@ -32,26 +32,28 @@ def generate_palette(rgb_list, center_color=None):
 
 # PASTE INPUT COLORS HERE
 #input_colors = "rgb(240, 10, 50), rgb(100, 200, 150), rgb(0, 120, 255), rgb(255, 220, 0)"
-input_colors = '''        --lexer-color-shadow: rgb(130, 60, 40);
-    --lexer-color-foreground-top: rgb(255, 204, 128);
-    --lexer-color-foreground-bottom: rgb(255, 183, 77);
-    --lexer-color-background-top: rgb(255, 112, 155);
-    --lexer-color-background-bottom: rgb(255, 138, 101);'''
+input_colors = '''                   --ast-color-shadow: rgb(36, 66, 40);
+    --ast-color-foreground-top: rgb(193, 236, 200);
+    --ast-color-foreground-bottom: rgb(129, 196, 142);
+    --ast-color-background-top: rgb(90, 160, 102);
+    --ast-color-background-bottom: rgb(25, 81, 37);
+'''
 rgb_list = parse_rgb(input_colors)
 
 # PASTE A CENTER COLOR HERE (OR NONE TO CHOOSE RANDOMLY)
-center_color = (60, 27, 97)
-center_color = None
+center_color = (255, 255, 0)
 
 new_palette = generate_palette(rgb_list, center_color)
 
+prefix = "ast"
+
 print("New Palette (RGB):")
 if len(new_palette) == 5:
-    print(f"--executable-color-shadow: rgb{new_palette[0]};")
-    print(f"--executable-color-foreground-top: rgb{new_palette[1]};")
-    print(f"--executable-color-foreground-bottom: rgb{new_palette[2]};")
-    print(f"--executable-color-background-top: rgb{new_palette[3]};")
-    print(f"--executable-color-background-bottom: rgb{new_palette[4]};")
+    print(f"--{prefix}-color-shadow: rgb{new_palette[0]};")
+    print(f"--{prefix}-color-foreground-top: rgb{new_palette[1]};")
+    print(f"--{prefix}-color-foreground-bottom: rgb{new_palette[2]};")
+    print(f"--{prefix}-color-background-top: rgb{new_palette[3]};")
+    print(f"--{prefix}-color-background-bottom: rgb{new_palette[4]};")
 else:
     for rgb in new_palette:
         print(f"rgb{rgb}")

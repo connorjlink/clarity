@@ -11,13 +11,16 @@ class MyArticleSelectorElement extends HTMLElement {
         const list = document.createElement('div');
         list.className = 'article-list';
 
-        this.querySelectorAll('my-article').forEach((article: Element) => {
+        const articles = this.querySelectorAll('my-article');
+        for (let i = 0; i < articles.length; i++) {
+            const article = articles[i];
+        
             const title = article.getAttribute('article-title') || '';
             const route = article.getAttribute('article-route') || '#';
             const description = article.getAttribute('article-description') || '';
 
             const item = document.createElement('div');
-            item.className = 'article-item';
+            item.className = 'article-item shadowed hoverable';
             item.addEventListener('click', () => {
                 window.location.hash = route;
             });
@@ -41,13 +44,16 @@ class MyArticleSelectorElement extends HTMLElement {
 
             item.appendChild(textContainer);
             list.appendChild(item);
-        });
+
+            // if (i !== articles.length - 1) {
+            //     list.append(document.createElement('hr'));
+            // }
+        }
 
         this.innerHTML = '';
         this.appendChild(list);
     }
 }
-
 
 class MyArticleElement extends HTMLElement {
 

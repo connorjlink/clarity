@@ -3,6 +3,7 @@ import * as se from './source_editor';
 import './TabView';
 import './ArticleSelector';
 import './CustomIcon';
+import './Collapsible';
 
 const outputWindow = document.getElementById('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [];
