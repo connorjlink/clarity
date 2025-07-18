@@ -107,6 +107,18 @@
     --codegen-color-background-top: rgb(69, 194, 219);
     --codegen-color-background-bottom: rgb(40, 74, 153);
 
+    --link-color-shadow: rgb(89, 89, 41);
+    --link-color-foreground-top: rgb(252, 187, 224);
+    --link-color-foreground-bottom: rgb(226, 143, 208);
+    --link-color-background-top: rgb(220, 138, 215);
+    --link-color-background-bottom: rgb(74, 47, 71);
+
+    --lto-color-shadow: rgb(89, 89, 41);
+    --lto-color-foreground-top: rgb(208, 181, 135);
+    --lto-color-foreground-bottom: rgb(180, 151, 85);
+    --lto-color-background-top: rgb(219, 164, 12);
+    --lto-color-background-bottom: rgb(95, 73, 11);
+
     --executable-color-shadow: rgb(60, 90, 95);
     --executable-color-foreground-top: rgb(210, 225, 210);
     --executable-color-foreground-bottom: rgb(170, 235, 210);
