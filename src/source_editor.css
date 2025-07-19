@@ -45,17 +45,15 @@ source-editor {
     source-editor:focus {
         border-top-color: var(--accent);
     }
-
-pre {
-    counter-reset: line;
-}
-
-code {
-    display: flex;
-    flex-direction: row; 
-    counter-increment: line;
-}
-    code:before {
+    source-editor pre {
+        counter-reset: line;
+    }
+    source-editor code {
+        display: flex;
+        flex-direction: row; 
+        counter-increment: line;
+    }
+    source-editor code:before {
         content: counter(line);
         padding-right: 1.5rem;
         color: var(--plain-text);

@@ -25,7 +25,7 @@ class CustomIconElement extends HTMLElement {
         const dropShadowId = `dropShadow-${uid}`;
 
         this.innerHTML = `
-            <svg class="custom-icon" style="${radiusStyle}" width="${size}" height="${size}" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+            <svg class="my-custom-icon" style="${radiusStyle}" width="${size}" height="${size}" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
             	<defs>
             		<linearGradient id="${bgGradientId}" x1="0%" y1="0%" x2="0%" y2="100%">
             			<stop offset="0%" stop-color="${backgroundTopColor}" />
@@ -69,4 +69,4 @@ class CustomIconElement extends HTMLElement {
     }
 }
 
-customElements.define('custom-icon', CustomIconElement);
+customElements.define('my-custom-icon', CustomIconElement);

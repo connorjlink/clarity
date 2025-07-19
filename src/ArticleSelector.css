@@ -30,7 +30,7 @@
     border-color: var(--dark-background-ll);
 }
 
-.custom-icon {
+.my-custom-icon {
     border-radius: 0.5rem;
 }
 
@@ -42,3 +42,21 @@
     margin: 0;
     color: var(--dark-foreground-l);
 }
+
+.article-content-container {
+    display: none;
+    flex-direction: row;
+    justify-content: center;
+    font-family: Georgia;
+    width: 700px;
+    max-width: 50%;
+    margin: auto;
+}
+    .article-content-container hr {
+        border: none;
+        border-top: 1px solid var(--dark-background-e);
+        margin: 2rem 0;
+    }
+    .article-content-container p {
+        line-height: 1.5rem;
+    }

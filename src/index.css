@@ -1,6 +1,5 @@
 :root {
     color-scheme: dark;
-    overflow: hidden;
 
     --corner-radius: 5px;
     --clickspot-width: 10px;
@@ -115,6 +114,21 @@ html, body, #root {
     height: 100%;
     margin: 0;
     padding: 0;
+}
+
+blockquote {
+    margin: 2rem;
+    padding: 10px 1rem;
+    border-left: 4px solid var(--accent); 
+    background: var(--dark-background-e);
+    width: fit-content;
+}
+
+code {
+    background: var(--dark-background-e);
+    padding: 1px 3px;
+    border: 1px solid var(--dark-background-l);
+    border-radius: 3px;
 }
 
 program-tree {
