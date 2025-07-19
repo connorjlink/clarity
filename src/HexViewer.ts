@@ -94,29 +94,49 @@ export class HexViewerElement extends HTMLElement {
         for (let row = 0; row < Math.ceil(this._data.length / this._columns); row++) {
             const addr = row * this._columns;
             html += `<span class="hex-address">${addr.toString(16).padStart(8, '0')}</span>  `;
-            // Hex bytes
+
+            // Hex bytes grouped by color (basically per symbol in the future)
+            let lastColor = '';
+            let hexGroup = '';
             for (let col = 0; col < this._columns; col++) {
                 const i = addr + col;
                 if (i < this._data.length) {
                     const sym = this.getSymbolAt(i);
                     const color = sym ? sym.color : '#ccc';
-                    html += `<span style="color:${color}">${this._data[i].toString(16).padStart(2, '0')}</span> `;
+                    const hexByte = this._data[i].toString(16).padStart(2, '0') + ' ';
+                    if (color !== lastColor && hexGroup) {
+                        html += `<span style="color:${lastColor}">${hexGroup}</span>`;
+                        hexGroup = hexByte;
+                        lastColor = color;
+                    } else {
+                        hexGroup += hexByte;
+                        lastColor = color;
+                    }
                 } else {
+                    if (hexGroup) {
+                        html += `<span style="color:${lastColor}">${hexGroup}</span>`;
+                        hexGroup = '';
+                    }
                     html += '   ';
                 }
             }
+            if (hexGroup) {
+                html += `<span style="color:${lastColor}">${hexGroup}</span>`;
+            }
             html += ' ';
-            // ASCII
+
+            // ASCII grouped one tag per row
+            let asciiStr = '';
             for (let col = 0; col < this._columns; col++) {
                 const i = addr + col;
                 if (i < this._data.length) {
                     const byte = this._data[i];
-                    html += `<span class="hex-ascii">${(byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.'}</span>`;
+                    asciiStr += (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.';
                 } else {
-                    html += ' ';
+                    asciiStr += ' ';
                 }
             }
-            html += '\n';
+            html += `<span class="hex-ascii">${asciiStr}</span>\n`;
         }
         return html;
     }
