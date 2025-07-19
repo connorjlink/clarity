@@ -60,3 +60,6 @@
     .article-content-container p {
         line-height: 1.5rem;
     }
+    .article-content-container code {
+        white-space: nowrap;
+    }
