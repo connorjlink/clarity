@@ -11,8 +11,8 @@
                 background: rgb(30, 30, 30);
             }
         </style>
-      <script type="module" crossorigin src="/clarity/assets/index-GT6j9loj.js"></script>
-      <link rel="stylesheet" crossorigin href="/clarity/assets/index-XinfnF6K.css">
+      <script type="module" crossorigin src="/clarity/assets/index-B90V-aun.js"></script>
+      <link rel="stylesheet" crossorigin href="/clarity/assets/index-f1TbAP-O.css">
     </head>
 
     <body>
@@ -26,15 +26,17 @@
                     </div>
                 </div>
             </my-header>
-            <my-tab label="Home" route="home">
-                <program-tree></program-tree>
+            <my-tab label="Home" route="home" class="home-tab">
+                <program-tree id="program-tree"></program-tree>
                 <source-editor id="main-editor" class="shadowed"></source-editor>
                 <output-window id="output-window"></output-window>
+                <div class="status-bar">
+                    Idle.
+                </div>
             </my-tab>
             <my-tab label="Learn" route="learn">
                 <my-articleselector>
-                    <my-article 
-                        article-route="preprocessor">
+                    <my-article>
                         <my-article-header
                             article-title="Preprocessing" 
                             article-description="The definition of micro-managing macros.">
@@ -53,8 +55,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="lexer">
+                    <my-article>
                         <my-article-header
                             article-title="Lexical Analysis" 
                             article-description="Read it and reap: scanning between the lines.">
@@ -73,8 +74,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="parser">
+                    <my-article>
                         <my-article-header
                             article-title="Parsing" 
                             article-description="A spiraling descent into where things began.">
@@ -93,8 +93,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="ast">
+                    <my-article>
                         <my-article-header
                             article-title="Abstract Syntax Tree Optimization" 
                             article-description="Miss the forest for the trees no more.">
@@ -113,8 +112,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="ir">
+                    <my-article>
                         <my-article-header
                             article-title="IR Code Generation" 
                             article-description="Distilled semantics. 200 proof(s).">
@@ -133,8 +131,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="is">
+                    <my-article>
                         <my-article-header
                             article-title="Three-Address Code Optimization" 
                             article-description="Less is more.">
@@ -153,8 +150,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="codegen">
+                    <my-article>
                         <my-article-header
                             article-title="x86 Code Generation" 
                             article-description="An archaic dialect spoken only by a billion pedants.">
@@ -173,8 +169,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="peephole">
+                    <my-article>
                         <my-article-header
                             article-title="Peephole Optimization" 
                             article-description="Seeing the bigger picture through a tiny window.">
@@ -193,8 +188,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="peephole">
+                    <my-article>
                         <my-article-header
                             article-title="Translation Unit Linking" 
                             article-description="Here's my address, so call me, maybe.">
@@ -213,8 +207,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="peephole">
+                    <my-article>
                         <my-article-header
                             article-title="Link-Time Optimization" 
                             article-description="Caching in on visibility without bound.">
@@ -233,8 +226,7 @@
                         </my-article-content>
                     </my-article>
 
-                    <my-article 
-                        article-route="titanium">
+                    <my-article>
                         <my-article-header 
                             article-title="Executable Exporting"
                             article-description="Fossilizing fresh code in the sediment of antiquity.">
