@@ -34,6 +34,13 @@
     border-radius: 0.5rem;
 }
 
+.article-header {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    align-items: center;
+}
+
 .article-title {
     margin: 0;
 }
@@ -45,7 +52,7 @@
 
 .article-content-container {
     display: none;
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
     font-family: Georgia;
     width: 700px;
@@ -63,3 +70,13 @@
     .article-content-container code {
         white-space: nowrap;
     }
+    .article-content-container my-article-header {
+        font-family: var(--global-font);
+        margin: 1rem auto 2rem auto;s
+    }
+
+my-article nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}

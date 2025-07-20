@@ -14,42 +14,27 @@ class MyArticleSelectorElement extends HTMLElement {
         const articles = this.querySelectorAll('my-article');
         for (let i = 0; i < articles.length; i++) {
             const article = articles[i];
+            const header = article.querySelector('my-article-header');
+
+            if (!header) {
+                console.warn(`Article ${i} does not have a header.`);
+                continue;
+            }
         
-            const title = article.getAttribute('article-title') || '';
+            // TODO: figure out proper routing
             const route = article.getAttribute('article-route') || '#';
-            const description = article.getAttribute('article-description') || '';
 
             const item = document.createElement('div');
             item.className = 'article-item shadowed hoverable';
+            item.innerHTML = header.outerHTML;
             item.addEventListener('click', () => {
-                // TODO: implement custom navigation logic to replace the 
-                const articleContent = this.querySelector('.article-content-container') as HTMLElement
-                if (articleContent) {
-                    window.location.hash = route;
+                const articleContentContainerRef = this.querySelector('.article-content-container') as HTMLElement;
+                if (articleContentContainerRef) {
                     list.style.display = 'none';
-                    articleContent.style.display = 'flex';
-                    articleContent.innerHTML = article.innerHTML;
+                    articleContentContainerRef.style.display = 'flex';
+                    articleContentContainerRef.innerHTML = article.innerHTML;
                 }
             });
-
-            const textContainer = document.createElement('div');
-            const titleElem = document.createElement('h3');
-            titleElem.textContent = title;
-            titleElem.className = 'article-title';
-
-            const descElem = document.createElement('p');
-            descElem.textContent = description;
-            descElem.className = 'article-desc';
-
-            textContainer.appendChild(titleElem);
-            textContainer.appendChild(descElem);
-
-            const image = this.querySelector('my-custom-icon');
-            if (image) {
-                item.prepend(image);
-            }
-
-            item.appendChild(textContainer);
             list.appendChild(item);
         }
 
@@ -66,74 +51,112 @@ class MyArticleSelectorElement extends HTMLElement {
 }
 
 class MyArticleElement extends HTMLElement {
+    private _rendered: boolean = false;
+
     connectedCallback() {
         this.render();
     }
 
     render() {
+        if (this._rendered) {
+            return;
+        }
+        this._rendered = true;
+
         const title = this.getAttribute('article-title') || 'Untitled Article';
         const description = this.getAttribute('article-description') || '';
-        const header = document.createElement('my-article-header');
-        const content = this.querySelector('my-article-content') || document.createElement('my-article-content');
-        header.setAttribute('article-title', title);
-        
-        const icon = this.querySelector('my-custom-icon');
-        if (icon) {
-            header.appendChild(icon);
+
+        const header = document.createElement('header');
+        const headerDiv = document.createElement('div');
+        const h1 = document.createElement('h1');
+        h1.textContent = title;
+        const descP = document.createElement('p');
+        descP.className = 'article-desc';
+        descP.textContent = description;
+        headerDiv.appendChild(h1);
+        headerDiv.appendChild(descP);
+        header.appendChild(headerDiv);
+
+        const iconRef = this.querySelector('my-custom-icon');
+        if (iconRef) { 
+            header.prepend(iconRef);
         }
 
-        const allArticles = Array.from(document.querySelectorAll('my-article-header'));
-        const allIcons = allArticles.map(article => {
-            return article.querySelector('my-custom-icon')?.cloneNode(true);
-        });
+        const section = document.createElement('section');
+        const main = document.createElement('main');
+        const article = document.createElement('article');
+
+        const content = this.querySelector('my-article-content');
+        if (content) {
+            article.appendChild(content);
+        }
+
+        main.appendChild(article);
+
+        const aside = document.createElement('aside');
+        const moreSpan = document.createElement('span');
+        moreSpan.textContent = 'More Articles';
+        const nav = document.createElement('nav');
+        nav.className = 'article-nav';
+        aside.appendChild(moreSpan);
+        aside.appendChild(nav);
+
+        section.appendChild(main);
+        section.appendChild(aside);
+
+        const footer = document.createElement('footer');
+        const copyright = document.createElement('div');
+        copyright.innerHTML = `
+            <span>Source code available at <a href="https://github.com/connorjlink/clarity">https://github.com/connorjlink/clarity</a>.</span>
+            <br>
+            <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
+        `;
+        footer.appendChild(copyright);
+
+        this.textContent = '';
+        this.appendChild(header);
+        this.appendChild(section);
+        this.appendChild(footer);
+
+        const allIcons = Array.from(document.querySelectorAll('my-article-header my-custom-icon'));
 
         let iconsList: CustomIconElement[] = [];
         for (const icon of allIcons) {
-            if (!icon) {
-                continue;
-            }
             const htmlIcon = icon as CustomIconElement;
             if (htmlIcon.getAttribute('article-title') === title) {
                 htmlIcon.classList.add('active');
             }
             iconsList.push(htmlIcon);
         }
-        
+
+        nav.append(...iconsList);
+    }
+}
+
+class MyArticleHeaderElement extends HTMLElement {
+    connectedCallback() {
+        this.render();
+    }
+
+    render() {
+        const title = this.getAttribute('article-title') || 'Untitled Article';
+        const description = this.getAttribute('article-description') || 'No description provided.';
+
+        // NOTE: will use the outer HTML to include the custom icon markup!
+        const customIconRef = this.querySelector('my-custom-icon');
+
         this.innerHTML = `
-            <header>
-                <h1>${title}</h1>
-                <p class="article-desc">${description}</p>
-            </header>
-            <section>
-                <main>
-                    <article class="article-content">
-                        <h2>Hello from the article</h2>
-                    </article>
-                </main>
-                <aside>
-                    <span>More Articles</span>
-                    <nav class="article-nav"></nav>
-                </aside>
-            </section>
-            <footer>
-                <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
-            </footer>
-        `
-
-        const articleContent = this.querySelector('.article-content');
-        if (articleContent) {
-            articleContent.appendChild(content);
-        }
-
-        const articleNavRef = this.querySelector('.article-nav');
-        if (articleNavRef) {
-            articleNavRef.append(...iconsList);
-        }
-
-        this.appendChild(header);
-        this.appendChild(content);
+            <div class="article-header">
+                ${customIconRef ? customIconRef.outerHTML : ''}
+                <div>
+                    <h2 class="article-title">${title}</h2>
+                    <p class="article-desc">${description}</p>
+                </div>
+            </div>
+        `;
     }
 }
 
 customElements.define('my-articleselector', MyArticleSelectorElement);
+customElements.define('my-article-header', MyArticleHeaderElement);
 customElements.define('my-article', MyArticleElement);
