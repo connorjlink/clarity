@@ -1,46 +1,16 @@
-.source-editor-container {
-    position: absolute;
-    width: 100%;
-    * {
-        font-size: 12pt;
-        text-wrap: wrap;
-    }
-}
-
-#highlighted-code {
-    position: absolute;
-    left: 0;
-    top: 0;
-    user-select: none;
-}
-
-#source-editor {
-    position: absolute;
-    padding-top: 1rem;
-    padding-left: 2rem;
-    width: 100%;
-    left: 0;
-    top: 0;
-    background: none;
-    border: none;
-}
-
 source-editor {
-    position: absolute;
-    bottom: 0;
     height: 350px;
     width: 100%;
     background: var(--dark-background-d);
-
     padding: 1rem;
     padding-left: 1rem;
     outline: none;
     display: flex;
     flex-direction: column;
     border-top: 1px solid var(--node-border);
+    border-bottom: 1px solid var(--node-border);
     transition: border-color 100ms ease-in-out;
-    overflow: scroll;
-    
+    overflow:auto;    
 }
     source-editor:focus {
         border-top-color: var(--accent);
@@ -98,5 +68,4 @@ source-editor {
     z-index: 2;
     outline: none;
     user-select: none;
-    /* El truco para ver el cursor y selección */
 }

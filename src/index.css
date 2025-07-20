@@ -134,3 +134,22 @@ code {
 program-tree {
     height: 100%;
 }
+
+.status-bar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: start;
+    padding: 0.5rem;
+    background: var(--accent);
+}
+
+my-tabview {
+    height: 100%;
+}
+
+.home-tab {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}

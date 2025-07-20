@@ -21,9 +21,6 @@ class MyArticleSelectorElement extends HTMLElement {
                 continue;
             }
         
-            // TODO: figure out proper routing
-            const route = article.getAttribute('article-route') || '#';
-
             const item = document.createElement('div');
             item.className = 'article-item shadowed hoverable';
             item.innerHTML = header.outerHTML;

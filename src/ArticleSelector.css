@@ -1,8 +1,13 @@
+my-articleselector {
+    width: 100%;
+}
+
 .article-list {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    width: 100%;
 }
     .article-list hr {
         width: 100%;

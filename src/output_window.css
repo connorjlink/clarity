@@ -1,8 +1,4 @@
 .console {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
     background: var(--dark-background-e);;
     color: #e0e0e0;
     max-height: 150px;
@@ -12,10 +8,12 @@
     box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
     pointer-events: auto;
     transition: opacity 100ms ease-in-out;
+    display: inline;
     opacity: 1;
 }
     .console.fade-out {
         opacity: 0;
+        display: none;
         pointer-events: none;
     }
 

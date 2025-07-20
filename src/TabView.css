@@ -22,10 +22,11 @@
 
 
 .page {
+    width: 100%;
     display: none;
 }
     .page.active {
-        display: block;
+        display: flex;
     }
 
 .tab-radio-wrapper label {

@@ -32,21 +32,21 @@ export class HexViewerElement extends HTMLElement {
         });
     }
 
-    initialize(uri: string, client: Worker, data: Uint8Array, columns: number = 0x10) {
+    initialize(uri: string, data: Uint8Array, columns: number = 0x10, client: Worker | null = null) {
         this._hasInitialized = true;
         this._client = client;
         this._sourceUri = uri;
         this._data = data;
         this._columns = columns;
 
-        this._client.addEventListener('message', (e) => {
+        this._client?.addEventListener('message', (e) => {
             if (e.data.type === 'symbolInfo' && e.data.uri === this._sourceUri) {
                 this._symbols = e.data.symbols;
                 this.render();
             }
         });
 
-        this._client.postMessage({
+        this._client?.postMessage({
             type: 'execute',
             method: 'openDocument',
             params: {
