@@ -77,7 +77,7 @@ my-articleselector {
     }
     .article-content-container my-article-header {
         font-family: var(--global-font);
-        margin: 1rem auto 2rem auto;s
+        margin: 1rem auto 2rem auto;
     }
 
 my-article nav {

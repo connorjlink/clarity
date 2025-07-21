@@ -1,8 +1,16 @@
 import { defineConfig } from 'vite';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig({
-  base: '/clarity/',
-  build: {
-    outDir: './docs',
-  },
+   base: '/clarity/',
+   plugins: [
+      svelte({
+         compilerOptions: {
+            customElement: true
+         }
+      })
+   ],
+   build: {
+      outDir: './docs',
+   }
 });

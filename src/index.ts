@@ -4,7 +4,9 @@ import * as hv from './HexViewer';
 import './TabView';
 import './ArticleSelector';
 import './CustomIcon';
-import './Collapsible';
+
+import './CollapseView.svelte';
+import './ArticleSelector.svelte';
 
 const outputWindow = document.getElementById('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [];
