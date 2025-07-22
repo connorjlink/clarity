@@ -22,7 +22,7 @@ my-articleselector {
     background: var(--dark-background);
     border: 1px solid var(--dark-background-l);
     padding: 1rem;
-    border-radius: 8px;
+    border-radius: 0.5rem;
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -35,7 +35,7 @@ my-articleselector {
     border-color: var(--dark-background-ll);
 }
 
-.my-custom-icon {
+.symbol-icon {
     border-radius: 0.5rem;
 }
 

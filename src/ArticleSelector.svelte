@@ -7,7 +7,9 @@
         content: string;
         icon: string;
     }   
+</script>
 
+<script lang="ts">
     export let articles: Article[] = [];    
 
     let selectedArticle: Article | null = null; 

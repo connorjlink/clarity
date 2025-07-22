@@ -14,7 +14,6 @@
         <link rel="stylesheet" href="./src/source_editor.css" />
         <link rel="stylesheet" href="./src/TabView.css" />
         <link rel="stylesheet" href="./src/ArticleSelector.css" />
-        <link rel="stylesheet" href="./src/CustomIcon.css" />
         <link rel="stylesheet" href="./src/HexViewer.css" />
 
         <style>
@@ -28,7 +27,7 @@
         <my-tabview>
             <my-header>
                 <div class="title-container">
-                    <a href="./"><my-custom-icon text="Hz" size="128" radius="1.5rem"></my-custom-icon></a>
+                    <a href="./"><symbol-icon text="Hz" size="128" radius="1.5rem"></symbol-icon></a>
                     <div>
                         <h1><a class="emphasis" href="https://github.com/connorjlink/haze">Haze</a> Clarity</h1>
                         <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
@@ -36,11 +35,31 @@
                 </div>
             </my-header>
             <my-tab label="Home" route="home" class="home-tab">
-                <program-tree id="program-tree"></program-tree>
-                <source-editor id="main-editor" class="shadowed"></source-editor>
+                <pane-view>
+                    <div class="pane-column" id="source-pane">
+                        <div class="pane-descriptor">Source Editor</div>
+                        <source-editor></source-editor>
+                    </div>
+                    <div class="pane-column" id="ast-pane">
+                        <div class="pane-descriptor">Abstract Syntax Tree</div>
+                        <program-tree></program-tree>
+                    </div>
+                    <div class="pane-column" id="ir-pane">
+                        <div class="pane-descriptor">Intermediate Representation</div>
+                    </div>
+                    <div class="pane-column" id="asm-pane">
+                        <div class="pane-descriptor">Assembly</div>
+                    </div>
+                    <div class="pane-column" id="exe-pane">
+                        <div class="pane-descriptor">Packaged Executable</div>
+                        <hex-viewer></hex-viewer>
+                    </div>
+                </pane-view>
+
                 <output-window id="output-window"></output-window>
                 <div class="status-bar">
-                    Idle.
+                    <img src="./res/expression.svg">
+                    <span>Idle.</span>
                 </div>
             </my-tab>
             <my-tab label="Learn" route="learn">
@@ -49,15 +68,15 @@
                         <my-article-header
                             article-title="Preprocessing" 
                             article-description="The definition of micro-managing macros.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="Pp" 
                                 size="64" 
-                                shadow-color="var(--preprocessor-color-shadow)"
-                                foreground-top-color="var(--preprocessor-color-foreground-top)"
-                                foreground-bottom-color="var(--preprocessor-color-foreground-bottom)"
-                                background-top-color="var(--preprocessor-color-background-top)"
-                                background-bottom-color="var(--preprocessor-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--preprocessor-color-shadow)"
+                                foregroundTopColor="var(--preprocessor-color-foreground-top)"
+                                foregroundBottomColor="var(--preprocessor-color-foreground-bottom)"
+                                backgroundTopColor="var(--preprocessor-color-background-top)"
+                                backgroundBottomColor="var(--preprocessor-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -68,15 +87,15 @@
                         <my-article-header
                             article-title="Lexical Analysis" 
                             article-description="Read it and reap: scanning between the lines.">
-                            <my-custom-icon
+                            <symbol-icon
                                 text="Lx" 
                                 size="64" 
-                                shadow-color="var(--lexer-color-shadow)"
-                                foreground-top-color="var(--lexer-color-foreground-top)"
-                                foreground-bottom-color="var(--lexer-color-foreground-bottom)"
-                                background-top-color="var(--lexer-color-background-top)"
-                                background-bottom-color="var(--lexer-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--lexer-color-shadow)"
+                                foregroundTopColor="var(--lexer-color-foreground-top)"
+                                foregroundBottomColor="var(--lexer-color-foreground-bottom)"
+                                backgroundTopColor="var(--lexer-color-background-top)"
+                                backgroundBottomColor="var(--lexer-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -87,15 +106,15 @@
                         <my-article-header
                             article-title="Parsing" 
                             article-description="A spiraling descent into where things began.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="Pa" 
                                 size="64" 
-                                shadow-color="var(--parser-color-shadow)"
-                                foreground-top-color="var(--parser-color-foreground-top)"
-                                foreground-bottom-color="var(--parser-color-foreground-bottom)"
-                                background-top-color="var(--parser-color-background-top)"
-                                background-bottom-color="var(--parser-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--parser-color-shadow)"
+                                foregroundTopColor="var(--parser-color-foreground-top)"
+                                foregroundBottomColor="var(--parser-color-foreground-bottom)"
+                                backgroundTopColor="var(--parser-color-background-top)"
+                                backgroundBottomColor="var(--parser-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -106,15 +125,15 @@
                         <my-article-header
                             article-title="Abstract Syntax Tree Optimization" 
                             article-description="Miss the forest for the trees no more.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="As" 
                                 size="64" 
-                                shadow-color="var(--ast-color-shadow)"
-                                foreground-top-color="var(--ast-color-foreground-top)"
-                                foreground-bottom-color="var(--ast-color-foreground-bottom)"
-                                background-top-color="var(--ast-color-background-top)"
-                                background-bottom-color="var(--ast-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--ast-color-shadow)"
+                                foregroundTopColor="var(--ast-color-foreground-top)"
+                                foregroundBottomColor="var(--ast-color-foreground-bottom)"
+                                backgroundTopColor="var(--ast-color-background-top)"
+                                backgroundBottomColor="var(--ast-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -125,15 +144,15 @@
                         <my-article-header
                             article-title="IR Code Generation" 
                             article-description="Distilled semantics. 200 proof(s).">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="Ir" 
                                 size="64" 
-                                shadow-color="var(--ir-color-shadow)"
-                                foreground-top-color="var(--ir-color-foreground-top)"
-                                foreground-bottom-color="var(--ir-color-foreground-bottom)"
-                                background-top-color="var(--ir-color-background-top)"
-                                background-bottom-color="var(--ir-color-background-bottom)">
-                            </my-custom-icon>    
+                                shadowColor="var(--ir-color-shadow)"
+                                foregroundTopColor="var(--ir-color-foreground-top)"
+                                foregroundBottomColor="var(--ir-color-foreground-bottom)"
+                                backgroundTopColor="var(--ir-color-background-top)"
+                                backgroundBottomColor="var(--ir-color-background-bottom)">
+                            </symbol-icon>    
                         </my-article-header>
                         <my-article-content>
 
@@ -144,15 +163,15 @@
                         <my-article-header
                             article-title="Three-Address Code Optimization" 
                             article-description="Less is more.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="To" 
                                 size="64" 
-                                shadow-color="var(--tac-color-shadow)"
-                                foreground-top-color="var(--tac-color-foreground-top)"
-                                foreground-bottom-color="var(--tac-color-foreground-bottom)"
-                                background-top-color="var(--tac-color-background-top)"
-                                background-bottom-color="var(--tac-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--tac-color-shadow)"
+                                foregroundTopColor="var(--tac-color-foreground-top)"
+                                foregroundBottomColor="var(--tac-color-foreground-bottom)"
+                                backgroundTopColor="var(--tac-color-background-top)"
+                                backgroundBottomColor="var(--tac-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -163,15 +182,15 @@
                         <my-article-header
                             article-title="x86 Code Generation" 
                             article-description="An archaic dialect spoken only by a billion pedants.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="Cg" 
                                 size="64" 
-                                shadow-color="var(--codegen-color-shadow)"
-                                foreground-top-color="var(--codegen-color-foreground-top)"
-                                foreground-bottom-color="var(--codegen-color-foreground-bottom)"
-                                background-top-color="var(--codegen-color-background-top)"
-                                background-bottom-color="var(--codegen-color-background-bottom)">
-                            </my-custom-icon>    
+                                shadowColor="var(--codegen-color-shadow)"
+                                foregroundTopColor="var(--codegen-color-foreground-top)"
+                                foregroundBottomColor="var(--codegen-color-foreground-bottom)"
+                                backgroundTopColor="var(--codegen-color-background-top)"
+                                backgroundBottomColor="var(--codegen-color-background-bottom)">
+                            </symbol-icon>    
                         </my-article-header>
                         <my-article-content>
 
@@ -182,15 +201,15 @@
                         <my-article-header
                             article-title="Peephole Optimization" 
                             article-description="Seeing the bigger picture through a tiny window.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="Po" 
                                 size="64" 
-                                shadow-color="var(--peephole-color-shadow)"
-                                foreground-top-color="var(--peephole-color-foreground-top)"
-                                foreground-bottom-color="var(--peephole-color-foreground-bottom)"
-                                background-top-color="var(--peephole-color-background-top)"
-                                background-bottom-color="var(--peephole-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--peephole-color-shadow)"
+                                foregroundTopColor="var(--peephole-color-foreground-top)"
+                                foregroundBottomColor="var(--peephole-color-foreground-bottom)"
+                                backgroundTopColor="var(--peephole-color-background-top)"
+                                backgroundBottomColor="var(--peephole-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -201,15 +220,15 @@
                         <my-article-header
                             article-title="Translation Unit Linking" 
                             article-description="Here's my address, so call me, maybe.">
-                            <my-custom-icon
+                            <symbol-icon
                                 text="Tu" 
                                 size="64" 
-                                shadow-color="var(--link-color-shadow)"
-                                foreground-top-color="var(--link-color-foreground-top)"
-                                foreground-bottom-color="var(--link-color-foreground-bottom)"
-                                background-top-color="var(--link-color-background-top)"
-                                background-bottom-color="var(--link-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--link-color-shadow)"
+                                foregroundTopColor="var(--link-color-foreground-top)"
+                                foregroundBottomColor="var(--link-color-foreground-bottom)"
+                                backgroundTopColor="var(--link-color-background-top)"
+                                backgroundBottomColor="var(--link-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -220,15 +239,15 @@
                         <my-article-header
                             article-title="Link-Time Optimization" 
                             article-description="Caching in on visibility without bound.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="Li" 
                                 size="64" 
-                                shadow-color="var(--lto-color-shadow)"
-                                foreground-top-color="var(--lto-color-foreground-top)"
-                                foreground-bottom-color="var(--lto-color-foreground-bottom)"
-                                background-top-color="var(--lto-color-background-top)"
-                                background-bottom-color="var(--lto-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--lto-color-shadow)"
+                                foregroundTopColor="var(--lto-color-foreground-top)"
+                                foregroundBottomColor="var(--lto-color-foreground-bottom)"
+                                backgroundTopColor="var(--lto-color-background-top)"
+                                backgroundBottomColor="var(--lto-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
 
@@ -239,15 +258,15 @@
                         <my-article-header 
                             article-title="Executable Exporting"
                             article-description="Fossilizing fresh code in the sediment of antiquity.">
-                            <my-custom-icon 
+                            <symbol-icon 
                                 text="Ex" 
                                 size="64"
-                                shadow-color="var(--executable-color-shadow)"
-                                foreground-top-color="var(--executable-color-foreground-top)"
-                                foreground-bottom-color="var(--executable-color-foreground-bottom)"
-                                background-top-color="var(--executable-color-background-top)"
-                                background-bottom-color="var(--executable-color-background-bottom)">
-                            </my-custom-icon>
+                                shadowColor="var(--executable-color-shadow)"
+                                foregroundTopColor="var(--executable-color-foreground-top)"
+                                foregroundBottomColor="var(--executable-color-foreground-bottom)"
+                                backgroundTopColor="var(--executable-color-background-top)"
+                                backgroundBottomColor="var(--executable-color-background-bottom)">
+                            </symbol-icon>
                         </my-article-header>
                         <my-article-content>
                             <h2>Section 0</h2>
@@ -262,7 +281,7 @@
                                 <p>This program cannot be run in DOS mode.</p>
                             </blockquote>
                             <p>Windows PE&mdash;that's <i>Portable Executable</i>, not to be confused with <a href="https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment"><i>Pre-installation Environment</i></a>&mdash;suffers many shortfalls inherent to an API designed in the early '90s, which itself was more or less a bolt-on addition to the <a href="https://en.wikipedia.org/wiki/New_Executable"><i>New Exectuable</i></a> format pioneered by Windows 1.0 hailing from the mid-'80s. PE has aged remarkably well, no doubt owing to the original designer's ingenuity and forward thinking, but by now, the cracks have surfaced en masse and now mar the otherwise silky smooth surface of modern programs with indellible reminders of yesteryear's technology: MIPS compatibility, bound imports, and the deprecated COFF symbol table, among others.</p>
-                            <br>
+
                             <p>Moreover, software needs, usage, and especially build tools have changed over time, but Microsoft's commitment to backwards compatibility has created a spaghetti bowl worthy of Italy's finest. Take for example the <code>TimeDateStamp</code> field: it seems a reasonable guess that the executable uses it to store a build (or perhaps link in the case of dynamic loading?) timestamp. Wrong. Indeed, as Raymond Chen helpfully explains <a href="https://devblogs.microsoft.com/oldnewthing/20240815-00/?p=110131">here</a>, build reproducibility issues mean this field now typically stores a compile hash. Because of course it does. Likewise, investigate the <code>COM Descriptor Directory</code> field: why is it typically omitted? The answer lay within the origins of .NET, the CLR for which continues to use it as metadata storage, though it remains now only a forlorn relic of forgotten times in native code.</p>
                             <hr>
 

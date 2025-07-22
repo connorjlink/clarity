@@ -123,6 +123,11 @@ blockquote {
     background: var(--dark-background-e);
     width: fit-content;
 }
+    blockquote p {
+        margin: 0;
+        color: var(--dark-foreground-l);
+        font-style: italic;
+    }
 
 code {
     background: var(--dark-background-e);
@@ -131,11 +136,24 @@ code {
     border-radius: 3px;
 }
 
- .status-bar {
+main {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+main > * {
+    border: 1px solid var(--node-border);
+    border-top-width: 1px;
+}
+
+.status-bar {
+    --status-bar-split: 0.1rem;
+    --status-bar-height: calc(1rem - var(--status-bar-split));
+
     display: flex;
     flex-direction: row;
     align-items: center;
-    justify-content: start;
-    padding: 0.5rem;
     background: var(--accent);
+    font-size: var(--status-bar-height);
+    padding: var(--status-bar-split);
+    gap: var(--status-bar-split);
 }

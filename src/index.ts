@@ -3,10 +3,11 @@ import * as se from './source_editor';
 import * as hv from './HexViewer';
 import './TabView';
 import './ArticleSelector';
-import './CustomIcon';
+import './PaneView';
 
 import './CollapseView.svelte';
 import './ArticleSelector.svelte';
+import './SymbolIcon.svelte';
 
 const outputWindow = document.getElementById('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [];
@@ -49,7 +50,9 @@ serverPort.start();
 
 /////////////////////////////////////////////////////////
 
-const sourceEditor = document.querySelector('#main-editor') as se.SourceEditorElement;
+const clarityPane = document.querySelector('pane-view') as PaneViewElement;
+
+const sourceEditor = clarityPane.querySelector('source-editor') as se.SourceEditorElement;
 sourceEditor.attachEventListeners();
 // the source editor in this case is mocking the language server so that it can communicate with the client through the same channel
 sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);

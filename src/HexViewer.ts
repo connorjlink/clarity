@@ -1,5 +1,3 @@
-import * as lc from './language_client';
-
 interface HexSymbol {
     address: number;
     length: number;

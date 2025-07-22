@@ -1,5 +1,4 @@
 source-editor {
-    height: 350px;
     width: 100%;
     background: var(--dark-background-d);
     padding: 1rem;
@@ -7,8 +6,6 @@ source-editor {
     outline: none;
     display: flex;
     flex-direction: column;
-    border-top: 1px solid var(--node-border);
-    border-bottom: 1px solid var(--node-border);
     transition: border-color 100ms ease-in-out;
     overflow:auto;    
 }

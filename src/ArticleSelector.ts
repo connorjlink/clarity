@@ -74,7 +74,7 @@ class MyArticleElement extends HTMLElement {
         headerDiv.appendChild(descP);
         header.appendChild(headerDiv);
 
-        const iconRef = this.querySelector('my-custom-icon');
+        const iconRef = this.querySelector('symbol-icon');
         if (iconRef) { 
             header.prepend(iconRef);
         }
@@ -115,18 +115,18 @@ class MyArticleElement extends HTMLElement {
         this.appendChild(section);
         this.appendChild(footer);
 
-        const allIcons = Array.from(document.querySelectorAll('my-article-header my-custom-icon'));
+        const allIcons = Array.from(document.querySelectorAll('my-article-header symbol-icon'));
 
-        let iconsList: CustomIconElement[] = [];
-        for (const icon of allIcons) {
-            const htmlIcon = icon as CustomIconElement;
-            if (htmlIcon.getAttribute('article-title') === title) {
-                htmlIcon.classList.add('active');
-            }
-            iconsList.push(htmlIcon);
-        }
+        // let iconsList: CustomIconElement[] = [];
+        // for (const icon of allIcons) {
+        //     const htmlIcon = icon as CustomIconElement;
+        //     if (htmlIcon.getAttribute('article-title') === title) {
+        //         htmlIcon.classList.add('active');
+        //     }
+        //     iconsList.push(htmlIcon);
+        // }
 
-        nav.append(...iconsList);
+        // nav.append(...iconsList);
     }
 }
 
@@ -140,7 +140,7 @@ class MyArticleHeaderElement extends HTMLElement {
         const description = this.getAttribute('article-description') || 'No description provided.';
 
         // NOTE: will use the outer HTML to include the custom icon markup!
-        const customIconRef = this.querySelector('my-custom-icon');
+        const customIconRef = this.querySelector('symbol-icon');
 
         this.innerHTML = `
             <div class="article-header">
