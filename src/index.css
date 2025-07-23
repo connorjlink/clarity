@@ -144,16 +144,3 @@ main > * {
     border: 1px solid var(--node-border);
     border-top-width: 1px;
 }
-
-.status-bar {
-    --status-bar-split: 0.1rem;
-    --status-bar-height: calc(1rem - var(--status-bar-split));
-
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    background: var(--accent);
-    font-size: var(--status-bar-height);
-    padding: var(--status-bar-split);
-    gap: var(--status-bar-split);
-}

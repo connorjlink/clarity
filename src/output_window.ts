@@ -1,6 +1,7 @@
 export type OutputWindowMessage = {
     id: string;
     text: string;
+    rawText: string;
     visible: boolean;
 };
 
@@ -55,7 +56,7 @@ export class OutputWindowElement extends HTMLElement {
 
     private render() {
         this.innerHTML = `
-            <div class="console${this.visible ? '' : ' fade-out'}">
+            <div class="console ${this.visible ? '' : 'fade-out'}">
                 ${this._messages.map(msg =>
                     `<div class="console-line">${msg.text}</div>`
                 ).join('')}

@@ -39,11 +39,12 @@ class PaneViewElement extends HTMLElement {
     }
 
     private render() {
-        const style = `
+        const style = /*css*/`
             :host {
                 display: block;
                 width: 100%;
                 height: 100%;
+                overflow-x: hidden;
             }
             :host *, :host *::before, :host *::after {
                 box-sizing: border-box;

@@ -6,27 +6,51 @@ import './ArticleSelector';
 import './PaneView';
 
 import './CollapseView.svelte';
-import './ArticleSelector.svelte';
 import './SymbolIcon.svelte';
+import './StatusBar.svelte';
 
-const outputWindow = document.getElementById('output-window') as ow.OutputWindowElement;
+const outputWindow = document.querySelector('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [];
 outputWindow.visible = false;
 
-var fadeTimeout: any;
+var fadeTimeout: number | undefined;
 const showConsole = () => {
     outputWindow.visible = true;
-    if (fadeTimeout) {
-        clearTimeout(fadeTimeout.current);
+    if (fadeTimeout !== undefined) {
+        clearTimeout(fadeTimeout);
     }
-    // five seconds of inactivity
-    fadeTimeout = setTimeout(() => outputWindow.visible = false, 10000);
+    // resettable three seconds of inactivity
+    fadeTimeout = window.setTimeout(() => {
+        outputWindow.visible = false;
+        fadeTimeout = undefined;
+    }, 3000);
 };
+
+let lastMsgText: string | null = null;
+let lastMsgCount = 1;
 
 const consoleListener = {
     notify: (msg: string) => {
         console.log(msg);
-        outputWindow.messages = [...outputWindow.messages, { id: Date.now().toString(), text: msg, visible: true }];
+
+        const messages = [...outputWindow.messages];
+        if (
+            messages.length > 0 &&
+            messages[messages.length - 1].rawText === msg
+        ) {
+            lastMsgCount++;
+            messages[messages.length - 1].text = `${msg} [x${lastMsgCount}]`;
+        } else {
+            lastMsgText = msg;
+            lastMsgCount = 1;
+            messages.push({
+                id: Date.now().toString(),
+                text: msg,
+                rawText: msg, // para comparación eficiente
+                visible: true
+            });
+        }
+        outputWindow.messages = messages;
         showConsole();
     }
 };
@@ -52,15 +76,22 @@ serverPort.start();
 
 const clarityPane = document.querySelector('pane-view') as PaneViewElement;
 
-const sourceEditor = clarityPane.querySelector('source-editor') as se.SourceEditorElement;
+const sourceEditor = clarityPane.querySelector('#source-pane source-editor') as se.SourceEditorElement;
 sourceEditor.attachEventListeners();
-// the source editor in this case is mocking the language server so that it can communicate with the client through the same channel
 sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
 
-// const data = new Uint8Array([0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21]);
-// const hexViewer = document.createElement('hex-viewer') as hv.HexViewerElement;
-// document.body.appendChild(hexViewer);
-// hexViewer.initialize('file:///mock.bin', data, 0x10);
+const irViewer = clarityPane.querySelector('#ir-pane source-editor') as se.SourceEditorElement;
+irViewer.attachEventListeners();
+irViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+
+const asmViewer = clarityPane.querySelector('#asm-pane source-editor') as se.SourceEditorElement;
+asmViewer.attachEventListeners();
+asmViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+
+const data = new Uint8Array([0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21]);
+const hexViewer = clarityPane.querySelector('hex-viewer') as hv.HexViewerElement;
+console
+hexViewer.initialize('file:///mock.bin', data, 0x10);
 
 
 //const tabView = document.querySelector('my-tabview') as tv.TabHostElement;

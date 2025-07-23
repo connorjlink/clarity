@@ -13,8 +13,8 @@
                 background: rgb(30, 30, 30);
             }
         </style>
-      <script type="module" crossorigin src="/clarity/assets/index-RYDdPAJG.js"></script>
-      <link rel="stylesheet" crossorigin href="/clarity/assets/index-BEdWpusA.css">
+      <script type="module" crossorigin src="/clarity/assets/index-kjKS3Tah.js"></script>
+      <link rel="stylesheet" crossorigin href="/clarity/assets/index-C6RzBECd.css">
     </head>
 
     <body>
@@ -40,9 +40,11 @@
                     </div>
                     <div class="pane-column" id="ir-pane">
                         <div class="pane-descriptor">Intermediate Representation</div>
+                        <source-editor data-readonly="true"></source-editor>
                     </div>
                     <div class="pane-column" id="asm-pane">
                         <div class="pane-descriptor">Assembly</div>
+                        <source-editor data-readonly="true"></source-editor>
                     </div>
                     <div class="pane-column" id="exe-pane">
                         <div class="pane-descriptor">Packaged Executable</div>
@@ -50,11 +52,8 @@
                     </div>
                 </pane-view>
 
-                <output-window id="output-window"></output-window>
-                <div class="status-bar">
-                    <img src="data:image/svg+xml,%3csvg%20aria-hidden='true'%20xmlns='http://www.w3.org/2000/svg'%20width='24'%20height='24'%20fill='none'%20viewBox='0%200%2024%2024'%3e%3cpath%20stroke='rgb(230,%20230,%20230)'%20stroke-linecap='round'%20stroke-linejoin='round'%20stroke-width='1'%20d='M7%209h5m3%200h2M7%2012h2m3%200h5M5%205h14a1%201%200%200%201%201%201v9a1%201%200%200%201-1%201h-6.616a1%201%200%200%200-.67.257l-2.88%202.592A.5.5%200%200%201%208%2018.477V17a1%201%200%200%200-1-1H5a1%201%200%200%201-1-1V6a1%201%200%200%201%201-1Z'/%3e%3c/svg%3e">
-                    <span>Idle.</span>
-                </div>
+                <output-window></output-window>
+                <status-bar></status-bar>
             </my-tab>
             <my-tab label="Learn" route="learn">
                 <my-articleselector>
@@ -175,7 +174,7 @@
                     <my-article>
                         <my-article-header
                             article-title="x86 Code Generation" 
-                            article-description="An archaic dialect spoken only by a billion pedants.">
+                            article-description="An unspoken archaic dialect understood only by pedants.">
                             <symbol-icon 
                                 text="Cg" 
                                 size="64" 
@@ -187,7 +186,7 @@
                             </symbol-icon>    
                         </my-article-header>
                         <my-article-content>
-
+                            
                         </my-article-content>
                     </my-article>
 

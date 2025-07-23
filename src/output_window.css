@@ -7,8 +7,7 @@
     padding: 0.5rem 1rem;
     box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
     pointer-events: auto;
-    transition: opacity 100ms ease-in-out;
-    display: inline;
+    display: block;
     opacity: 1;
 }
     .console.fade-out {

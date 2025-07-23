@@ -48,9 +48,11 @@
                     </div>
                     <div class="pane-column" id="ir-pane">
                         <div class="pane-descriptor">Intermediate Representation</div>
+                        <source-editor data-readonly="true"></source-editor>
                     </div>
                     <div class="pane-column" id="asm-pane">
                         <div class="pane-descriptor">Assembly</div>
+                        <source-editor data-readonly="true"></source-editor>
                     </div>
                     <div class="pane-column" id="exe-pane">
                         <div class="pane-descriptor">Packaged Executable</div>
@@ -58,11 +60,8 @@
                     </div>
                 </pane-view>
 
-                <output-window id="output-window"></output-window>
-                <div class="status-bar">
-                    <img src="./res/expression.svg">
-                    <span>Idle.</span>
-                </div>
+                <output-window></output-window>
+                <status-bar></status-bar>
             </my-tab>
             <my-tab label="Learn" route="learn">
                 <my-articleselector>
@@ -183,7 +182,7 @@
                     <my-article>
                         <my-article-header
                             article-title="x86 Code Generation" 
-                            article-description="An archaic dialect spoken only by a billion pedants.">
+                            article-description="An unspoken archaic dialect understood only by pedants.">
                             <symbol-icon 
                                 text="Cg" 
                                 size="64" 
@@ -195,7 +194,7 @@
                             </symbol-icon>    
                         </my-article-header>
                         <my-article-content>
-
+                            
                         </my-article-content>
                     </my-article>
 
