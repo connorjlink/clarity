@@ -1,6 +1,6 @@
 
-import * as lc from './language_client';
-import * as sd from './symbol_database';
+import * as lc from './LanguageClient';
+import * as sd from './SymbolDatabase';
 
 let serverPort: MessagePort | null = null;
 let languageClient: lc.LanguageClient | null = null;

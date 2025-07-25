@@ -1,4 +1,19 @@
-import * as nt from './node_types';
+import * as nt from './NodeTypes';
+
+const transformedViewStyle = /*css*/`
+    .container {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        user-select: none;
+        overflow: hidden;
+        will-change: transform, scale;
+        transform-origin: 0 0;
+    }
+`;
+const transformedViewStyleSheet = new CSSStyleSheet();
+transformedViewStyleSheet.replaceSync(transformedViewStyle);
+
 
 export class TransformedViewElement extends HTMLElement {
     static minScale = 0.2;
@@ -21,6 +36,8 @@ export class TransformedViewElement extends HTMLElement {
     }
     
     connectedCallback() {
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [transformedViewStyleSheet];
         this.render();
         this.updateTransform();
         this._container.addEventListener('mousedown', this.onMouseDown);
@@ -110,17 +127,12 @@ export class TransformedViewElement extends HTMLElement {
     }
 
     private render() {
-        if (!this.shadowRoot) {
-            return;
-        }
-        // NOTE: ABSOLUTELY HAS TO BE SHADOW ROOT FOR NOW BECAUSE IT USES THE SLOT ELEMENT!
-        this.shadowRoot.innerHTML = `
-            <link rel="stylesheet" href="./TransformedView.css">
+        this.shadowRoot!.innerHTML = `
             <div class="container">
                 <slot name="transformed-view-slot"></slot>
             </div>
         `;
-        this._container = this.shadowRoot.querySelector('.container') as HTMLDivElement;
+        this._container = this.shadowRoot!.querySelector('.container') as HTMLDivElement;
     }
 }
 

@@ -1,5 +1,78 @@
-import * as pt from './piece_table';
-import * as lc from './language_client';
+import * as pt from './PieceTable';
+import * as lc from './LanguageClient';
+
+const sourceEditorStyle = /*css*/`
+    source-editor {
+        width: 100%;
+        background: var(--dark-background-d);
+        padding: 1rem;
+        padding-left: 1rem;
+        outline: none;
+        display: flex;
+        flex-direction: column;
+        transition: border-color 100ms ease-in-out;
+        overflow:auto;    
+    }
+        source-editor:focus {
+            border-top-color: var(--accent);
+        }
+        source-editor pre {
+            counter-reset: line;
+        }
+        source-editor code {
+            display: flex;
+            flex-direction: row; 
+            counter-increment: line;
+        }
+        source-editor code:before {
+            content: counter(line);
+            padding-right: 1.5rem;
+            color: var(--plain-text);
+            width: 2rem;
+            text-align: right;
+        }
+
+    .editor-shell {
+        position: relative;
+        font-family: Consolas;
+        height: 300px;
+        * {
+            font-size: 14pt;
+        }
+    }
+    .highlight-layer, .input-layer {
+        white-space: pre-wrap;
+        word-break: break-word;
+        padding: 8px;
+        line-height: 1.5;
+        height: 100%;
+        min-height: 100%;
+        box-sizing: border-box;
+    }
+    .highlight-layer {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        z-index: 1;
+        color: #ccc;
+        margin: 0;
+        padding: 0;
+    }
+    .input-layer {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        margin: 0 0 0 2rem;
+        padding: 0;
+        background: transparent;
+        caret-color: var(--accent);
+        z-index: 2;
+        outline: none;
+        user-select: none;
+    }
+`;
+const sourceEditorStyleSheet = new CSSStyleSheet();
+sourceEditorStyleSheet.replaceSync(sourceEditorStyle);
+
 
 function getTextWithLineBreaks(element: HTMLElement): string {
     let text = '';
@@ -90,6 +163,8 @@ export class SourceEditorElement extends HTMLElement {
 
     connectedCallback() {
         //this.render();
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [sourceEditorStyleSheet];
     }
 
     disconnectedCallback() {
@@ -242,14 +317,14 @@ export class SourceEditorElement extends HTMLElement {
             throw new Error('call initialize() on SourceEditorElement before rendering.');
         }
         const text = this._pieceTable.getText();
-        this.innerHTML = `
+        this.shadowRoot!.innerHTML = `
             <div class="editor-shell">
                 <pre class="highlight-layer"></pre>
                 <div class="input-layer" contenteditable="true" spellcheck="false"></div>
             </div>
         `;
-        this._highlightRef = this.querySelector('.highlight-layer');
-        this._inputRef = this.querySelector('.input-layer');
+        this._highlightRef = this.shadowRoot!.querySelector('.highlight-layer');
+        this._inputRef = this.shadowRoot!.querySelector('.input-layer');
         if (this._inputRef) {
             this._inputRef.textContent = text;
             this._lastText = text;

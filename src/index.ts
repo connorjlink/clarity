@@ -1,5 +1,5 @@
-import * as ow from './output_window';
-import * as se from './source_editor';
+import * as ow from './OutputWindow';
+import * as se from './SourceEditor';
 import * as hv from './HexViewer';
 import './TabView';
 import './ArticleSelector';
@@ -57,8 +57,8 @@ const consoleListener = {
 
 /////////////////////////////////////////////////////////
 
-const languageServerWorker = new Worker(new URL('./language_server_worker.ts', import.meta.url), { type: 'module' });
-const languageClientWorker = new Worker(new URL('./language_client_worker.ts', import.meta.url), { type: 'module' });
+const languageServerWorker = new Worker(new URL('./LanguageServerWorker.ts', import.meta.url), { type: 'module' });
+const languageClientWorker = new Worker(new URL('./LanguageClientWorker.ts', import.meta.url), { type: 'module' });
 
 const channel = new MessageChannel();
 

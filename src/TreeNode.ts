@@ -1,4 +1,86 @@
-import * as nt from './node_types';
+import * as nt from './NodeTypes';
+
+const style = /*css*/`
+    .node {
+        margin: 1rem;
+        height: 100px;
+        width: 200px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        -webkit-user-select: none;
+        user-select: none;
+        background: none;
+        border-radius: var(--corner-radius);
+        will-change: transform;
+    }
+
+    .node-header {
+        font-size: 8pt;
+        width: 100%;
+        border-radius: var(--corner-radius) var(--corner-radius) 0 0;
+        border: 1px solid var(--node-border);
+        background: var(--keyword);
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+    }
+        .node-header .node-icon {
+            height: 15px;
+            padding: 0 1px;
+        }
+
+    .node-body {
+        border-radius: 0 0 var(--corner-radius) var(--corner-radius);
+        border: 1px solid var(--node-border);
+        border-top: none;
+        background: var(--dark-background-e);
+        flex: 1;
+        width: 100%;
+    }
+
+    .node-clickspot-container {
+        position: absolute;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+    }
+        .node-clickspot-container.left {
+            left: 0;
+            top: 0;
+            transform: translateX(-50%);
+        }
+        .node-clickspot-container.right {
+            right: 0;
+            top: 0;
+            transform: translateX(50%);
+        }
+        .node-clickspot-container.bottom {
+            height: initial;
+            width: 100%;
+            flex-direction: row;
+            bottom: 0;
+            left: 0;
+            transform: translateY(50%);
+        }
+
+    .node-clickspot {
+        aspect-ratio: 1 / 1;
+        width: var(--clickspot-width);
+        background: var(--light-background-d);
+        border: dashed 1px var(--light-background-ll);
+        border-radius: 50%;
+    }
+        .node-clickspot.connected {
+            background: var(--accent);
+            border-color: var(--accent-hovered);
+        }
+`;
+const stylesheet = new CSSStyleSheet();
+stylesheet.replaceSync(style);
 
 export class TreeNodeElement extends HTMLElement {
     // Observed attributes for attributeChangedCallback
@@ -37,6 +119,8 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     connectedCallback() {
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [stylesheet];
         this.render();
     }
 
@@ -70,14 +154,6 @@ export class TreeNodeElement extends HTMLElement {
             this._contentRef.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0)`;
         }
     }
-
-    // private attachEventListeners() {
-    //     this.querySelector('.node-header')?.addEventListener('mousedown', this.startNodeDrag.bind(this));
-    //     this.querySelectorAll('.node-clickspot')?.forEach(c => {
-    //         c.addEventListener('mousedown', this.onConnectStart!.bind(this))
-    //         c.addEventListener('mousedown', this.handleClickspotMouseDown.bind(this, c.getAttribute('id')!));
-    //     });
-    // }
 
     private attachEventListeners() {
         this.querySelector('.node-header')?.addEventListener('mousedown', (event: Event) => {
@@ -234,11 +310,8 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     private render() {
-        if (!this.shadowRoot) {
-            return;
-        }
         // TODO: fix this import since it likely will cause abysmal performance issues for each tree node requiring a reload
-        this.shadowRoot.innerHTML = `
+        this.shadowRoot!.innerHTML = `
             <link rel="stylesheet" href="./tree_node.css">
             <div
                 id="${this._nodeId}"
@@ -267,7 +340,7 @@ export class TreeNodeElement extends HTMLElement {
             </div>
         `;
 
-        this._contentRef = this.querySelector(`#${this._nodeId}`);
+        this._contentRef = this.shadowRoot!.querySelector(`#${this._nodeId}`);
         this.updateTransform(this._position);
 
         if (this._areCallbacksSet) {

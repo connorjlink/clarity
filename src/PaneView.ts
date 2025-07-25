@@ -1,3 +1,55 @@
+const paneViewStyle = /*css*/`
+    :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+    }
+    :host *, :host *::before, :host *::after {
+        box-sizing: border-box;
+    }
+    .pane-row {
+        display: grid;
+        grid-template-rows: 1fr;
+        will-change: grid-template-columns;
+        height: 100%;
+        width: 100%;
+    }
+    .pane-col {
+        position: relative;
+    }
+    .pane-descriptor {
+        padding: 0.5rem;
+        background: var(--dark-background-e);
+        border-top: 1px solid var(--node-border);
+        border-bottom: 1px solid var(--node-border);
+        width: 100%;
+    }
+    .pane-column {
+        width: 100%;
+    }
+    .handle {
+        position: absolute;
+        top: 0;
+        right: -1px;
+        width: 1px;
+        height: 100%;
+        cursor: col-resize;
+        z-index: 1;
+        background: var(--node-border);
+        transition: background-color 100ms ease-in-out;
+    }
+    .handle:hover {
+        background: var(--accent-hovered);
+        width: 2px;
+    }
+    .handle.dragging {
+        background: var(--accent-selected);
+    }
+`;
+const paneViewStyleSheet = new CSSStyleSheet();
+paneViewStyleSheet.replaceSync(paneViewStyle);
+
 const STORAGE_KEY = 'resizable-pane-widths';
 
 class PaneViewElement extends HTMLElement {
@@ -39,56 +91,6 @@ class PaneViewElement extends HTMLElement {
     }
 
     private render() {
-        const style = /*css*/`
-            :host {
-                display: block;
-                width: 100%;
-                height: 100%;
-                overflow-x: hidden;
-            }
-            :host *, :host *::before, :host *::after {
-                box-sizing: border-box;
-            }
-            .pane-row {
-                display: grid;
-                grid-template-rows: 1fr;
-                will-change: grid-template-columns;
-                height: 100%;
-                width: 100%;
-            }
-            .pane-col {
-                position: relative;
-            }
-            .pane-descriptor {
-                padding: 0.5rem;
-                background: var(--dark-background-e);
-                border-top: 1px solid var(--node-border);
-                border-bottom: 1px solid var(--node-border);
-                width: 100%;
-            }
-            .pane-column {
-                width: 100%;
-            }
-            .handle {
-                position: absolute;
-                top: 0;
-                right: -1px;
-                width: 1px;
-                height: 100%;
-                cursor: col-resize;
-                z-index: 1;
-                background: var(--node-border);
-                transition: background-color 100ms ease-in-out;
-            }
-            .handle:hover {
-                background: var(--accent-hovered);
-                width: 2px;
-            }
-            .handle.dragging {
-                background: var(--accent-selected);
-            }
-        `;
-
         const children = Array.from(this.children);
         this.columns = [];
         this.handles = [];
@@ -112,7 +114,8 @@ class PaneViewElement extends HTMLElement {
             }
         });
 
-        this.shadowRoot!.innerHTML = `<style>${style}</style>`;
+        this.shadowRoot!.innerHTML = `<style>${paneViewStyle}</style>`;
+        this.shadowRoot!.adoptedStyleSheets = [];
         this.shadowRoot!.appendChild(row);
     }
 

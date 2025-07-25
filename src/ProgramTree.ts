@@ -1,7 +1,21 @@
-import * as nt from './node_types';
-import * as nm from './node_manager';
-import * as tn from './tree_node';
-import * as tv from './transformed_view';
+import * as nt from './NodeTypes';
+import * as nm from './NodeManager';
+import * as tn from './TreeNode';
+import * as tv from './TransformedView';
+
+const programTreeStyle = /*css*/`
+    #connections-canvas {
+        position:absolute;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        pointer-events:none;
+    }
+`;
+const programTreeStyleSheet = new CSSStyleSheet();
+programTreeStyleSheet.replaceSync(programTreeStyle);
+
 
 export class ProgramTreeElement extends HTMLElement {
     static observedAttributes = [];
@@ -135,6 +149,7 @@ export class ProgramTreeElement extends HTMLElement {
             const fromCenter = this.getClickspotCenter(connection.from.nodeId, connection.from.clickspotId);
             const toCenter = this.getClickspotCenter(connection.to.nodeId, connection.to.clickspotId);
             if (!fromCenter || !toCenter || !connection.from.location || !connection.to.location) {
+                console.warn(`Skipping connection from ${connection.from.nodeId} to ${connection.to.nodeId} due to missing clickspot centers or locations.`);
                 continue;
             }
             this.drawBezierPath(
@@ -339,16 +354,17 @@ export class ProgramTreeElement extends HTMLElement {
     }
 
     private render() {
-        this.innerHTML = `
+        this.shadowRoot!.innerHTML = `
             <transformed-view id="program-tree-transformed-view">
-                <div slot="transformed-view-slot" style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                <div id="transform-content" slot="transformed-view-slot" style="position:absolute; top:0; left:0; width:100%; height:100%;">
                     <canvas id="connections-canvas"></canvas>
                 </div>
             </transformed-view>
         `;
 
-        this._transformedViewRef = this.querySelector('#program-tree-transformed-view') as tv.TransformedViewElement;
-        this._contentRef = this._transformedViewRef.querySelector('div[slot="transformed-view-slot"]') as HTMLDivElement;
+        this._transformedViewRef = this.shadowRoot!.querySelector('#program-tree-transformed-view') as tv.TransformedViewElement;
+        this._contentRef = this._transformedViewRef.querySelector('#transform-content') as HTMLDivElement;
+
         this._connectionsCanvas = this._contentRef.querySelector('#connections-canvas') as HTMLCanvasElement;
         this._canvasRef = this._connectionsCanvas.getContext('2d')!;
 

@@ -39,6 +39,10 @@
     --light-background-ll: rgb(170, 170, 170);
     --light-background-lll: rgb(140, 140, 140);
     --light-foreground: rgb(50, 50, 50);
+
+    --node-border: var(--dark-background-ll);
+
+
     --purple: rgb(143, 132, 215);
     --blue: rgb(56, 114, 186);
 

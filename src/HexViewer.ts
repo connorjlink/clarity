@@ -1,3 +1,34 @@
+const hexViewerStyle = /*css*/`
+    .hex-shell {
+        background: #181818;
+        color: #ccc;
+        font-family: 'Fira Mono', 'Consolas', monospace;
+        font-size: 14px;
+        padding: 8px;
+        overflow: auto;
+        width: fit-content;
+        max-width: 100%;
+    }
+
+    .hex-address {
+        color: #888;
+        margin-right: 12px;
+        font-weight: bold;
+    }
+
+    .hex-ascii {
+        color: #6cf;
+        margin-left: 2px;
+    }
+
+    .hex-highlight-layer span {
+        transition: background-color 0.2s;
+    }
+`;
+const hexViewerStyleSheet = new CSSStyleSheet();
+hexViewerStyleSheet.replaceSync(hexViewerStyle);
+
+
 interface HexSymbol {
     address: number;
     length: number;
@@ -19,7 +50,8 @@ export class HexViewerElement extends HTMLElement {
     }
 
     connectedCallback() {
-        // No-op
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [hexViewerStyleSheet];
     }
 
     disconnectedCallback() {
@@ -76,12 +108,12 @@ export class HexViewerElement extends HTMLElement {
         if (!this._hasInitialized) {
             throw new Error('call initialize() on HexViewerElement before rendering.');
         }
-        this.innerHTML = `
+        this.shadowRoot!.innerHTML = `
             <div class="hex-shell">
                 <pre class="hex-highlight-layer"></pre>
             </div>
         `;
-        this._highlightRef = this.querySelector('.hex-highlight-layer');
+        this._highlightRef = this.shadowRoot!.querySelector('.hex-highlight-layer');
         if (this._highlightRef) {
             this._highlightRef.innerHTML = this.renderHex();
         }

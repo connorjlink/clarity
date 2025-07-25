@@ -1,5 +1,5 @@
-import * as ls from './language_server';
-import * as doc from './LSP_document';
+import * as ls from './LanguageServer';
+import * as doc from './LSPdocument';
 import * as lsp from './LSP';
 
 export class CompilerDriver {

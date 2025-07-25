@@ -1,7 +1,7 @@
 import * as lsp from './LSP';
 import * as rpc from './JSONRPC';
-import * as ls from './language_server';
-import * as sb from './symbol_database';
+import * as ls from './LanguageServer';
+import * as sb from './SymbolDatabase';
 
 // TODO: structure this method to be a mixin class that implements the execute method since it useful for both the language server client and server
 type MethodNames = Exclude<{

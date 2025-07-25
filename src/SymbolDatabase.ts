@@ -1,5 +1,5 @@
 import * as lsp from './LSP'
-import * as cd from './compiler_driver'
+import * as cd from './CompilerDriver'
 
 export const TypeStorages = ['value', 'ptr'];
 export const TypeSpecifiers = ['byte', 'word', 'dword', 'qword', 'string', 'struct', 'nvr'];

@@ -1,4 +1,4 @@
-import * as nt from './node_types';
+import * as nt from './NodeTypes';
 
 export class NodeManager {
     private nodes: Map<string, nt.NodeData> = new Map();
