@@ -3,11 +3,16 @@ const paneViewStyle = /*css*/`
         display: block;
         width: 100%;
         height: 100%;
-        overflow-x: hidden;
     }
+    
     :host *, :host *::before, :host *::after {
         box-sizing: border-box;
     }
+
+    pane-view {
+        overflow-x: hidden;
+    }
+
     .pane-row {
         display: grid;
         grid-template-rows: 1fr;
@@ -15,36 +20,39 @@ const paneViewStyle = /*css*/`
         height: 100%;
         width: 100%;
     }
-    .pane-col {
+    .pane-column {
+        width: 100%;
         position: relative;
     }
+    
+    .handle {
+        width: 1px;
+        cursor: col-resize;
+        background: var(--node-border);
+        z-index: 2;
+        height: 100%;
+        transition: background-color 100ms ease-in-out;
+    }
+        .handle:hover {
+            background: var(--accent-hovered);
+            width: 2px;
+        }
+        .handle.dragging {
+            background: var(--accent-selected);
+        }
+    
+    .pane-col {
+    }
+        .pane-col.hidden {
+            display: none;
+        }
+
     .pane-descriptor {
         padding: 0.5rem;
         background: var(--dark-background-e);
         border-top: 1px solid var(--node-border);
         border-bottom: 1px solid var(--node-border);
         width: 100%;
-    }
-    .pane-column {
-        width: 100%;
-    }
-    .handle {
-        position: absolute;
-        top: 0;
-        right: -1px;
-        width: 1px;
-        height: 100%;
-        cursor: col-resize;
-        z-index: 1;
-        background: var(--node-border);
-        transition: background-color 100ms ease-in-out;
-    }
-    .handle:hover {
-        background: var(--accent-hovered);
-        width: 2px;
-    }
-    .handle.dragging {
-        background: var(--accent-selected);
     }
 `;
 const paneViewStyleSheet = new CSSStyleSheet();
@@ -59,15 +67,19 @@ class PaneViewElement extends HTMLElement {
     private draggingIndex: number | null = null;
     private startX: number = 0;
     private startWidths: number[] = [];
+    private visible: boolean[] = [];
+    private originalPanes: HTMLElement[] = []; 
 
     constructor() {
         super();
-        this.attachShadow({ mode: 'open' });
     }
 
     connectedCallback() {
-        this.render();
+        if (this.originalPanes.length === 0) {
+            this.originalPanes = Array.from(this.querySelectorAll('.pane-column')) as HTMLElement[];
+        }
         this.loadWidths();
+        this.render();
         this.applyWidths();
         this.addHandleEvents();
     }
@@ -76,47 +88,38 @@ class PaneViewElement extends HTMLElement {
         this.removeHandleEvents();
     }
 
-    getElementById(id: string): HTMLElement | null {
-        if (!this.shadowRoot) {
-            return null;
-        }
-        return this.shadowRoot.getElementById(id) as HTMLElement | null;
-    }
-
-    querySelector(selector: string): HTMLElement | null {
-        if (!this.shadowRoot) {
-            return null;
-        }
-        return this.shadowRoot.querySelector(selector) as HTMLElement | null;
+    setVisiblePanes(visible: boolean[]) {
+        this.visible = visible;
+        this.render();
+        this.applyWidths();
+        this.addHandleEvents();
     }
 
     private render() {
-        const children = Array.from(this.children);
-        this.columns = [];
-        this.handles = [];
+        this.innerHTML = `<style>${paneViewStyle}</style>`;
 
         const row = document.createElement('div');
         row.className = 'pane-row';
 
-        children.forEach((child, i) => {
-            const col = document.createElement('div');
-            col.className = 'pane-col';
-            col.appendChild(child.cloneNode(true));
-            row.appendChild(col);
-            this.columns.push(col);
+        this.columns = [];
+        this.handles = [];
 
-            if (i < children.length - 1) {
+        const visiblePanes = this.originalPanes.filter((_, i) => this.visible[i]);
+        visiblePanes.forEach((pane, i) => {
+            Array.from(pane.querySelectorAll('.handle')).forEach(h => h.remove());
+            row.appendChild(pane);
+            this.columns.push(pane);
+
+            if (i < visiblePanes.length - 1) {
                 const handle = document.createElement('div');
                 handle.className = 'handle';
                 handle.dataset.index = i.toString();
-                col.appendChild(handle);
+                row.appendChild(handle);
                 this.handles.push(handle);
             }
         });
 
-        this.shadowRoot!.innerHTML = `<style>${paneViewStyle}</style>`;
-        this.shadowRoot!.adoptedStyleSheets = [];
-        this.shadowRoot!.appendChild(row);
+        this.appendChild(row);
     }
 
     private addHandleEvents() {
@@ -214,8 +217,28 @@ class PaneViewElement extends HTMLElement {
         if (this.widths.length !== this.columns.length) {
             this.widths = Array(this.columns.length).fill(1 / this.columns.length);
         }
-        const row = this.shadowRoot!.querySelector('.pane-row') as HTMLElement;
-        row.style.gridTemplateColumns = this.widths.map(w => `${w * 100}%`).join(' ');
+        const row = this.querySelector('.pane-row') as HTMLElement;
+        if (!row) return;
+
+        let template = '';
+        for (let i = 0; i < this.columns.length; i++) {
+            template += `${this.widths[i] * 100}% `;
+            if (i < this.columns.length - 1) {
+                template += '1px ';
+            }
+        }
+        row.style.gridTemplateColumns = template.trim();
+
+        let gridIndex = 1;
+        this.columns.forEach(col => {
+            if (!col.classList.contains('hidden')) {
+                col.style.gridColumn = `${gridIndex}`;
+                gridIndex += 2;
+            }
+        });
+        this.handles.forEach((handle, i) => {
+            handle.style.gridColumn = `${2 * (i + 1)}`;
+        });
     }
 
     private saveWidths() {

@@ -13,8 +13,8 @@
                 background: rgb(30, 30, 30);
             }
         </style>
-      <script type="module" crossorigin src="/clarity/assets/index-BvJumbC4.js"></script>
-      <link rel="stylesheet" crossorigin href="/clarity/assets/index-C1DJtox5.css">
+      <script type="module" crossorigin src="/clarity/assets/index.html-CtTEVI-J.js"></script>
+      <link rel="stylesheet" crossorigin href="/clarity/assets/index-MaFU3aT2.css">
     </head>
 
     <body>
@@ -53,7 +53,96 @@
                 </pane-view>
 
                 <output-window></output-window>
-                <status-bar></status-bar>
+                
+                <div class="status-bar">
+    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+  <path stroke="rgb(230, 230, 230)" stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 9h5m3 0h2M7 12h2m3 0h5M5 5h14a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1h-6.616a1 1 0 0 0-.67.257l-2.88 2.592A.5.5 0 0 1 8 18.477V17a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/>
+</svg>
+
+    <span>Idle.</span>
+    <span style="flex-grow: 1;"></span>
+    <symbol-toggle title="Toggle Source Editor Pane">
+        <on-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="2" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="rgb(230, 230, 230)"/>
+</svg>
+
+        </on-icon>
+        <off-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="2" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+</svg>
+
+        </off-icon>
+    </symbol-toggle>
+    <symbol-toggle title="Toggle Abstract Syntax Tree Pane">
+        <on-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="6" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="rgb(230, 230, 230)"/>
+</svg>
+
+        </on-icon>
+        <off-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="6" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+</svg>
+
+        </off-icon>
+    </symbol-toggle>
+    <symbol-toggle title="Toggle Intermediate Representation Pane">
+        <on-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="10" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="rgb(230, 230, 230)"/>
+</svg>
+
+        </on-icon>
+        <off-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="10" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+</svg>
+
+        </off-icon>
+    </symbol-toggle>
+    <symbol-toggle title="Toggle Assembly Pane">
+        <on-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="14" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="rgb(230, 230, 230)"/>
+</svg>
+
+        </on-icon>
+        <off-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="14" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+</svg>
+
+        </off-icon>
+    </symbol-toggle>
+    <symbol-toggle title="Toggle Executable Pane">
+        <on-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="18" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="rgb(230, 230, 230)"/>
+</svg>
+
+        </on-icon>
+        <off-icon>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="20" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+    <rect x="18" y="2" width="4" height="20" stroke="rgb(230, 230, 230)" stroke-width="1" fill="none"/>
+</svg>
+
+        </off-icon>
+    </symbol-toggle>
+</div>
+
             </my-tab>
             <my-tab label="Learn" route="learn">
                 <my-articleselector>

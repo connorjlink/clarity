@@ -4,8 +4,9 @@
     "version": "0.0.1",
     "type": "module",
     "scripts": {
-        "dev": "vite",
-        "build": "tsc -b && vite build",
+        "predev": "node injector.cjs",
+        "dev": "node injector.cjs && vite",
+        "build": "node injector.cjs && tsc -b && vite build && node renamer.cjs",
         "lint": "eslint .",
         "preview": "vite preview"
     },

@@ -4,10 +4,49 @@ import * as hv from './HexViewer';
 import './TabView';
 import './ArticleSelector';
 import './PaneView';
+import './SymbolToggle';
 
 import './CollapseView.svelte';
 import './SymbolIcon.svelte';
-import './StatusBar.svelte';
+
+
+const PANE_VISIBILITY_KEY = 'pane-visibility';
+
+function getInitialVisibility(): boolean[] {
+    const saved = localStorage.getItem(PANE_VISIBILITY_KEY);
+    if (saved) {
+        try {
+            const arr = JSON.parse(saved);
+            if (Array.isArray(arr)) {
+                return arr;
+            }
+        } catch {}
+    }
+    return Array.from(document.querySelectorAll('pane-view > *')).map(() => true);
+}
+
+function saveVisibility(visible: boolean[]) {
+    localStorage.setItem(PANE_VISIBILITY_KEY, JSON.stringify(visible));
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    const toggles = Array.from(document.querySelectorAll('symbol-toggle')) as any[];
+    const paneView = document.querySelector('pane-view') as any;
+    let visible = getInitialVisibility();
+
+    toggles.forEach((toggle, i) => {
+        toggle.checked = visible[i] ?? true;
+        toggle.addEventListener('toggle-change', (e: any) => {
+            visible[i] = e.detail.checked;
+            saveVisibility(visible);
+            paneView.setVisiblePanes(visible);
+        });
+    });
+
+    paneView.setVisiblePanes(visible);
+});
+
+/////////////////////////////////////////////////////////
 
 const outputWindow = document.querySelector('output-window') as ow.OutputWindowElement;
 outputWindow.messages = [];
@@ -75,6 +114,7 @@ serverPort.start();
 /////////////////////////////////////////////////////////
 
 const clarityPane = document.querySelector('pane-view') as PaneViewElement;
+clarityPane.setVisiblePanes(getInitialVisibility());
 
 const sourceEditor = clarityPane.querySelector('#source-pane source-editor') as se.SourceEditorElement;
 sourceEditor.attachEventListeners();
@@ -96,3 +136,4 @@ hexViewer.initialize('file:///mock.bin', data, 0x10);
 
 //const tabView = document.querySelector('my-tabview') as tv.TabHostElement;
 //tabView.render();
+
