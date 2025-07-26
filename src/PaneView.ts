@@ -97,28 +97,30 @@ class PaneViewElement extends HTMLElement {
 
     private render() {
         this.innerHTML = `<style>${paneViewStyle}</style>`;
-
+    
         const row = document.createElement('div');
         row.className = 'pane-row';
-
+    
         this.columns = [];
         this.handles = [];
-
-        const visiblePanes = this.originalPanes.filter((_, i) => this.visible[i]);
-        visiblePanes.forEach((pane, i) => {
+    
+        this.originalPanes.forEach((pane, i) => {
             Array.from(pane.querySelectorAll('.handle')).forEach(h => h.remove());
-            row.appendChild(pane);
-            this.columns.push(pane);
-
-            if (i < visiblePanes.length - 1) {
-                const handle = document.createElement('div');
-                handle.className = 'handle';
-                handle.dataset.index = i.toString();
-                row.appendChild(handle);
-                this.handles.push(handle);
+        
+            if (this.visible[i]) {
+                row.appendChild(pane);
+                this.columns.push(pane);
+            
+                if (this.columns.length - 1 < this.visible.filter(Boolean).length - 1) {
+                    const handle = document.createElement('div');
+                    handle.className = 'handle';
+                    handle.dataset.index = (this.columns.length - 1).toString();
+                    row.appendChild(handle);
+                    this.handles.push(handle);
+                }
             }
         });
-
+    
         this.appendChild(row);
     }
 

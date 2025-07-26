@@ -159,11 +159,11 @@ export class SourceEditorElement extends HTMLElement {
     constructor() {
         super();
         this._pieceTable = new pt.PieceTable('function nvr main = () {}');
+        this.attachShadow({ mode: 'open' });
     }
 
     connectedCallback() {
         //this.render();
-        this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [sourceEditorStyleSheet];
     }
 
