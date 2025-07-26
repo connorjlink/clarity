@@ -56,9 +56,12 @@ export class SymbolToggle extends HTMLElement {
 
     private _titleText: string | null = null;
 
-    connectedCallback() {
+    constructor() {
+        super();
         this.attachShadow({ mode: 'open' });
+    }
 
+    connectedCallback() {
         this._onIcon = this.querySelector('on-icon');
         this._offIcon = this.querySelector('off-icon');
 

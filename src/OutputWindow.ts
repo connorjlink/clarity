@@ -39,10 +39,6 @@ export class OutputWindowElement extends HTMLElement {
         return ['visible'];
     }
 
-    constructor() {
-        super();
-    }
-
     private _messages: OutputWindowMessage[] = [];
     get messages() {
         return this._messages;
@@ -72,16 +68,20 @@ export class OutputWindowElement extends HTMLElement {
         }
     }
 
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+    }
+
+    connectedCallback() {
+        this.shadowRoot!.adoptedStyleSheets = [outputWindowStyleSheet];
+        this.render();
+    }
+
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (name === 'visible') {
             this.visible = newValue !== 'false';
         }
-    }
-
-    connectedCallback() {
-        this.attachShadow({ mode: 'open' });
-        this.shadowRoot!.adoptedStyleSheets = [outputWindowStyleSheet];
-        this.render();
     }
 
     private render() {

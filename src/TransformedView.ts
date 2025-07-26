@@ -36,7 +36,6 @@ export class TransformedViewElement extends HTMLElement {
     }
     
     connectedCallback() {
-        this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [transformedViewStyleSheet];
         this.render();
         this.updateTransform();
