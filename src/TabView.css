@@ -56,3 +56,7 @@ my-tabview {
     display: grid;
     grid-template-rows: auto 1fr;
 }
+
+my-tab {
+    overflow: auto;
+}

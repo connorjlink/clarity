@@ -11,6 +11,7 @@
 html {
     font-family: var(--global-font) !important;
     box-sizing: border-box;
+    overflow: hidden;
 }
 
 *, *::before, *::after {
@@ -151,6 +152,7 @@ main > * {
     align-items: center;
     background: var(--accent);
     height: 1rem;
+    border-top: 1px solid var(--node-border);
 }
     .status-bar svg {
         height: 1rem;

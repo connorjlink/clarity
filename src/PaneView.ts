@@ -24,6 +24,9 @@ const paneViewStyle = /*css*/`
         width: 100%;
         position: relative;
     }
+    .pane-column.hidden {
+        display: none;
+    }
     
     .handle {
         width: 1px;
@@ -39,12 +42,6 @@ const paneViewStyle = /*css*/`
         }
         .handle.dragging {
             background: var(--accent-selected);
-        }
-    
-    .pane-col {
-    }
-        .pane-col.hidden {
-            display: none;
         }
 
     .pane-descriptor {
@@ -110,7 +107,6 @@ class PaneViewElement extends HTMLElement {
             if (this.visible[i]) {
                 row.appendChild(pane);
                 this.columns.push(pane);
-            
                 if (this.columns.length - 1 < this.visible.filter(Boolean).length - 1) {
                     const handle = document.createElement('div');
                     handle.className = 'handle';

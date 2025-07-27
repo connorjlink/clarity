@@ -12,7 +12,7 @@ import './SymbolIcon.svelte';
 
 const PANE_VISIBILITY_KEY = 'pane-visibility';
 
-function getInitialVisibility(): boolean[] {
+function getInitialVisibility(): boolean[] | null {
     const saved = localStorage.getItem(PANE_VISIBILITY_KEY);
     if (saved) {
         try {
@@ -22,7 +22,7 @@ function getInitialVisibility(): boolean[] {
             }
         } catch {}
     }
-    return Array.from(document.querySelectorAll('pane-view > *')).map(() => true);
+    return null;
 }
 
 function saveVisibility(visible: boolean[]) {
@@ -33,6 +33,10 @@ window.addEventListener('DOMContentLoaded', () => {
     const toggles = Array.from(document.querySelectorAll('symbol-toggle')) as any[];
     const paneView = document.querySelector('pane-view') as any;
     let visible = getInitialVisibility();
+    if (!visible || visible.length !== toggles.length) {
+        visible = Array(toggles.length).fill(true);
+        saveVisibility(visible);
+    }
 
     toggles.forEach((toggle, i) => {
         toggle.checked = visible[i] ?? true;
@@ -46,20 +50,29 @@ window.addEventListener('DOMContentLoaded', () => {
     paneView.setVisiblePanes(visible);
 
     const sourceEditor = paneView.querySelector('#source-pane source-editor') as se.SourceEditorElement;
-    sourceEditor.attachEventListeners();
-    sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
-
+    if (sourceEditor) {
+        sourceEditor.attachEventListeners();
+        sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+    }
+    
     const irViewer = paneView.querySelector('#ir-pane source-editor') as se.SourceEditorElement;
-    irViewer.attachEventListeners();
-    irViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+    if (irViewer) {
+        irViewer.attachEventListeners();
+        irViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+    }
 
     const asmViewer = paneView.querySelector('#asm-pane source-editor') as se.SourceEditorElement;
-    asmViewer.attachEventListeners();
-    asmViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
-
+    if (asmViewer) {
+        asmViewer.attachEventListeners();
+        asmViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+    }
+    
     const data = new Uint8Array([0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21]);
+
     const hexViewer = paneView.querySelector('hex-viewer') as hv.HexViewerElement;
-    hexViewer.initialize('file:///mock.bin', data, 0x10);
+    if (hexViewer) {
+        hexViewer.initialize('file:///mock.bin', data, 0x10);
+    }
 
 });
 
