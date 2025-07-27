@@ -71,10 +71,10 @@ export class OutputWindowElement extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [outputWindowStyleSheet];
     }
 
     connectedCallback() {
-        this.shadowRoot!.adoptedStyleSheets = [outputWindowStyleSheet];
         this.render();
     }
 

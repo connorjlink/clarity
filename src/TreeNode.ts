@@ -117,10 +117,10 @@ export class TreeNodeElement extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [stylesheet];
     }
 
     connectedCallback() {
-        this.shadowRoot!.adoptedStyleSheets = [stylesheet];
         this.render();
     }
 

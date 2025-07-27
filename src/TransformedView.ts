@@ -33,10 +33,10 @@ export class TransformedViewElement extends HTMLElement {
         this.onMouseUp = this.onMouseUp.bind(this);
         this.onWheel = this.onWheel.bind(this);
         this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [transformedViewStyleSheet];
     }
     
     connectedCallback() {
-        this.shadowRoot!.adoptedStyleSheets = [transformedViewStyleSheet];
         this.render();
         this.updateTransform();
         this._container.addEventListener('mousedown', this.onMouseDown);

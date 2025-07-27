@@ -48,10 +48,10 @@ export class HexViewerElement extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [hexViewerStyleSheet];
     }
 
     connectedCallback() {
-        this.shadowRoot!.adoptedStyleSheets = [hexViewerStyleSheet];
     }
 
     disconnectedCallback() {
