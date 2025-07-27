@@ -4,13 +4,27 @@ import * as tn from './TreeNode';
 import * as tv from './TransformedView';
 
 const programTreeStyle = /*css*/`
+    transformed-view {
+        display: block;
+        width: 100%;
+        height: 100%;
+        z-index: -1000;
+    }
     #connections-canvas {
         position:absolute;
         top:0;
         left:0;
-        width:100%;
-        height:100%;
+        width: var(--transform-size);
+        height: var(--transform-size);
         pointer-events:none;
+    }
+    #transform-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: var(--transform-size);
+        height: var(--transform-size);
+        transform: translate(50%, 50%);
     }
 `;
 const programTreeStyleSheet = new CSSStyleSheet();
@@ -61,6 +75,8 @@ export class ProgramTreeElement extends HTMLElement {
                 ]
             }
         ]);
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot!.adoptedStyleSheets = [programTreeStyleSheet];
     }
 
     connectedCallback() {

@@ -1,16 +1,21 @@
 import * as nt from './NodeTypes';
 
 const transformedViewStyle = /*css*/`
+    .wrapper {
+        transform: translate(calc(-1 * var(--transform-size) / 2), calc(-1 * var(--transform-size) / 2));
+    }
     .container {
         position: absolute;
-        width: 100%;
-        height: 100%;
+        width: var(--transform-size);
+        height: var(--transform-size);
         user-select: none;
         overflow: hidden;
-        will-change: transform, scale;
-        transform-origin: 0 0;
+        will-change: transform, scale, zoom;
+        transform-origin: 50% 50%;
+        z-index: -1000;
     }
 `;
+
 const transformedViewStyleSheet = new CSSStyleSheet();
 transformedViewStyleSheet.replaceSync(transformedViewStyle);
 
@@ -122,13 +127,17 @@ export class TransformedViewElement extends HTMLElement {
     }
 
     private updateTransform() {
-        this._container.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0) scale(${this._scale})`;
+        //this._container.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0) scale(${this._scale})`;
+        this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px)`;
+        this._container.style.zoom = `${this._scale * 100}%`;
     }
 
     private render() {
         this.shadowRoot!.innerHTML = `
-            <div class="container">
-                <slot name="transformed-view-slot"></slot>
+            <div class="wrapper">
+                <div class="container">
+                    <slot name="transformed-view-slot"></slot>
+                </div>
             </div>
         `;
         this._container = this.shadowRoot!.querySelector('.container') as HTMLDivElement;

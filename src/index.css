@@ -5,6 +5,8 @@
     --clickspot-width: 10px;
 
     --global-font: 'Consolas', 'Menlo', 'Cascadia Mono', monospace;
+
+    --transform-size: 10000px;
 }
 
 /* NOTE: supposedly, this is the highest-performance method to set global defaults for these rules */ 
@@ -162,4 +164,17 @@ main > * {
 .home-tab {
     overflow-y: hidden;
     border-top: 1px solid var(--node-border);
+}
+.home-tab pane-view {
+    overflow-y: hidden;
+}
+
+program-tree {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#source-pane {
+    z-index: 1000;
 }

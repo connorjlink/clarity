@@ -20,19 +20,22 @@ const paneViewStyle = /*css*/`
         height: 100%;
         width: 100%;
     }
+
     .pane-column {
         width: 100%;
         position: relative;
+        background: var(--dark-background-d);
+        z-index: 1;
     }
-    .pane-column.hidden {
-        display: none;
-    }
+        .pane-column.hidden {
+            display: none;
+        }
     
     .handle {
         width: 1px;
         cursor: col-resize;
         background: var(--node-border);
-        z-index: 2;
+        z-index: 3;
         height: 100%;
         transition: background-color 100ms ease-in-out;
     }
@@ -50,6 +53,8 @@ const paneViewStyle = /*css*/`
         border-top: 1px solid var(--node-border);
         border-bottom: 1px solid var(--node-border);
         width: 100%;
+        position: relative;
+        z-index: 2;
     }
 `;
 const paneViewStyleSheet = new CSSStyleSheet();

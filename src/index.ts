@@ -1,6 +1,7 @@
 import * as ow from './OutputWindow';
 import * as se from './SourceEditor';
 import * as hv from './HexViewer';
+import * as pt from './ProgramTree';
 import './TabView';
 import './ArticleSelector';
 import './PaneView';
@@ -53,6 +54,10 @@ window.addEventListener('DOMContentLoaded', () => {
     if (sourceEditor) {
         sourceEditor.attachEventListeners();
         sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+    }
+
+    const programTree = paneView.querySelector('program-tree') as pt.ProgramTreeElement;
+    if (programTree) {
     }
     
     const irViewer = paneView.querySelector('#ir-pane source-editor') as se.SourceEditorElement;
