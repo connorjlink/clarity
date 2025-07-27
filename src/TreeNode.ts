@@ -310,15 +310,13 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     private render() {
-        // TODO: fix this import since it likely will cause abysmal performance issues for each tree node requiring a reload
         this.shadowRoot!.innerHTML = `
-            <link rel="stylesheet" href="./tree_node.css">
             <div
                 id="${this._nodeId}"
                 class="node shadowed"
             >
                 <div class="node-header">
-                    <img src="../res/expression.svg" class="node-icon" alt="Node Icon" />
+                    <img src="/res/expression.svg" class="node-icon" />
                     <span>Exponentiation Expression</span>
                 </div>
                 <div class="node-body">
