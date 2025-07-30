@@ -12,7 +12,6 @@ const transformedViewStyle = /*css*/`
         overflow: hidden;
         will-change: transform, scale, zoom;
         transform-origin: 50% 50%;
-        z-index: -1000;
     }
 `;
 
@@ -113,9 +112,10 @@ export class TransformedViewElement extends HTMLElement {
         const scaleAmount = -e.deltaY * 0.001;
         const newScale = Math.min(TransformedViewElement.maxScale, Math.max(TransformedViewElement.minScale, this._scale + scaleAmount));
 
-        const rect = this._container.getBoundingClientRect();
+        const rect = this.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
         const mouseY = e.clientY - rect.top;
+
         const dx = mouseX - this._position.x;
         const dy = mouseY - this._position.y;
         const ratio = newScale / this._scale;
@@ -123,13 +123,14 @@ export class TransformedViewElement extends HTMLElement {
         this._position.x = mouseX - dx * ratio;
         this._position.y = mouseY - dy * ratio;
         this._scale = newScale;
+
         this.updateTransform();
     }
 
     private updateTransform() {
-        //this._container.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0) scale(${this._scale})`;
-        this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px)`;
-        this._container.style.zoom = `${this._scale * 100}%`;
+        this._container.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0) scale(${this._scale})`;
+        //this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px)`;
+        //this._container.style.zoom = `${this._scale * 100}%`;
     }
 
     private render() {

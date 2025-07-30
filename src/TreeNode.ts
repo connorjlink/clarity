@@ -1,6 +1,6 @@
 import * as nt from './NodeTypes';
 
-const style = /*css*/`
+const treeNodeStyle = /*css*/`
     .node {
         margin: 1rem;
         height: 100px;
@@ -78,9 +78,16 @@ const style = /*css*/`
             background: var(--accent);
             border-color: var(--accent-hovered);
         }
+        .node-clickspot:hover {
+            background: var(--light-background);
+        }
+        .node-clickspot.connected:hover {
+            background: var(--accent-hovered);
+        }
 `;
-const stylesheet = new CSSStyleSheet();
-stylesheet.replaceSync(style);
+const treeNodeStyleSheet = new CSSStyleSheet();
+treeNodeStyleSheet.replaceSync(treeNodeStyle);
+
 
 export class TreeNodeElement extends HTMLElement {
     // Observed attributes for attributeChangedCallback
@@ -117,7 +124,7 @@ export class TreeNodeElement extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
-        this.shadowRoot!.adoptedStyleSheets = [stylesheet];
+        this.shadowRoot!.adoptedStyleSheets = [treeNodeStyleSheet];
     }
 
     connectedCallback() {
@@ -148,6 +155,30 @@ export class TreeNodeElement extends HTMLElement {
         this.render();
     }
 
+    elementFromPoint(x: number, y: number): HTMLElement | null {
+        const element = this.shadowRoot!.elementFromPoint(x, y);
+        if (element) {
+            return element as HTMLElement;
+        }
+        return null;
+    }
+
+    clickspotFromId(clickspotId: string): HTMLElement | null {
+        return this.shadowRoot!.querySelector(`#${clickspotId}`) as HTMLElement | null;
+    }
+
+    getBoundingClientRect(): DOMRect {
+        const element = this.shadowRoot!.querySelector(`#${this._nodeId}`);
+        if (element) {
+            return element.getBoundingClientRect();
+        }
+        return new DOMRect(0, 0, 0, 0);
+    }
+    
+    getRealNode(): TreeNodeElement | null {
+        return this.shadowRoot!.querySelector(`#${this._nodeId}`) as TreeNodeElement | null;
+    }
+
     updateTransform(pos: nt.Point) {
         this._position = pos;
         if (this._contentRef) {
@@ -156,10 +187,10 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     private attachEventListeners() {
-        this.querySelector('.node-header')?.addEventListener('mousedown', (event: Event) => {
+        this.shadowRoot!.querySelector('.node-header')?.addEventListener('mousedown', (event: Event) => {
             this.startNodeDrag(event as MouseEvent);
         });
-        this.querySelectorAll('.node-clickspot')?.forEach(c => {
+        this.shadowRoot!.querySelectorAll('.node-clickspot')?.forEach(c => {
             c.addEventListener('mousedown', (event: Event) => {
                 this.handleClickspotMouseDown(c.getAttribute('id')!, event as MouseEvent);
             });
@@ -271,23 +302,47 @@ export class TreeNodeElement extends HTMLElement {
                 document.removeEventListener('mousemove', onMouseMove);
                 document.removeEventListener('mouseup', onMouseUp);
 
+                // searches the #transform-content host element for the other nodes
                 const mouseScreen = { x: e.clientX, y: e.clientY };
-                
-                const hoveredElement = document.elementFromPoint(mouseScreen.x, mouseScreen.y);
-                if (!hoveredElement || !hoveredElement.classList.contains('node-clickspot') || hoveredElement.classList.contains('connected')) {
+
+                const allNodes = Array.from(this.parentElement!.querySelectorAll('tree-node')) as TreeNodeElement[];
+                let hoveredNode: TreeNodeElement | null = null;
+                let hoveredClickspot: HTMLElement | null = null;
+
+                for (const node of allNodes) {
+                    const rect = node.getBoundingClientRect();
+                    if (
+                        mouseScreen.x >= rect.left &&
+                        mouseScreen.x <= rect.right &&
+                        mouseScreen.y >= rect.top &&
+                        mouseScreen.y <= rect.bottom
+                    ) {
+                        const el = node.elementFromPoint(mouseScreen.x, mouseScreen.y);
+                        if (el && el.classList.contains('node-clickspot') && !el.classList.contains('connected')) {
+                            hoveredNode = node.getRealNode();
+                            hoveredClickspot = el;
+                            break;
+                        }
+                    }
+                }
+
+                if (!hoveredNode) {
                     this.onTempLine!(null);
                     return;
                 }
-                const targetClickspotId = hoveredElement.getAttribute('id');
-
-                const nodeElement = hoveredElement.closest('.node') as HTMLElement | null;
-                if (!nodeElement || !targetClickspotId) {
+                if (!hoveredClickspot || !hoveredClickspot.classList.contains('node-clickspot') || hoveredClickspot.classList.contains('connected')) {
                     this.onTempLine!(null);
                     return;
                 }
-                const targetNodeId = nodeElement.getAttribute('id');
 
-                const targetClickspotContainer = hoveredElement.closest('.node-clickspot-container');
+                const targetClickspotId = hoveredClickspot.getAttribute('id');
+                const targetNodeId = hoveredNode.getAttribute('id');
+                if (!targetClickspotId || !targetNodeId) {
+                    this.onTempLine!(null);
+                    return;
+                }
+
+                const targetClickspotContainer = hoveredClickspot.closest('.node-clickspot-container');
                 if (!targetClickspotContainer) {
                     this.onTempLine!(null);
                     return;
@@ -316,7 +371,7 @@ export class TreeNodeElement extends HTMLElement {
                 class="node shadowed"
             >
                 <div class="node-header">
-                    <img src="/res/expression.svg" class="node-icon" />
+                    <img src="/clarity/res/expression.svg" class="node-icon" />
                     <span>Exponentiation Expression</span>
                 </div>
                 <div class="node-body">

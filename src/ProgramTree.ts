@@ -8,7 +8,6 @@ const programTreeStyle = /*css*/`
         display: block;
         width: 100%;
         height: 100%;
-        z-index: -1000;
     }
     #connections-canvas {
         position:absolute;
@@ -88,7 +87,12 @@ export class ProgramTreeElement extends HTMLElement {
     }
 
     private getClickspotCenter(nodeId: string, clickspotId: string) {
-        const el = document.querySelector(`#${clickspotId}`) as HTMLElement;
+        const treeNodes = this.shadowRoot!.querySelectorAll('tree-node');
+        const node = Array.from(treeNodes).find(el => el.getAttribute('data-node-id') === nodeId) as tn.TreeNodeElement | null;
+        if (!node) {
+            return null;
+        }
+        const el = node.clickspotFromId(clickspotId);
         if (!el || !this._transformedViewRef) {
             return null;
         }
@@ -135,10 +139,10 @@ export class ProgramTreeElement extends HTMLElement {
     private handleNodeMove(id: string, pos: nt.Point) {
         this._nodeManager.updateNodePosition(id, pos);
         
-        const nodeElement = this._contentRef?.querySelector(`#${id}`) as HTMLElement;
-        const parentElement = nodeElement.parentElement as tn.TreeNodeElement;
-        if (parentElement) {
-            parentElement.updateTransform(pos);
+        const nodeElements = this._contentRef?.querySelectorAll(`tree-node`) || [];
+        const nodeElement = Array.from(nodeElements).find(el => el.getAttribute('data-node-id') === id) as tn.TreeNodeElement;
+        if (nodeElement) {
+            nodeElement.updateTransform(pos);
         }
         
         // since moving a node can repath multiple lines, it makes sense to re-render everything for now
@@ -352,6 +356,8 @@ export class ProgramTreeElement extends HTMLElement {
                     screenToWorld: (pt) => this._transformedViewRef?.screenToWorld(pt) ?? pt,
                     worldToScreen: (pt) => this._transformedViewRef?.worldToScreen(pt) ?? pt
                 });
+
+                nodeElement.setAttribute('data-node-id', node.id);
 
                 this._contentRef.appendChild(nodeElement);
             }
