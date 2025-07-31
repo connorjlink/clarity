@@ -6,6 +6,7 @@ import './TabView';
 import './ArticleSelector';
 import './PaneView';
 import './SymbolToggle';
+import './PaneStatus';
 
 import './CollapseView.svelte';
 import './SymbolIcon.svelte';

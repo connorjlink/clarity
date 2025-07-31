@@ -1,6 +1,10 @@
 import * as nt from './NodeTypes';
 
 const treeNodeStyle = /*css*/`
+    tre-node {
+        position: absolute;
+    }
+
     .node {
         margin: 1rem;
         height: 100px;

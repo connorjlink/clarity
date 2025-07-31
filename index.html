@@ -41,11 +41,11 @@
             <my-tab label="Home" route="home" class="home-tab shadowed">
                 <pane-view>
                     <div class="pane-column" id="source-pane">
-                        <div class="pane-descriptor">Source Editor</div>
+                        <pane-status data-header="Source Editor" id="source-cursor-plugin"></pane-status>
                         <source-editor></source-editor>
                     </div>
                     <div class="pane-column" id="ast-pane">
-                        <div class="pane-descriptor scaler"><span>Abstract Syntax Tree</span><span class="scaler grow"></span></div>
+                        <pane-status data-header="Abstract Syntax Tree" id="ast-zoom-plugin"></pane-status>
                         <program-tree></program-tree>
                     </div>
                     <div class="pane-column" id="ir-pane">

@@ -70,6 +70,18 @@ export class TransformedViewElement extends HTMLElement {
         };
     }
 
+    getTransform() {
+        return {
+            scale: this._scale,
+            position: { ...this._position },
+        };
+    }
+    
+    updateTransform() {
+        this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this._scale})`;
+        this._scaler.innerHTML = `${Math.floor(parseFloat(this._scale.toFixed(2)) * 100)}%`;
+    }
+
     private onMouseDown(e: MouseEvent) {
         let element = e.target as HTMLElement | null;
         // don't pan if already interacting with a node header! 
@@ -127,11 +139,6 @@ export class TransformedViewElement extends HTMLElement {
         this._scale = newScale;
 
         this.updateTransform();
-    }
-
-    private updateTransform() {
-        this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this._scale})`;
-        this._scaler.innerHTML = `${Math.floor(parseFloat(this._scale.toFixed(2)) * 100)}%`;
     }
 
     private render() {

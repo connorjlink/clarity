@@ -57,7 +57,7 @@ function InjectorPlugin() {
 }
 
 export default defineConfig({
-   base: '/clarity/',
+   //base: '/clarity/',
    plugins: [
       InjectorPlugin(),
       svelte({
