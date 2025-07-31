@@ -1,3 +1,4 @@
+import * as pt from './ProgramTree';
 import * as nt from './NodeTypes';
 
 export class NodeManager {
@@ -78,13 +79,17 @@ export class NodeManager {
         }
         set.add({ from, to });
 
-        document.getElementById(from.clickspotId)?.classList.toggle('connected', true);
+        const programTreeRef = document.querySelector('program-tree') as pt.ProgramTreeElement | null;
+        if (programTreeRef) {
+            programTreeRef.setNodeConnected(from.nodeId, from.clickspotId, true);
+            programTreeRef.setNodeConnected(to.nodeId, to.clickspotId, true);
+        }
+
         var fromNode = this.nodes.get(from.nodeId)?.clickspots.find(cs => cs.id === from.clickspotId);
         if (fromNode) {
             fromNode.isConnected = true;
         }
 
-        document.getElementById(to.clickspotId)?.classList.toggle('connected', true);
         var toNode = this.nodes.get(to.nodeId)?.clickspots.find(cs => cs.id === to.clickspotId);
         if (toNode) {
             toNode.isConnected = true;
@@ -99,13 +104,17 @@ export class NodeManager {
                     (connection.to.nodeId === info.nodeId && connection.to.clickspotId === info.clickspotId)
                 ) {
                     
-                    document.getElementById(connection.from.clickspotId)?.classList.toggle('connected', false);
+                    const programTreeRef = document.querySelector('program-tree') as pt.ProgramTreeElement | null;
+                    if (programTreeRef) {
+                        programTreeRef.setNodeConnected(connection.from.nodeId, connection.from.clickspotId, false);
+                        programTreeRef.setNodeConnected(connection.to.nodeId, connection.to.clickspotId, false);
+                    }
+
                     var fromNode = this.nodes.get(connection.from.nodeId)?.clickspots.find(cs => cs.id === connection.from.clickspotId);
                     if (fromNode) {
                         fromNode.isConnected = false;
                     }
                     
-                    document.getElementById(connection.to.clickspotId)?.classList.toggle('connected', false);
                     var toNode = this.nodes.get(connection.to.nodeId)?.clickspots.find(cs => cs.id === connection.to.clickspotId);
                     if (toNode) {
                         toNode.isConnected = false;

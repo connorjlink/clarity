@@ -186,6 +186,13 @@ export class TreeNodeElement extends HTMLElement {
         }
     }
 
+    setConnected(clickspotId: string, connected: boolean) {
+        const clickspot = this.clickspotFromId(clickspotId);
+        if (clickspot) {
+            clickspot.classList.toggle('connected', connected);
+        }
+    }
+
     private attachEventListeners() {
         this.shadowRoot!.querySelector('.node-header')?.addEventListener('mousedown', (event: Event) => {
             this.startNodeDrag(event as MouseEvent);

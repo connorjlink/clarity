@@ -86,23 +86,30 @@ export class ProgramTreeElement extends HTMLElement {
         // for now no attributes require re-rendering
     }
 
+    setNodeConnected(nodeId: string, clickspotId: string, connected: boolean) {
+        const nodeElement = this.shadowRoot!.querySelector(`tree-node[data-node-id="${nodeId}"]`) as tn.TreeNodeElement | null;
+        if (nodeElement) {
+            nodeElement.setConnected(clickspotId, connected);
+        }
+    }
+
     private getClickspotCenter(nodeId: string, clickspotId: string) {
-        const treeNodes = this.shadowRoot!.querySelectorAll('tree-node');
-        const node = Array.from(treeNodes).find(el => el.getAttribute('data-node-id') === nodeId) as tn.TreeNodeElement | null;
-        if (!node) {
+        const node = this.shadowRoot!.querySelector(`tree-node[data-node-id="${nodeId}"]`) as tn.TreeNodeElement | null;
+        if (!node || !this._transformedViewRef) {
             return null;
         }
         const el = node.clickspotFromId(clickspotId);
-        if (!el || !this._transformedViewRef) {
+        if (!el) {
             return null;
         }
-        const rect = el.getBoundingClientRect();
-        const rectWorld = this._transformedViewRef.screenToWorld({ x: rect.left, y: rect.top });
-        return {
-            x: rectWorld.x + rect.width / 2,
-            y: rectWorld.y + rect.height / 2
+        const spotRect = el.getBoundingClientRect();
+        const centerScreen = {
+            x: spotRect.left + spotRect.width / 2,
+            y: spotRect.top + spotRect.height / 2
         };
-    };
+        const world = this._transformedViewRef.screenToWorld(centerScreen);
+        return world;
+    }
 
     private isClickspotConnected(info: nt.ClickspotInfo) {
         const connections = this._nodeManager.getConnections(info.nodeId);
@@ -139,10 +146,9 @@ export class ProgramTreeElement extends HTMLElement {
     private handleNodeMove(id: string, pos: nt.Point) {
         this._nodeManager.updateNodePosition(id, pos);
         
-        const nodeElements = this._contentRef?.querySelectorAll(`tree-node`) || [];
-        const nodeElement = Array.from(nodeElements).find(el => el.getAttribute('data-node-id') === id) as tn.TreeNodeElement;
-        if (nodeElement) {
-            nodeElement.updateTransform(pos);
+        const node = this.shadowRoot!.querySelector(`tree-node[data-node-id="${id}"]`) as tn.TreeNodeElement | null;
+        if (node) {
+            node.updateTransform(pos);
         }
         
         // since moving a node can repath multiple lines, it makes sense to re-render everything for now
@@ -168,8 +174,12 @@ export class ProgramTreeElement extends HTMLElement {
         for (const connection of connections) {
             const fromCenter = this.getClickspotCenter(connection.from.nodeId, connection.from.clickspotId);
             const toCenter = this.getClickspotCenter(connection.to.nodeId, connection.to.clickspotId);
-            if (!fromCenter || !toCenter || !connection.from.location || !connection.to.location) {
-                console.warn(`Skipping connection from ${connection.from.nodeId} to ${connection.to.nodeId} due to missing clickspot centers or locations.`);
+            if (!fromCenter || !toCenter) {
+                console.warn(`Skipping connection from ${connection.from.nodeId} to ${connection.to.nodeId} due to missing clickspot centers.`);
+                continue;
+            }
+            if (!connection.from.location || !connection.to.location) {
+                console.warn(`Skipping connection from ${connection.from.nodeId} to ${connection.to.nodeId} due to missing locations.`);
                 continue;
             }
             this.drawBezierPath(
@@ -279,33 +289,48 @@ export class ProgramTreeElement extends HTMLElement {
     }
 
     private drawBezierPath(
-        start: nt.Point,
-        end: nt.Point,
-        fromLocation: nt.ClickspotLocation,
-        toLocation: nt.ClickspotLocation | null,
-        strokeStyle: string,
-        lineWidth: number,
-        dashed: boolean
-    ) {
-        if (!this._canvasRef) {
-            return;
-        }
-        const [x1, y1, c1x, c1y, c2x, c2y, x2, y2] = this.getBezierPath({ start, end }, fromLocation, toLocation);
-
-        this._canvasRef.save();
-        this._canvasRef.beginPath();
-        if (dashed) {
-            this._canvasRef.setLineDash([4, 4]);
-        } else {
-            this._canvasRef.setLineDash([]);
-        }
-        this._canvasRef.moveTo(x1, y1);
-        this._canvasRef.bezierCurveTo(c1x, c1y, c2x, c2y, x2, y2);
-        this._canvasRef.strokeStyle = strokeStyle;
-        this._canvasRef.lineWidth = lineWidth;
-        this._canvasRef.stroke();
-        this._canvasRef.restore();
+    start: nt.Point,
+    end: nt.Point,
+    fromLocation: nt.ClickspotLocation,
+    toLocation: nt.ClickspotLocation | null,
+    strokeStyle: string,
+    lineWidth: number,
+    dashed: boolean
+) {
+    if (!this._canvasRef || !this._transformedViewRef) {
+        return;
     }
+    // Convertir de world a screen (canvas)
+    const startScreen = this._transformedViewRef.worldToScreen(start);
+    const endScreen = this._transformedViewRef.worldToScreen(end);
+
+    // Calcular los puntos de control en world
+    const [x1, y1, c1x, c1y, c2x, c2y, x2, y2] = this.getBezierPath(
+        { start, end }, fromLocation, toLocation
+    );
+
+    // Convertir todos los puntos a screen
+    const c1Screen = this._transformedViewRef.worldToScreen({ x: c1x, y: c1y });
+    const c2Screen = this._transformedViewRef.worldToScreen({ x: c2x, y: c2y });
+
+    this._canvasRef.save();
+    this._canvasRef.beginPath();
+    if (dashed) {
+        this._canvasRef.setLineDash([4, 4]);
+    } else {
+        this._canvasRef.setLineDash([]);
+    }
+    this._canvasRef.moveTo(startScreen.x, startScreen.y);
+    this._canvasRef.bezierCurveTo(
+        c1Screen.x, c1Screen.y,
+        c2Screen.x, c2Screen.y,
+        endScreen.x, endScreen.y
+    );
+    this._canvasRef.strokeStyle = strokeStyle;
+    this._canvasRef.lineWidth = lineWidth;
+    this._canvasRef.stroke();
+    this._canvasRef.restore();
+}
 
     private resizeCanvas() {
         if (!this._connectionsCanvas) {
@@ -378,7 +403,7 @@ export class ProgramTreeElement extends HTMLElement {
     private render() {
         this.shadowRoot!.innerHTML = `
             <transformed-view id="program-tree-transformed-view">
-                <div id="transform-content" slot="transformed-view-slot" style="position:absolute; top:0; left:0; width:100%; height:100%;">
+                <div id="transform-content" slot="transformed-view-slot">
                     <canvas id="connections-canvas"></canvas>
                 </div>
             </transformed-view>

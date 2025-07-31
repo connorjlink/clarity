@@ -1,28 +1,58 @@
 const hexViewerStyle = /*css*/`
-    .hex-shell {
-        background: #181818;
-        color: #ccc;
-        font-family: 'Fira Mono', 'Consolas', monospace;
-        font-size: 14px;
-        padding: 8px;
-        overflow: auto;
-        width: fit-content;
-        max-width: 100%;
+    :host *, :host *::after, :host *::before {
+        box-sizing: border-box;
     }
+
+    .hex-shell {
+        color: var(--light-foreground);
+        padding: 1rem;
+        overflow: auto;
+        height: 100%;
+        width: 100%;
+    }
+
+    .hex-table {
+        font-family: var(--global-font);
+        border-collapse: collapse;
+        width: 100%;
+    }
+        .hex-table th,
+        .hex-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .hex-table th {
+            color: var(--dark-foreground-l);
+        }
+
+    .header-spacer-row {
+        height: 0.5rem;
+    }
+
+    .hex-offset {
+        font-weight: normal;
+    }
+        th.hex-offset {
+            color: var(--accent);
+        }
 
     .hex-address {
-        color: #888;
-        margin-right: 12px;
         font-weight: bold;
+        color: var(--light-foreground-l);
+        padding-right: 1rem;
     }
 
+    .hex-byte {
+        width: fit-content;
+    }
+    
     .hex-ascii {
-        color: #6cf;
-        margin-left: 2px;
+        color: var(--secondary);
+        padding-left: 1rem;
     }
 
-    .hex-highlight-layer span {
-        transition: background-color 0.2s;
+    .hex-highlight-layer {
+        margin: 0;
     }
 `;
 const hexViewerStyleSheet = new CSSStyleSheet();
@@ -44,6 +74,7 @@ export class HexViewerElement extends HTMLElement {
     private _symbols: HexSymbol[] = [];
     private _sourceUri: string = '';
     private _hasInitialized: boolean = false;
+    private _resizeObserver: ResizeObserver | null = null;
 
     constructor() {
         super();
@@ -52,9 +83,13 @@ export class HexViewerElement extends HTMLElement {
     }
 
     connectedCallback() {
+        const target = this.parentElement ?? this;
+        this._resizeObserver = new ResizeObserver(() => this._onResize());
+        this._resizeObserver.observe(target);
     }
 
     disconnectedCallback() {
+        this._resizeObserver?.disconnect();
         this._client?.postMessage({
             type: 'execute',
             method: 'closeDocument',
@@ -95,6 +130,22 @@ export class HexViewerElement extends HTMLElement {
         }
     }
 
+    private _onResize() {
+        const characterWidth = parseInt(getComputedStyle(this.shadowRoot!.host).fontSize.replace('px', ''));
+
+        const addressWidth = characterWidth * 8;;
+        const asciiWidth = this._columns * 8;
+        const shellPadding = characterWidth * 2;
+
+        const containerWidth = this.getBoundingClientRect().width - addressWidth - asciiWidth - shellPadding;
+        const maxColumns = Math.max(1, containerWidth / 24);
+
+        // hysteresis
+        if (Math.abs(maxColumns - this._columns) > 0.5) {
+            this.setColumns(Math.floor(maxColumns));
+        }
+    }
+
     private getSymbolAt(addr: number): HexSymbol | null {
         for (const sym of this._symbols) {
             if (addr >= sym.address && addr < sym.address + sym.length) {
@@ -120,54 +171,59 @@ export class HexViewerElement extends HTMLElement {
     }
 
     private renderHex(): string {
-        let html = '';
+        let html = '<table class="hex-table"><thead>';
+
+        html += '<tr>';
+        html += '<th class="hex-address">Address</th>';
+        html += '<th colspan="' + this._columns + '">Offset</th>';
+        html += '<th class="hex-ascii">ASCII</th>';
+        html += '</tr>';
+
+        html += '<tr class="header-spacer-row"></tr>';
+        html += '<tr class="hex-offset-row">';
+        html += '<th></th>';
+        for (let col = 0; col < this._columns; col++) {
+            html += `<th class="hex-offset">+${col.toString(16).toUpperCase()}</th>`;
+        }
+        html += '<th></th>';
+        html += '</tr>';
+        html += '<tr class="header-spacer-row"></tr>';
+
+        html += '</thead><tbody>';
+
         for (let row = 0; row < Math.ceil(this._data.length / this._columns); row++) {
             const addr = row * this._columns;
-            html += `<span class="hex-address">${addr.toString(16).padStart(8, '0')}</span>  `;
-
-            // Hex bytes grouped by color (basically per symbol in the future)
-            let lastColor = '';
-            let hexGroup = '';
+            html += '<tr>';
+        
+            html += `<td class="hex-address">${addr.toString(16).padStart(8, '0')}</td>`;
+        
             for (let col = 0; col < this._columns; col++) {
                 const i = addr + col;
                 if (i < this._data.length) {
                     const sym = this.getSymbolAt(i);
                     const color = sym ? sym.color : '#ccc';
-                    const hexByte = this._data[i].toString(16).padStart(2, '0') + ' ';
-                    if (color !== lastColor && hexGroup) {
-                        html += `<span style="color:${lastColor}">${hexGroup}</span>`;
-                        hexGroup = hexByte;
-                        lastColor = color;
-                    } else {
-                        hexGroup += hexByte;
-                        lastColor = color;
-                    }
+                    const hexByte = this._data[i].toString(16).padStart(2, '0');
+                    html += `<td class="hex-byte" style="color:${color}">${hexByte}</td>`;
                 } else {
-                    if (hexGroup) {
-                        html += `<span style="color:${lastColor}">${hexGroup}</span>`;
-                        hexGroup = '';
-                    }
-                    html += '   ';
+                    html += '<td></td>';
                 }
             }
-            if (hexGroup) {
-                html += `<span style="color:${lastColor}">${hexGroup}</span>`;
-            }
-            html += ' ';
-
-            // ASCII grouped one tag per row
-            let asciiStr = '';
+        
+            html += '<td class="hex-ascii">';
             for (let col = 0; col < this._columns; col++) {
                 const i = addr + col;
                 if (i < this._data.length) {
                     const byte = this._data[i];
-                    asciiStr += (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.';
+                    html += (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.';
                 } else {
-                    asciiStr += ' ';
+                    html += ' ';
                 }
             }
-            html += `<span class="hex-ascii">${asciiStr}</span>\n`;
+            html += '</td>';
+        
+            html += '</tr>';
         }
+        html += '</tbody></table>';
         return html;
     }
 }
