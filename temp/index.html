@@ -16,6 +16,14 @@
             body { 
                 background: rgb(30, 30, 30);
             }
+
+            .scaler {
+                display: flex;
+            }
+                .scaler.grow {
+                    flex: 1;
+                    justify-content: flex-end;
+                }
         </style>
     </head>
 
@@ -37,7 +45,7 @@
                         <source-editor></source-editor>
                     </div>
                     <div class="pane-column" id="ast-pane">
-                        <div class="pane-descriptor">Abstract Syntax Tree</div>
+                        <div class="pane-descriptor scaler"><span>Abstract Syntax Tree</span><span class="scaler grow"></span></div>
                         <program-tree></program-tree>
                     </div>
                     <div class="pane-column" id="ir-pane">

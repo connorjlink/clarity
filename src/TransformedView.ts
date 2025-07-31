@@ -25,6 +25,7 @@ export class TransformedViewElement extends HTMLElement {
 
     private _container!: HTMLDivElement;
     private _scale = 1;
+    private _scaler!: HTMLElement;
     
     private _isPanning = false;
     private _position: nt.Point = { x: 0, y: 0 };
@@ -38,6 +39,7 @@ export class TransformedViewElement extends HTMLElement {
         this.onWheel = this.onWheel.bind(this);
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [transformedViewStyleSheet];
+        this._scaler = document.querySelector('.scaler.grow') as HTMLElement;
     }
     
     connectedCallback() {
@@ -129,6 +131,7 @@ export class TransformedViewElement extends HTMLElement {
 
     private updateTransform() {
         this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this._scale})`;
+        this._scaler.innerHTML = `${Math.floor(parseFloat(this._scale.toFixed(2)) * 100)}%`;
     }
 
     private render() {

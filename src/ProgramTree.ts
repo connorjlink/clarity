@@ -95,7 +95,7 @@ export class ProgramTreeElement extends HTMLElement {
 
     private getClickspotCenter(nodeId: string, clickspotId: string) {
         const node = this.shadowRoot!.querySelector(`tree-node[data-node-id="${nodeId}"]`) as tn.TreeNodeElement | null;
-        if (!node || !this._transformedViewRef) {
+        if (!node || !this._transformedViewRef || !this._connectionsCanvas) {
             return null;
         }
         const el = node.clickspotFromId(clickspotId);
@@ -103,9 +103,10 @@ export class ProgramTreeElement extends HTMLElement {
             return null;
         }
         const spotRect = el.getBoundingClientRect();
+        const canvasRect = this._connectionsCanvas.getBoundingClientRect();
         const centerScreen = {
-            x: spotRect.left + spotRect.width / 2,
-            y: spotRect.top + spotRect.height / 2
+            x: spotRect.left + spotRect.width / 2 - canvasRect.left,
+            y: spotRect.top + spotRect.height / 2 - canvasRect.top
         };
         const world = this._transformedViewRef.screenToWorld(centerScreen);
         return world;
