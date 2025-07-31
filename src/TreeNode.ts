@@ -1,7 +1,7 @@
 import * as nt from './NodeTypes';
 
 const treeNodeStyle = /*css*/`
-    tre-node {
+    :host {
         position: absolute;
     }
 

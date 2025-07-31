@@ -1,7 +1,21 @@
 const paneStatusStyle = /*css*/`
-    .pane-status {
-        display: flex;
+    *, *::before, *::after {
+        box-sizing: border-box;
     }
+    .pane-descriptor {
+        display: flex;
+        padding: 0.5rem;
+        background: var(--dark-background-e);
+        border-top: 1px solid var(--node-border);
+        border-bottom: 1px solid var(--node-border);
+        width: 100%;
+        position: relative;
+        z-index: 2;
+    }
+        .pane-descriptor .grow {
+            flex: 1;
+            text-align: right;
+        }
 `;
 const paneStatusStyleSheet = new CSSStyleSheet();
 paneStatusStyleSheet.replaceSync(paneStatusStyle);
@@ -20,7 +34,7 @@ export class PaneStatusElement extends HTMLElement {
 
     connectedCallback() {
         this._header = this.getAttribute('data-header') || '';
-        this._pluginNameRef = this.getAttribute('data-plugin') || '';
+        this._pluginNameRef = this.getAttribute('id') || '';
         this.render();
     }
 
@@ -30,9 +44,7 @@ export class PaneStatusElement extends HTMLElement {
 
     private render() {
         this.shadowRoot!.innerHTML = `
-            <div class="pane-status">
-                <span class="pane-descriptor">${this._header}</span>
-            </div>
+            <div class="pane-descriptor">${this._header}</div>
         `;
         if (this._pluginNameRef) {
             const plugin = document.createElement('span');
