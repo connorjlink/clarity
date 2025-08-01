@@ -26,10 +26,6 @@
     svg {
         filter: none;
     }
-    symbol-icon svg.active {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
-    }
 </style>
 
 <svg

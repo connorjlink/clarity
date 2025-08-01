@@ -15,6 +15,7 @@ const paneStatusStyle = /*css*/`
         .pane-descriptor .grow {
             flex: 1;
             text-align: right;
+            color: var(--dark-foreground-ll);
         }
 `;
 const paneStatusStyleSheet = new CSSStyleSheet();

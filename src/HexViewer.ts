@@ -1,3 +1,5 @@
+import * as ps from './PaneStatus';
+
 const hexViewerStyle = /*css*/`
     :host *, :host *::after, :host *::before {
         box-sizing: border-box;
@@ -6,7 +8,8 @@ const hexViewerStyle = /*css*/`
     .hex-shell {
         color: var(--light-foreground);
         padding: 1rem;
-        overflow: auto;
+        overflow-x: hidden;
+        overflow-y: auto;
         height: 100%;
         width: 100%;
     }
@@ -98,11 +101,21 @@ export class HexViewerElement extends HTMLElement {
     }
 
     initialize(uri: string, data: Uint8Array, columns: number = 0x10, client: Worker | null = null) {
+        // calling initialize again will safely refresh with the new data
+        if (this._hasInitialized) {
+            this.unload();
+        }
+        
         this._hasInitialized = true;
         this._client = client;
         this._sourceUri = uri;
         this._data = data;
         this._columns = columns;
+
+        const plugin = document.querySelector('#exe-hex-plugin') as ps.PaneStatusElement;
+        if (plugin) {
+            plugin.getPlugin()!.innerHTML = `${data.length} bytes`;
+        }
 
         this._client?.addEventListener('message', (e) => {
             if (e.data.type === 'symbolInfo' && e.data.uri === this._sourceUri) {
@@ -121,6 +134,14 @@ export class HexViewerElement extends HTMLElement {
         });
 
         this.render();
+    }
+
+    unload() {
+        this._client?.postMessage({
+            type: 'execute',
+            method: 'closeDocument',
+            params: { uri: this._sourceUri }
+        });
     }
 
     setColumns(columns: number) {

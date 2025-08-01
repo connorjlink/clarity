@@ -16,14 +16,6 @@
             body { 
                 background: rgb(30, 30, 30);
             }
-
-            .scaler {
-                display: flex;
-            }
-                .scaler.grow {
-                    flex: 1;
-                    justify-content: flex-end;
-                }
         </style>
     </head>
 
@@ -41,23 +33,23 @@
             <my-tab label="Home" route="home" class="home-tab shadowed">
                 <pane-view>
                     <div class="pane-column" id="source-pane">
-                        <pane-status data-header="Source Editor" id="source-cursor-plugin"></pane-status>
-                        <source-editor></source-editor>
+                        <pane-status data-header="Source Editor" id="source-editor-plugin"></pane-status>
+                        <source-editor data-plugin="source-editor-plugin"></source-editor>
                     </div>
                     <div class="pane-column" id="ast-pane">
                         <pane-status data-header="Abstract Syntax Tree" id="ast-zoom-plugin"></pane-status>
                         <program-tree></program-tree>
                     </div>
                     <div class="pane-column" id="ir-pane">
-                        <div class="pane-descriptor">Intermediate Representation</div>
-                        <source-editor data-readonly="true"></source-editor>
+                        <pane-status data-header="Intermediate Representation" id="ir-editor-plugin"></pane-status>
+                        <source-editor data-readonly="true" data-plugin="ir-editor-plugin"></source-editor>
                     </div>
                     <div class="pane-column" id="asm-pane">
-                        <div class="pane-descriptor">Assembly</div>
-                        <source-editor data-readonly="true"></source-editor>
+                        <pane-status data-header="Assembly and Machine Code" id="asm-editor-plugin"></pane-status>
+                        <source-editor data-readonly="true" data-plugin="asm-editor-plugin"></source-editor>
                     </div>
                     <div class="pane-column" id="exe-pane">
-                        <div class="pane-descriptor">Packaged Executable</div>
+                        <pane-status data-header="Packaged Executable" id="exe-hex-plugin"></pane-status>
                         <hex-viewer></hex-viewer>
                     </div>
                 </pane-view>

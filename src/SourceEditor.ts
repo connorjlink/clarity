@@ -1,44 +1,12 @@
 import * as pt from './PieceTable';
 import * as lc from './LanguageClient';
+import * as ps from './PaneStatus';
 
 const sourceEditorStyle = /*css*/`
-    source-editor {
-        width: 100%;
-        background: var(--dark-background-d);
-        padding: 1rem;
-        padding-left: 1rem;
-        outline: none;
-        display: flex;
-        flex-direction: column;
-        transition: border-color 100ms ease-in-out;
-        overflow:auto;    
-    }
-        source-editor:focus {
-            border-top-color: var(--accent);
-        }
-        source-editor pre {
-            counter-reset: line;
-        }
-        source-editor code {
-            display: flex;
-            flex-direction: row; 
-            counter-increment: line;
-        }
-        source-editor code:before {
-            content: counter(line);
-            padding-right: 1.5rem;
-            color: var(--plain-text);
-            width: 2rem;
-            text-align: right;
-        }
-
     .editor-shell {
         position: relative;
         font-family: Consolas;
         height: 300px;
-        * {
-            font-size: 14pt;
-        }
     }
     .highlight-layer, .input-layer {
         white-space: pre-wrap;
@@ -73,6 +41,8 @@ const sourceEditorStyle = /*css*/`
 const sourceEditorStyleSheet = new CSSStyleSheet();
 sourceEditorStyleSheet.replaceSync(sourceEditorStyle);
 
+const MIN_EDITOR_ZOOM = 0.2;
+const MAX_EDITOR_ZOOM = 3;
 
 function getTextWithLineBreaks(element: HTMLElement): string {
     let text = '';
@@ -143,6 +113,14 @@ function setCaretPosition(element: HTMLElement, offset: number) {
     }
 }
 
+/*
+TODO on the source editor:
+-refactor to make it easier to use the piece table on a line-by-line basis
+-simplify the calculation for the cursor position
+-use editor deltas to update the highlight layer
+
+*/
+
 export class SourceEditorElement extends HTMLElement {
     private _pieceTable: pt.PieceTable;
     private _consoleListener: any = null;
@@ -156,6 +134,14 @@ export class SourceEditorElement extends HTMLElement {
 
     private _hasInitialized: boolean = false;
 
+    private _editorZoom: number = 1;
+
+    private _cursorLine: number | null = null;
+    private _cursorColumn: number | null = null;
+    private _lastCaretOffset: number | null = null;
+
+    private _zoomPlugin!: ps.PaneStatusElement;
+
     constructor() {
         super();
         this._pieceTable = new pt.PieceTable('function nvr main = () {}');
@@ -166,6 +152,10 @@ export class SourceEditorElement extends HTMLElement {
     connectedCallback() {
         // No longer called because the source editor requires some more initialization from the parent before use first!
         //this.render();
+        const plugin = this.getAttribute('data-plugin') || '';
+        if (plugin) {
+            this._zoomPlugin = document.querySelector(`#${plugin}`) as ps.PaneStatusElement;
+        }
     }
 
     disconnectedCallback() {
@@ -216,6 +206,7 @@ export class SourceEditorElement extends HTMLElement {
     private _boundInputCallback: (event: Event) => void = this.inputCallback.bind(this);
     private _boundScrollCallback: (event: Event) => void = this.scrollCallback.bind(this);
     private _boundKeydownCallback: (event: KeyboardEvent) => void = this.keydownCallback.bind(this);
+    private _boundWheelCallback: (event: WheelEvent) => void = this.wheelCallback.bind(this);
 
     inputCallback(event: Event) {
         this.handleInputChange(event);
@@ -229,16 +220,101 @@ export class SourceEditorElement extends HTMLElement {
         this.handleKeyDown(event);
     }
 
+    wheelCallback(event: WheelEvent) {
+        if (event.shiftKey) {
+            event.preventDefault();
+            const zoomDelta = -event.deltaY * 0.001;
+            let newZoom = this._editorZoom + zoomDelta;
+            newZoom = Math.max(MIN_EDITOR_ZOOM, Math.min(MAX_EDITOR_ZOOM, newZoom));
+            this._editorZoom = newZoom;
+            this.updateEditorZoom();
+        }
+    }
+
     attachEventListeners() {
         this._inputRef?.addEventListener('input', this._boundInputCallback);
         this._inputRef?.addEventListener('scroll', this._boundScrollCallback);
         this._inputRef?.addEventListener('keydown', this._boundKeydownCallback);
+        this._inputRef?.addEventListener('wheel', this._boundWheelCallback, { passive: false });
+        this._inputRef?.addEventListener('keyup', () => this.updateCursorPositionCache());
+        this._inputRef?.addEventListener('mouseup', () => this.updateCursorPositionCache());
+        this._inputRef?.addEventListener('focus', () => this.updateCursorPositionCache());
+        this._inputRef?.addEventListener('blur', () => this.updateCursorPositionCache());
+        document.addEventListener('selectionchange', () => this.updateCursorPositionCache());
     }
 
     detachEventListeners() {
         this._inputRef?.removeEventListener('input', this._boundInputCallback);
         this._inputRef?.removeEventListener('scroll', this._boundScrollCallback);
         this._inputRef?.removeEventListener('keydown', this._boundKeydownCallback);
+        this._inputRef?.removeEventListener('wheel', this._boundWheelCallback);
+        this._inputRef?.removeEventListener('keyup', () => this.updateCursorPositionCache());
+        this._inputRef?.removeEventListener('mouseup', () => this.updateCursorPositionCache());
+        this._inputRef?.removeEventListener('focus', () => this.updateCursorPositionCache());
+        this._inputRef?.removeEventListener('blur', () => this.updateCursorPositionCache());
+        document.removeEventListener('selectionchange', () => this.updateCursorPositionCache());
+    }
+
+    private updateCursorPositionCache() {
+        if (!this._inputRef) {
+            this._cursorLine = null;
+            this._cursorColumn = null;
+            this._lastCaretOffset = null;
+            return;
+        }
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || !selection.isCollapsed) {
+            // No cursor or multiple selection
+            this._cursorLine = null;
+            this._cursorColumn = null;
+            this._lastCaretOffset = null;
+            return;
+        }
+        const caretOffset = getCaretCharacterOffsetWithin(this._inputRef);
+        if (caretOffset === this._lastCaretOffset) {
+            // No change, skip
+            return;
+        }
+        this._lastCaretOffset = caretOffset;
+        const text = getTextWithLineBreaks(this._inputRef);
+        let line = 0, col = 0, idx = 0;
+        for (; idx < caretOffset; idx++) {
+            if (text[idx] === '\n') {
+                line++;
+                col = 0;
+            } else {
+                col++;
+            }
+        }
+        // 1-based
+        this._cursorLine = line + 1; 
+        this._cursorColumn = col + 1;
+        this.updateEditorZoom();
+    }
+
+    private showCursorInfo(): string {
+        if (this._cursorLine !== null && this._cursorColumn !== null) {
+            return `LN:${this._cursorLine} COL:${this._cursorColumn} | `;
+        }
+        return '';
+    }
+
+    private updateEditorZoom() {
+        const zoomPercent = Math.floor(this._editorZoom * 100);
+        this.style.setProperty('--editor-zoom', `${zoomPercent}%`);
+        if (this.shadowRoot) {
+            (this.shadowRoot.host as HTMLElement).style.setProperty('--editor-zoom', `${zoomPercent}%`);
+        }
+        if (this._inputRef) {
+            this._inputRef.style.fontSize = `${this._editorZoom}rem`;
+        }
+        if (this._highlightRef) {
+            this._highlightRef.style.fontSize = `${this._editorZoom}rem`;
+        }
+        const plugin = this._zoomPlugin.getPlugin();
+        if (plugin) {
+            plugin.innerHTML = `${this.showCursorInfo()}${zoomPercent}%`;
+        }
     }
 
     private handleInputChange(e: Event) {
@@ -279,6 +355,7 @@ export class SourceEditorElement extends HTMLElement {
         this.renderHighlight([]);
 
         setCaretPosition(this._inputRef, caret);
+        this.updateCursorPositionCache();
     }
 
     private handleKeyDown(e: KeyboardEvent) {
@@ -290,6 +367,8 @@ export class SourceEditorElement extends HTMLElement {
             e.preventDefault();
             document.execCommand('insertLineBreak');
         }
+        // invokes on the UI thread
+        setTimeout(() => this.updateCursorPositionCache(), 0);
     }
 
     private renderHighlight(deltas: lc.EditorDelta[]) {
@@ -331,7 +410,9 @@ export class SourceEditorElement extends HTMLElement {
             this._lastText = text;
         }
         this.attachEventListeners();
+        this.updateEditorZoom();
         this.renderHighlight([]);
+        this.updateCursorPositionCache();
     }
 }
 

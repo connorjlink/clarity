@@ -54,7 +54,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const sourceEditor = paneView.querySelector('#source-pane source-editor') as se.SourceEditorElement;
     if (sourceEditor) {
         sourceEditor.attachEventListeners();
-        sourceEditor.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+        sourceEditor.initialize('file:///C:/source.hz', consoleListener, languageClientWorker);
     }
 
     const programTree = paneView.querySelector('program-tree') as pt.ProgramTreeElement;
@@ -64,20 +64,20 @@ window.addEventListener('DOMContentLoaded', () => {
     const irViewer = paneView.querySelector('#ir-pane source-editor') as se.SourceEditorElement;
     if (irViewer) {
         irViewer.attachEventListeners();
-        irViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+        irViewer.initialize('file:///C:/ir.hzi', consoleListener, languageClientWorker);
     }
 
     const asmViewer = paneView.querySelector('#asm-pane source-editor') as se.SourceEditorElement;
     if (asmViewer) {
         asmViewer.attachEventListeners();
-        asmViewer.initialize('file:///c:/Users/Connor/Desktop/clarity/src/index.ts', consoleListener, languageClientWorker);
+        asmViewer.initialize('file:///C:/asm.hzs', consoleListener, languageClientWorker);
     }
     
     const data = new Uint8Array([0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21]);
 
     const hexViewer = paneView.querySelector('hex-viewer') as hv.HexViewerElement;
     if (hexViewer) {
-        hexViewer.initialize('file:///mock.bin', data, 0x10);
+        hexViewer.initialize('file:///program.exe', data, 0x10, languageClientWorker);
     }
 
 });
