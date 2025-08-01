@@ -12,7 +12,7 @@
 </script>
 
 <script lang="ts">
-    import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+    import { onMount } from 'svelte';
 
     export let data: Uint8Array = new Uint8Array();
     export let columns: number = 0x10;
@@ -24,9 +24,6 @@
     let hasInitialized = false;
     let resizeObserver: ResizeObserver | null = null;
     let container: HTMLElement;
-    let lastWidth = 0;
-
-    const dispatch = createEventDispatcher();
 
     function getSymbolAt(addr: number) {
         for (const sym of symbols) {
@@ -55,7 +52,9 @@
 
     // Resize logic
     function updateColumns() {
-        if (!autoColumns || !container) return;
+        if (!autoColumns || !container) {
+            return;
+        }
         const style = getComputedStyle(container);
         const fontSize = parseInt(style.fontSize.replace('px', '')) || 16;
         const addressWidth = fontSize * 8;
@@ -108,10 +107,10 @@
     }
 
     // external API initialize()
-    export function initialize(uri: string, d: Uint8Array, c: Worker | null = null) {
-        sourceUri = uri;
-        data = d;
-        client = c;
+    export function initialize(inputUri: string, inputData: Uint8Array, inputClient: Worker | null = null) {
+        sourceUri = inputUri;
+        data = inputData;
+        client = inputClient;
         hasInitialized = true;
         if (client && sourceUri && data.length > 0) {
             client.postMessage({
@@ -123,13 +122,18 @@
                 }
             });
         }
+        const bytes = inputData.length;
+        const plugin = document.querySelector('#exe-hex-plugin');
+        if (plugin) {
+            plugin.setAttribute('dataPlugin', `${bytes} B`);
+        }
     }
 </script>
 
 <style>
-    /* Apparently this is the most efficient way to globally apply the style. */
-    :host { box-sizing: border-box; }
-    :host * { box-sizing: inherit; }
+    *, *::before, *::after { 
+        box-sizing: border-box; 
+    }
 
     .hex-shell { 
         color: var(--light-foreground); 

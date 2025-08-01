@@ -1,16 +1,15 @@
 import * as ow from './OutputWindow';
 import * as se from './SourceEditor';
-// import * as hv from './HexViewer';
 import * as pt from './ProgramTree';
 import './TabView';
 import './ArticleSelector';
 import './PaneView';
-import './SymbolToggle';
-import './PaneStatus';
 
+import './PaneStatus.svelte';
 import './CollapseView.svelte';
 import './SymbolIcon.svelte';
 import './HexViewer.svelte';
+import './SymbolToggle.svelte'
 
 const PANE_VISIBILITY_KEY = 'pane-visibility';
 

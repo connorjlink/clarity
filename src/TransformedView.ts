@@ -1,5 +1,4 @@
 import * as nt from './NodeTypes';
-import * as ps from './PaneStatus';
 
 const transformedViewStyle = /*css*/`
     .wrapper {
@@ -26,7 +25,7 @@ export class TransformedViewElement extends HTMLElement {
 
     private _container!: HTMLDivElement;
     private _scale = 1;
-    private _scalePlugin!: ps.PaneStatusElement;
+    private _scalePlugin!: HTMLElement;
     
     private _isPanning = false;
     private _position: nt.Point = { x: 0, y: 0 };
@@ -40,7 +39,7 @@ export class TransformedViewElement extends HTMLElement {
         this.onWheel = this.onWheel.bind(this);
         this.attachShadow({ mode: 'open' });
         this.shadowRoot!.adoptedStyleSheets = [transformedViewStyleSheet];
-        this._scalePlugin = document.querySelector('#ast-zoom-plugin') as ps.PaneStatusElement;
+        this._scalePlugin = document.querySelector('#ast-zoom-plugin') as HTMLElement;
     }
     
     connectedCallback() {
@@ -80,7 +79,7 @@ export class TransformedViewElement extends HTMLElement {
     
     updateTransform() {
         this._container.style.transform = `translate(${this._position.x}px, ${this._position.y}px) scale(${this._scale})`;
-        this._scalePlugin.getPlugin()!.innerHTML = `${Math.floor(parseFloat(this._scale.toFixed(2)) * 100)}%`;
+        this._scalePlugin.setAttribute('dataPlugin', `${Math.floor(parseFloat(this._scale.toFixed(2)) * 100)}%`);
     }
 
     private onMouseDown(e: MouseEvent) {

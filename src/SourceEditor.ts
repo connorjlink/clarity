@@ -1,6 +1,5 @@
 import * as pt from './PieceTable';
 import * as lc from './LSPClient';
-import * as ps from './PaneStatus';
 
 const sourceEditorStyle = /*css*/`
     .editor-shell {
@@ -140,7 +139,7 @@ export class SourceEditorElement extends HTMLElement {
     private _cursorColumn: number | null = null;
     private _lastCaretOffset: number | null = null;
 
-    private _zoomPlugin!: ps.PaneStatusElement;
+    private _zoomPlugin!: HTMLElement;
 
     constructor() {
         super();
@@ -154,7 +153,7 @@ export class SourceEditorElement extends HTMLElement {
         //this.render();
         const plugin = this.getAttribute('data-plugin') || '';
         if (plugin) {
-            this._zoomPlugin = document.querySelector(`#${plugin}`) as ps.PaneStatusElement;
+            this._zoomPlugin = document.querySelector(`#${plugin}`) as HTMLElement;
         }
     }
 
@@ -311,10 +310,8 @@ export class SourceEditorElement extends HTMLElement {
         if (this._highlightRef) {
             this._highlightRef.style.fontSize = `${this._editorZoom}rem`;
         }
-        const plugin = this._zoomPlugin.getPlugin();
-        if (plugin) {
-            plugin.innerHTML = `${this.showCursorInfo()}${zoomPercent}%`;
-        }
+
+        this._zoomPlugin.setAttribute('dataPlugin', `${zoomPercent}%`);
     }
 
     private handleInputChange(e: Event) {
