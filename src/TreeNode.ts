@@ -382,7 +382,7 @@ export class TreeNodeElement extends HTMLElement {
                 class="node shadowed"
             >
                 <div class="node-header">
-                    <img src="/clarity/res/expression.svg" class="node-icon" />
+                    <img src="/res/expression.svg" class="node-icon" />
                     <span>Exponentiation Expression</span>
                 </div>
                 <div class="node-body">

@@ -198,6 +198,14 @@ export class ProgramTreeElement extends HTMLElement {
         const fromLocation = line[1];
 
         const offset = this.getBoundingClientRect() || { left: 0, top: 0 };
+        const transform = this._transformedViewRef?.getTransform();
+        if (transform) {
+            start.x *= transform.scale;
+            start.y *= transform.scale;
+            end.x *= transform.scale;
+            end.y *= transform.scale;
+        }
+
         const startScreen = {
             x: start.x - offset.left,
             y: start.y - offset.top
@@ -295,6 +303,14 @@ export class ProgramTreeElement extends HTMLElement {
     ) {
         if (!this._canvasRef) {
             return;
+        }
+
+        const transform = this._transformedViewRef?.getTransform();
+        if (transform) {
+            start.x /= transform.scale;
+            start.y /= transform.scale;
+            end.x /= transform.scale;
+            end.y /= transform.scale;
         }
     
         const controlOffset = 100;
