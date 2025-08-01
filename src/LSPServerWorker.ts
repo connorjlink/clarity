@@ -1,6 +1,6 @@
-import * as ls from './LanguageServer';
+import * as ls from './LSPServer';
 import * as cd from './CompilerDriver';
-import * as doc from './LSPdocument';
+import * as doc from './LSPDocument';
 
 const HOST = 'localhost';
 const PORT = '8080';

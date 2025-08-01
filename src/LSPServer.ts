@@ -1,6 +1,6 @@
 import * as rpc from './JSONRPC';
 import * as lsp from './LSP';
-import * as doc from './LSPdocument';
+import * as doc from './LSPDocument';
 import * as cd from './CompilerDriver';
 
 type MethodNames = Exclude<{

@@ -1,6 +1,6 @@
 import * as ow from './OutputWindow';
 import * as se from './SourceEditor';
-import * as hv from './HexViewer';
+// import * as hv from './HexViewer';
 import * as pt from './ProgramTree';
 import './TabView';
 import './ArticleSelector';
@@ -10,7 +10,7 @@ import './PaneStatus';
 
 import './CollapseView.svelte';
 import './SymbolIcon.svelte';
-
+import './HexViewer.svelte';
 
 const PANE_VISIBILITY_KEY = 'pane-visibility';
 
@@ -75,9 +75,11 @@ window.addEventListener('DOMContentLoaded', () => {
     
     const data = new Uint8Array([0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21]);
 
-    const hexViewer = paneView.querySelector('hex-viewer') as hv.HexViewerElement;
+    const hexViewer = paneView.querySelector('hex-viewer');
     if (hexViewer) {
-        hexViewer.initialize('file:///program.exe', data, 0x10, languageClientWorker);
+        customElements.whenDefined('hex-viewer').then(() => {
+            hexViewer.initialize('file:///program.exe', data, languageClientWorker);
+        });
     }
 
 });
@@ -132,8 +134,8 @@ const consoleListener = {
 
 /////////////////////////////////////////////////////////
 
-const languageServerWorker = new Worker(new URL('./LanguageServerWorker.ts', import.meta.url), { type: 'module' });
-const languageClientWorker = new Worker(new URL('./LanguageClientWorker.ts', import.meta.url), { type: 'module' });
+const languageServerWorker = new Worker(new URL('./LSPServerWorker.ts', import.meta.url), { type: 'module' });
+const languageClientWorker = new Worker(new URL('./LSPClientWorker.ts', import.meta.url), { type: 'module' });
 
 const channel = new MessageChannel();
 

@@ -1,5 +1,5 @@
 import * as pt from './PieceTable';
-import * as lc from './LanguageClient';
+import * as lc from './LSPClient';
 import * as ps from './PaneStatus';
 
 const sourceEditorStyle = /*css*/`

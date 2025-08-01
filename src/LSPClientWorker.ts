@@ -1,5 +1,5 @@
 
-import * as lc from './LanguageClient';
+import * as lc from './LSPClient';
 import * as sd from './SymbolDatabase';
 
 let serverPort: MessagePort | null = null;
