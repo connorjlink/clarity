@@ -39,47 +39,6 @@ my-articleselector {
     border-radius: 0.5rem;
 }
 
-.article-header {
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    align-items: center;
-}
-
-.article-title {
-    margin: 0;
-}
-
-.article-desc {
-    margin: 0;
-    color: var(--dark-foreground-l);
-}
-
-.article-content-container {
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    font-family: Georgia;
-    width: 700px;
-    max-width: 50%;
-    margin: auto;
-}
-    .article-content-container hr {
-        border: none;
-        border-top: 1px solid var(--dark-background-e);
-        margin: 2rem 0;
-    }
-    .article-content-container p {
-        line-height: 1.5rem;
-    }
-    .article-content-container code {
-        white-space: nowrap;
-    }
-    .article-content-container my-article-header {
-        font-family: var(--global-font);
-        margin: 1rem auto 2rem auto;
-    }
-
 my-article nav {
     display: flex;
     flex-direction: column;

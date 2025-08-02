@@ -24,6 +24,7 @@
     let hasInitialized = false;
     let resizeObserver: ResizeObserver | null = null;
     let container: HTMLElement;
+    let selectedIndex: number | null = null;
 
     function getSymbolAt(addr: number) {
         for (const sym of symbols) {
@@ -66,6 +67,30 @@
         // hysteresis
         if (Math.abs(maxColumns - columns) > 0.5) {
             columns = Math.floor(maxColumns);
+        }
+    }
+
+    function updatePluginCursor() {
+        const plugin = document.querySelector('#exe-hex-plugin');
+        if (plugin) {
+            if (selectedIndex !== null) {
+                const hexAddress = selectedIndex.toString(16).toUpperCase();
+                plugin.setAttribute('dataPlugin', `$${hexAddress} ${selectedIndex + 1}/${data.length} B`);
+            } else {
+                plugin.setAttribute('dataPlugin', `${data.length} B`);
+            }
+        }
+    }
+
+    function handleByteClick(idx: number) {
+        selectedIndex = idx;
+        updatePluginCursor();
+    }
+
+    function handleShellClick(e: MouseEvent) {
+        if (!(e.target as HTMLElement).closest('.hex-byte')) {
+            selectedIndex = null;
+            updatePluginCursor();
         }
     }
 
@@ -122,11 +147,7 @@
                 }
             });
         }
-        const bytes = inputData.length;
-        const plugin = document.querySelector('#exe-hex-plugin');
-        if (plugin) {
-            plugin.setAttribute('dataPlugin', `${bytes} B`);
-        }
+        updatePluginCursor();
     }
 </script>
 
@@ -152,6 +173,7 @@
         .hex-table th, .hex-table td {
             width: 3ch;
             min-width: 3ch;
+            text-align: center;
             white-space: nowrap;
         }
 
@@ -179,6 +201,12 @@
     .hex-ascii { 
         color: var(--secondary); 
         padding-left: 1rem; 
+    }
+
+    .hex-byte.selected {
+        outline: 1px solid var(--accent);
+        background: var(--dark-background);
+        border-radius: 0.25rem;
     }
     
     .hex-highlight-layer { 
@@ -211,7 +239,11 @@
                         <td class="hex-address">{(row * columns).toString(16).padStart(8, '0')}</td>
                         {#each Array(columns) as _, col}
                             {#if (row * columns + col) < data.length}
-                                <td class="hex-byte" style="color: {getSymbolAt(row * columns + col)?.color || '#ccc'}">
+                                <td
+                                    class="hex-byte {selectedIndex === (row * columns + col) ? 'selected' : ''}"
+                                    style="color: {getSymbolAt(row * columns + col)?.color || '#ccc'}"
+                                    on:click|stopPropagation={() => handleByteClick(row * columns + col)}
+                                >
                                     {data[row * columns + col].toString(16).padStart(2, '0')}
                                 </td>
                             {:else}

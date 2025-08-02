@@ -1,15 +1,16 @@
 import * as se from './SourceEditor';
 import * as pt from './ProgramTree';
 import './TabView';
-import './ArticleSelector';
 import './PaneView';
 
 import './PaneStatus.svelte';
 import './CollapseView.svelte';
 import './SymbolIcon.svelte';
 import './HexViewer.svelte';
-import './SymbolToggle.svelte'
+import './SymbolToggle.svelte';
+import './SymbolTristate.svelte';
 import './OutputWindow.svelte';
+import './ArticleSelector.svelte';
 
 const PANE_VISIBILITY_KEY = 'pane-visibility';
 
@@ -87,6 +88,22 @@ customElements.whenDefined('output-window').then(() => {
         if (hexViewer) {
             customElements.whenDefined('hex-viewer').then(() => {
                 hexViewer.initialize('file:///program.exe', data, languageClientWorker);
+            });
+        }
+
+        const outputTristate = document.querySelector('symbol-tristate') as any;
+        if (outputTristate) {
+            outputTristate.state = 0;
+            outputTristate.addEventListener('tristate-change', (e: any) => {
+                const state = e.detail.state;
+                console.log(`Output window state changed to: ${state}`);
+                if (state === 0) {
+                    outputWindow.auto();
+                } else if (state === 1) {
+                    outputWindow.show();
+                } else if (state === 2) {
+                    outputWindow.hide();
+                }
             });
         }
 
