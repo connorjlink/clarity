@@ -3,6 +3,8 @@ import * as pt from './ProgramTree';
 import './TabView';
 import './PaneView';
 
+import { mount } from 'svelte';
+
 import './PaneStatus.svelte';
 import './CollapseView.svelte';
 import './SymbolIcon.svelte';
@@ -10,7 +12,8 @@ import './HexViewer.svelte';
 import './SymbolToggle.svelte';
 import './SymbolTristate.svelte';
 import './OutputWindow.svelte';
-import './ArticleSelector.svelte';
+import LearnPage from './LearnPage.svelte';
+import AboutPage from './AboutPage.svelte'; 
 
 const PANE_VISIBILITY_KEY = 'pane-visibility';
 
@@ -109,6 +112,24 @@ customElements.whenDefined('output-window').then(() => {
 
     });
 });
+
+/////////////////////////////////////////////////////////
+
+const learnPage = document.querySelector('#learn-page');
+if (learnPage) {
+    mount(LearnPage, {
+        target: learnPage,
+        props: {}
+    });
+}
+
+const aboutPage = document.querySelector('#about-page');
+if (aboutPage) {
+    mount(AboutPage, {
+        target: aboutPage,
+        props: {}
+    });
+}
 
 /////////////////////////////////////////////////////////
 

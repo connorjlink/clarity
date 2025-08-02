@@ -19,10 +19,7 @@ class MyTabViewElement extends HTMLElement {
     }   
 
     private getTabIndexFromUrl(): number | null {
-        let path = window.location.pathname.replace(/^\//, '');
-        if (path.startsWith('clarity/')) {
-            path = path.substring('clarity/'.length);
-        }
+        let path = window.location.hash;
         const children = Array.from(this.querySelectorAll('my-tab'));
         for (let i = 0; i < children.length; i++) {
             const route = children[i].getAttribute('route');
@@ -46,9 +43,7 @@ class MyTabViewElement extends HTMLElement {
         if (pushHistory) {
             const children = Array.from(this.querySelectorAll('my-tab'));
             const route = children[index].getAttribute('route') || '';
-            const base = '/clarity/';
-            const url = `${window.location.origin}${base}${route}`;
-            history.pushState({ tab: index }, '', url);
+            window.location.hash = route;
         }
     }
 

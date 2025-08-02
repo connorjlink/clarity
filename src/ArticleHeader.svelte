@@ -16,6 +16,7 @@
         flex-direction: row;
         gap: 1rem;
         align-items: center;
+        font-family: var(--global-font);
     }
 
     h2 {
