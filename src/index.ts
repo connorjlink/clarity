@@ -1,15 +1,19 @@
 import * as se from './SourceEditor';
 import * as pt from './ProgramTree';
 import './TabView';
-import './ArticleSelector';
 import './PaneView';
+
+import { mount } from 'svelte';
 
 import './PaneStatus.svelte';
 import './CollapseView.svelte';
 import './SymbolIcon.svelte';
 import './HexViewer.svelte';
-import './SymbolToggle.svelte'
+import './SymbolToggle.svelte';
+import './SymbolTristate.svelte';
 import './OutputWindow.svelte';
+import LearnPage from './LearnPage.svelte';
+import AboutPage from './AboutPage.svelte'; 
 
 const PANE_VISIBILITY_KEY = 'pane-visibility';
 
@@ -90,8 +94,42 @@ customElements.whenDefined('output-window').then(() => {
             });
         }
 
+        const outputTristate = document.querySelector('symbol-tristate') as any;
+        if (outputTristate) {
+            outputTristate.state = 0;
+            outputTristate.addEventListener('tristate-change', (e: any) => {
+                const state = e.detail.state;
+                console.log(`Output window state changed to: ${state}`);
+                if (state === 0) {
+                    outputWindow.auto();
+                } else if (state === 1) {
+                    outputWindow.show();
+                } else if (state === 2) {
+                    outputWindow.hide();
+                }
+            });
+        }
+
     });
 });
+
+/////////////////////////////////////////////////////////
+
+const learnPage = document.querySelector('#learn-page');
+if (learnPage) {
+    mount(LearnPage, {
+        target: learnPage,
+        props: {}
+    });
+}
+
+const aboutPage = document.querySelector('#about-page');
+if (aboutPage) {
+    mount(AboutPage, {
+        target: aboutPage,
+        props: {}
+    });
+}
 
 /////////////////////////////////////////////////////////
 

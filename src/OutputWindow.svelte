@@ -16,6 +16,8 @@
     let endRef: HTMLDivElement | null = null;
     let messageIdIdentity = 0;
 
+    let mode = 'auto';
+
     export function addMessage(msg: string) {
         if (
             messages.length > 0 &&
@@ -37,15 +39,34 @@
                 }
             ];
         }
-        show();
+        if (mode === 'auto') {
+            auto();
+        } else if (mode === 'show') {
+            show();
+        } else if (mode === 'hide') {
+            hide();
+        }
     }
 
     export function show() {
+        visible = true;
+        mode = 'show';
+        clearTimeout(hideTimeout);
+    }
+
+    export function hide() {
+        visible = false;
+        mode = 'hide';
+        clearTimeout(hideTimeout);
+    }
+
+    export function auto() {
         visible = true;
         clearTimeout(hideTimeout);
         hideTimeout = setTimeout(() => {
             visible = false;
         }, 3000);
+        mode = 'auto';
     }
 
     let hideTimeout: any;
