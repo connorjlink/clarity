@@ -59,7 +59,7 @@
         const fontSize = parseInt(style.fontSize.replace('px', '')) || 16;
         const addressWidth = fontSize * 8;
         const asciiWidth = columns * 8;
-        const shellPadding = fontSize * 2;
+        const shellPadding = fontSize * 4;
         const containerWidth = container.getBoundingClientRect().width - addressWidth - asciiWidth - shellPadding;
         const maxColumns = Math.max(1, containerWidth / 24);
 
@@ -150,11 +150,8 @@
         width: 100%;
     }
         .hex-table th, .hex-table td {
-            text-align: center;
-            vertical-align: middle;
-            font-size: 1em;
-            width: 2.5ch;
-            height: 1.5em;
+            width: 3ch;
+            min-width: 3ch;
             white-space: nowrap;
         }
 
