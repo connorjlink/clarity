@@ -120,7 +120,7 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-        .nav-button:hover {
+        .nav-button:hover:not(:disabled) {
             background: var(--dark-background-e);
             border-color: var(--dark-background-ll);
         }

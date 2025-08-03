@@ -12,18 +12,25 @@ class MyTabViewElement extends HTMLElement {
             }
         });
 
+        window.addEventListener('hashchange', () => {
+            const tabIndex = this.getTabIndexFromUrl();
+            if (typeof tabIndex === 'number' && tabIndex >= 0 && tabIndex < this.pages.length) {
+                this.activatePage(tabIndex, false);
+            }
+        });
+
         const initialTab = this.getTabIndexFromUrl();
         if (typeof initialTab === 'number' && initialTab >= 0 && initialTab < this.pages.length) {
             this.activatePage(initialTab, false);
         }
-    }   
+    }
 
     private getTabIndexFromUrl(): number | null {
         let path = window.location.hash;
         const children = Array.from(this.querySelectorAll('my-tab'));
         for (let i = 0; i < children.length; i++) {
             const route = children[i].getAttribute('route');
-            if (route === path) {
+            if (route && path.includes(route)) {
                 return i;
             }
         }
