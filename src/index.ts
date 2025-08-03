@@ -1,4 +1,3 @@
-import * as se from './SourceEditor';
 import * as pt from './ProgramTree';
 import './TabView';
 import './PaneView';
@@ -14,6 +13,7 @@ import './SymbolTristate.svelte';
 import './OutputWindow.svelte';
 import LearnPage from './LearnPage.svelte';
 import AboutPage from './AboutPage.svelte'; 
+import SourceEditor from './SourceEditor.svelte';
 
 const PANE_VISIBILITY_KEY = 'pane-visibility';
 
@@ -63,7 +63,7 @@ customElements.whenDefined('output-window').then(() => {
 
         paneView.setVisiblePanes(visible);
 
-        const sourceEditor = paneView.querySelector('#source-pane source-editor') as se.SourceEditorElement;
+        const sourceEditor = paneView.querySelector('#source-pane source-editor');
         if (sourceEditor) {
             sourceEditor.attachEventListeners();
             sourceEditor.initialize('file:///C:/source.hz', consoleListener, languageClientWorker);
@@ -73,13 +73,26 @@ customElements.whenDefined('output-window').then(() => {
         if (programTree) {
         }
 
-        const irViewer = paneView.querySelector('#ir-pane source-editor') as se.SourceEditorElement;
+        const irEditor = paneView.querySelector('#ir-editor');
+        if (irEditor) {
+            mount(SourceEditor, {
+                target: irEditor,
+                props: {
+                    initialText: ';; Intermediate Representation\n\n(module\n  (func $main (export "main")\n    (nop)\n  )\n)',
+                    fontSize: 1.0,
+                    softWrap: true
+                }
+            });
+        }
+
+
+        const irViewer = paneView.querySelector('#ir-pane source-editor');
         if (irViewer) {
             irViewer.attachEventListeners();
             irViewer.initialize('file:///C:/ir.hzi', consoleListener, languageClientWorker);
         }
 
-        const asmViewer = paneView.querySelector('#asm-pane source-editor') as se.SourceEditorElement;
+        const asmViewer = paneView.querySelector('#asm-pane source-editor');
         if (asmViewer) {
             asmViewer.attachEventListeners();
             asmViewer.initialize('file:///C:/asm.hzs', consoleListener, languageClientWorker);

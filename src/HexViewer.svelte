@@ -62,7 +62,7 @@
         const asciiWidth = columns * 8;
         const shellPadding = fontSize * 4;
         const containerWidth = container.getBoundingClientRect().width - addressWidth - asciiWidth - shellPadding;
-        const maxColumns = Math.max(1, containerWidth / 24);
+        const maxColumns = Math.max(1, containerWidth / (fontSize * 2));
 
         // hysteresis
         if (Math.abs(maxColumns - columns) > 0.5) {

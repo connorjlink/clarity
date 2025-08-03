@@ -81,7 +81,7 @@
             margin: 2rem 0;
             width: 100%;
         }
-       :global(.article-content-container p) {
+        :global(.article-content-container p) {
             line-height: 1.5rem;
         }
         :global(.article-content-container code) {

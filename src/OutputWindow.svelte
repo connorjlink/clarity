@@ -85,6 +85,7 @@
         z-index: 1000;
         padding: 0.5rem 1rem;
         box-shadow: 0 -2px 8px rgba(0,0,0,0.3);
+        border-top: 1px solid var(--dark-background-ll);
         pointer-events: auto;
         display: block;
         transition: opacity 0.3s ease-in-out;

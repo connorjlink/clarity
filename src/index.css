@@ -179,33 +179,6 @@ program-tree {
     z-index: 1000;
 }
 
-source-editor {
-    width: 100%;
+#ir-editor {
     height: 100%;
-    background: var(--dark-background-d);
-    padding: 1rem;
-    padding-left: 1rem;
-    outline: none;
-    display: flex;
-    flex-direction: column;
-    transition: border-color 100ms ease-in-out;
-    overflow: auto;    
 }
-    source-editor:focus {
-        border-top-color: var(--accent);
-    }
-    source-editor pre {
-        counter-reset: line;
-    }
-    source-editor code {
-        display: flex;
-        flex-direction: row; 
-        counter-increment: line;
-    }
-    source-editor code:before {
-        content: counter(line);
-        padding-right: 1.5rem;
-        color: var(--plain-text);
-        width: 2rem;
-        text-align: right;
-    }
