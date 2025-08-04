@@ -63,10 +63,24 @@ customElements.whenDefined('output-window').then(() => {
 
         paneView.setVisiblePanes(visible);
 
-        const sourceEditor = paneView.querySelector('#source-pane source-editor');
+        const sourceEditor2 = paneView.querySelector('#source-pane source-editor');
+        if (sourceEditor2) {
+            sourceEditor2.attachEventListeners();
+            sourceEditor2.initialize('file:///C:/source.hz', consoleListener, languageClientWorker);
+        }
+
+        const sourceEditor = paneView.querySelector('#source-editor');
         if (sourceEditor) {
-            sourceEditor.attachEventListeners();
-            sourceEditor.initialize('file:///C:/source.hz', consoleListener, languageClientWorker);
+            mount(SourceEditor, {
+                target: sourceEditor,
+                props: {
+                    initialText: ';; Source Code\n\n(module\n  (func $main (export "main")\n    (nop)\n  )\n)',
+                    softWrap: true,
+                    readOnly: false,
+                    allowLoadFromDisk: true,
+                    pluginId: 'ir-editor-plugin'
+                }
+            });
         }
 
         const programTree = paneView.querySelector('program-tree') as pt.ProgramTreeElement;
@@ -78,24 +92,27 @@ customElements.whenDefined('output-window').then(() => {
             mount(SourceEditor, {
                 target: irEditor,
                 props: {
-                    initialText: ';; Intermediate Representation\n\n(module\n  (func $main (export "main")\n    (nop)\n  )\n)',
-                    fontSize: 1.0,
-                    softWrap: true
+                    initialText: ';; Intermediate Representation\n\n;; @main:\n  ret\n',
+                    softWrap: true,
+                    readOnly: true,
+                    allowLoadFromDisk: false,
+                    pluginId: 'ir-editor-plugin'
                 }
             });
         }
 
-
-        const irViewer = paneView.querySelector('#ir-pane source-editor');
-        if (irViewer) {
-            irViewer.attachEventListeners();
-            irViewer.initialize('file:///C:/ir.hzi', consoleListener, languageClientWorker);
-        }
-
-        const asmViewer = paneView.querySelector('#asm-pane source-editor');
-        if (asmViewer) {
-            asmViewer.attachEventListeners();
-            asmViewer.initialize('file:///C:/asm.hzs', consoleListener, languageClientWorker);
+        const asmEditor = paneView.querySelector('#asm-editor');
+        if (asmEditor) {
+            mount(SourceEditor, {
+                target: asmEditor,
+                props: {
+                    initialText: ';; Assembly Code\n\nsection .text\n  global _start\n\n_start:\n  nop\n',
+                    softWrap: true,
+                    readOnly: true,
+                    allowLoadFromDisk: false,
+                    pluginId: 'asm-editor-plugin'
+                }
+            });
         }
 
         const data = new Uint8Array([0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21, 0x48, 0x65, 0x78, 0x20, 0x56, 0x69, 0x65, 0x77, 0x65, 0x72, 0x21]);

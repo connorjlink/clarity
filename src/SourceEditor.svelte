@@ -5,7 +5,10 @@
     export let initialText: string = '';
     export let fontSize: number = 1.0; // rem
     export let softWrap: boolean = true;
+    export let readOnly: boolean = false;
+    export let allowLoadFromDisk: boolean = false;
     export let lineHeightBasis: number = 1.5;
+    export let pluginId: string = 'ir-editor-plugin';
 
     let pieceTable = new PieceTable(initialText);
 
@@ -36,13 +39,21 @@
 
     function updatePlugin() {
         if (pluginRef) {
-            pluginRef.setAttribute('dataPlugin', `LN:${cursorLine} COL:${cursorColumn} ${Math.floor(fontSize * 100)}%`);
+            pluginRef.setAttribute('dataPlugin', `LN:${cursorLine} COL:${cursorColumn} ${Math.round(fontSize * 100)}%`);
         }
     }
 
     function setFontSize(delta: number) {
         fontSize = Math.max(0.5, Math.min(3, fontSize + delta));
         onFontSizeChange(fontSize);
+    }
+
+    function onIncreaseFontSize() {
+        setFontSize(0.05);
+    }
+
+    function OnDecreaseFontSize() {
+        setFontSize(-0.05);
     }
 
     function handleWheel(e: WheelEvent) {
@@ -87,7 +98,9 @@
         input.accept = '.hz,.hzi,.hzs';
         input.onchange = async (e: any) => {
             const file = e.target.files[0];
-            if (!file) return;
+            if (!file) {
+                return;
+            }
             const text = await file.text();
             pieceTable = new PieceTable(text);
             updateLines();
@@ -168,7 +181,7 @@
     }
 
     onMount(() => {
-        pluginRef = document.querySelector('#ir-editor-plugin')!;
+        pluginRef = document.querySelector(`#${pluginId}`)!;
         updateLines();
         updateEditorContent();
         updatePlugin();
@@ -208,10 +221,7 @@
     }
 
     .editor-content {
-        white-space: pre;
         font-family: var(--global-font);
-        min-height: 100%;
-        min-width: max-content;
         width: 100%;
         overflow-x: auto;
         outline: none;
@@ -219,9 +229,11 @@
     }
 
     .editor-wrapper {
+        flex: 1;
+        min-height: 0;
+        height: 100%;
         display: flex;
         flex-direction: column;
-        height: 100%;
         overflow: hidden;
         position: relative;
     }
@@ -297,9 +309,11 @@
     style="line-height: {lineHeightBasis * fontSize}rem;"
 ></pre>
 <div class="editor-toolbar">
-    <button on:click={openFileDialog}>Open File...</button>
-    <button on:click={openFileDialog}>A<sup>&uparrow;</sup></button>
-    <button on:click={openFileDialog}>A<sub>&downarrow;</sub></button>
+    {#if allowLoadFromDisk}
+        <button on:click={openFileDialog}>Open File...</button>
+    {/if}
+    <button on:click={onIncreaseFontSize}>A<sup>&uparrow;</sup></button>
+    <button on:click={OnDecreaseFontSize}>A<sub>&downarrow;</sub></button>
     <button on:click={() => softWrap = !softWrap}>{softWrap ? 'Soft Wrap: ON' : 'Soft Wrap: OFF'}</button>
 </div>
 <div class="editor-wrapper">
@@ -327,7 +341,7 @@
                     bind:this={editorRef}
                     bind:this={editorRef}
                     on:scroll={mirrorScroll}
-                    contenteditable="true"
+                    contenteditable={!readOnly}
                     spellcheck="false"
                     style={editorStyle}
                 ></div>

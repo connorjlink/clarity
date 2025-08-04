@@ -179,6 +179,20 @@ program-tree {
     z-index: 1000;
 }
 
+#source-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
 #ir-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#asm-editor {
+    display: flex;
+    flex-direction: column;
     height: 100%;
 }

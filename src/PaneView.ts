@@ -26,6 +26,7 @@ const paneViewStyle = /*css*/`
         position: relative;
         background: var(--dark-background-d);
         z-index: 1;
+        overflow: hidden;
     }
         .pane-column.hidden {
             display: none;

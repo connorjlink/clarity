@@ -13,8 +13,8 @@
                 background: rgb(30, 30, 30);
             }
         </style>
-      <script type="module" crossorigin src="/assets/index.html-Dx9UjJMs.js"></script>
-      <link rel="stylesheet" crossorigin href="/assets/index-Bc1ryY4j.css">
+      <script type="module" crossorigin src="/assets/index.html-BBZVAZOp.js"></script>
+      <link rel="stylesheet" crossorigin href="/assets/index-CBu1C5tU.css">
     </head>
 
     <body>
@@ -32,7 +32,7 @@
                 <pane-view>
                     <div class="pane-column" id="source-pane">
                         <pane-status dataHeader="Source Editor" id="source-editor-plugin"></pane-status>
-                        <!-- <source-editor data-plugin="source-editor-plugin"></source-editor> -->
+                        <div id="source-editor"></div>
                     </div>
                     <div class="pane-column" id="ast-pane">
                         <pane-status dataHeader="Abstract Syntax Tree" id="ast-zoom-plugin"></pane-status>
@@ -41,11 +41,10 @@
                     <div class="pane-column" id="ir-pane">
                         <pane-status dataHeader="Intermediate Representation" id="ir-editor-plugin"></pane-status>
                         <div id="ir-editor"></div>
-                        <!-- <source-editor data-readonly="true" data-plugin="ir-editor-plugin"></source-editor> -->
                     </div>
                     <div class="pane-column" id="asm-pane">
                         <pane-status dataHeader="Assembly and Machine Code" id="asm-editor-plugin"></pane-status>
-                        <!-- <source-editor data-readonly="true" data-plugin="asm-editor-plugin"></source-editor> -->
+                        <div id="asm-editor"></div>
                     </div>
                     <div class="pane-column" id="exe-pane">
                         <pane-status dataHeader="Packaged Executable" id="exe-hex-plugin"></pane-status>
