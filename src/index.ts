@@ -78,7 +78,7 @@ customElements.whenDefined('output-window').then(() => {
                     softWrap: true,
                     readOnly: false,
                     allowLoadFromDisk: true,
-                    pluginId: 'ir-editor-plugin'
+                    pluginId: 'source-editor-plugin'
                 }
             });
         }

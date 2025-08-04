@@ -322,7 +322,7 @@ var rs=Object.defineProperty;var zr=t=>{throw TypeError(t)};var os=(t,n,e)=>n in
   (func $main (export "main")
     (nop)
   )
-)`,softWrap:!0,readOnly:!1,allowLoadFromDisk:!0,pluginId:"ir-editor-plugin"}}),r.querySelector("program-tree");const l=r.querySelector("#ir-editor");l&&xt($n,{target:l,props:{initialText:`;; Intermediate Representation
+)`,softWrap:!0,readOnly:!1,allowLoadFromDisk:!0,pluginId:"source-editor-plugin"}}),r.querySelector("program-tree");const l=r.querySelector("#ir-editor");l&&xt($n,{target:l,props:{initialText:`;; Intermediate Representation
 
 ;; @main:
   ret
