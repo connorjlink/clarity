@@ -19,6 +19,7 @@ html {
 *, *::before, *::after {
     font-family: inherit;
     box-sizing: inherit;
+    color-scheme: dark;
 }
 
 body {

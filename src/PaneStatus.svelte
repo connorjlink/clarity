@@ -14,7 +14,6 @@
         display: flex;
         padding: 0.5rem;
         background: var(--dark-background-e);
-        border-top: 1px solid var(--node-border);
         border-bottom: 1px solid var(--node-border);
         width: 100%;
         position: relative;

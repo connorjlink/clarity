@@ -11,6 +11,7 @@ import './HexViewer.svelte';
 import './SymbolToggle.svelte';
 import './SymbolTristate.svelte';
 import './OutputWindow.svelte';
+import StatisticsPage from './StatisticsPage.svelte';
 import LearnPage from './LearnPage.svelte';
 import AboutPage from './AboutPage.svelte'; 
 import SourceEditor from './SourceEditor.svelte';
@@ -144,6 +145,14 @@ customElements.whenDefined('output-window').then(() => {
 });
 
 /////////////////////////////////////////////////////////
+
+const statisticsPage = document.querySelector('#statistics-page');
+if (statisticsPage) {
+    mount(StatisticsPage, {
+        target: statisticsPage,
+        props: {}
+    });
+}
 
 const learnPage = document.querySelector('#learn-page');
 if (learnPage) {
