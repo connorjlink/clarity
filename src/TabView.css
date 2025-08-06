@@ -38,7 +38,7 @@
     font-size: 24pt;
     font-weight: bold;
 }
-    .tab-radio-wrapper label:hover {
+    .tab-radio-wrapper label:hover .tab-label span {
         --label-color: var(--accent-hovered);
         cursor: pointer;
     }
