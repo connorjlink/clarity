@@ -6,6 +6,27 @@
 </script>
 <script lang="ts">
     export let data: AreaData[] = [];
+    
+    export let maximumY: number | null = null;
+    export let minimumY: number | null = null;
+    export let majorTickScale: number | null = null;
+    export let minorTickScale: number | null = null;
+
+    function getTickScale(range: number, approxCount: number) {
+        const roughStep = range / approxCount;
+        const pow10 = Math.pow(10, Math.floor(Math.log10(roughStep)));
+        let step = pow10;
+        if (roughStep / pow10 > 5) {
+            step = 10 * pow10;
+        }
+        else if (roughStep / pow10 > 2) {
+            step = 5 * pow10;
+        }
+        else if (roughStep / pow10 > 1) {
+            step = 2 * pow10;
+        }
+        return Math.max(1, Math.round(step));
+    }
 
     $: sortedData = [...data].sort((a, b) =>
         typeof a.x === "number" && typeof b.x === "number" ? a.x - b.x : 0
@@ -17,10 +38,14 @@
     $: yVals = sortedData.map(d => d.y);
     $: minX = Math.min(...xVals);
     $: maxX = Math.max(...xVals);
-    $: minY = Math.min(...yVals);
-    $: maxY = Math.max(...yVals);
+    $: minY = minimumY ?? Math.min(...yVals);
+    $: maxY = maximumY ?? Math.max(...yVals);
 
-    const margin = 12;
+    $: yRange = maxY - minY;
+    $: majorStep = majorTickScale || getTickScale(yRange, 10);
+    $: minorStep = minorTickScale || Math.max(1, Math.round(majorStep / 3));
+
+    const margin = 30;
     const width = 300;
     const height = 160;
 
@@ -66,6 +91,27 @@
         return `hsl(${h}, ${s}%, ${l}%)`;
     }
 
+    let majorTicks: number[] = [];
+    let minorTicks: number[] = [];
+    $: {
+        majorTicks = [];
+        minorTicks = [];
+        if (yRange > 0 && minorStep > 0 && majorStep > 0) {
+            let start = Math.ceil((minY + 1e-6) / minorStep) * minorStep;
+            let end = Math.floor((maxY - 1e-6) / minorStep) * minorStep;
+            for (let y = start; y < end + 1e-6; y += Number(minorStep)) {
+                if (y <= minY + 1e-6 || Math.abs(y) < 1e-6) {
+                    continue;
+                }
+                if (Math.abs(y % majorStep) < 1e-6) {
+                    majorTicks.push(y);
+                } else {
+                    minorTicks.push(y);
+                }
+            }
+        }
+    }
+
     $: gradientStops = sortedData.map((_, i) => ({
         color: getActiveColor(i, sortedData.length, hoveredIndex, 0),
         offset: sortedData.length === 1 ? 0.5 : i / (sortedData.length - 1)
@@ -89,6 +135,11 @@
         return d;
     })();
 
+    $: xLabels = sortedData.map((d, i) => ({
+        label: typeof d.x === "string" ? d.x : d.x.toString(),
+        x: scaleX(d.x, i)
+    }));
+
     let hoveredIndex: number | null = null;
 </script>
 
@@ -102,7 +153,6 @@
         background: var(--dark-background-e);
         border: 1px solid var(--node-border);
         border-radius: 0.5em;
-        box-shadow: 0 1px 4px #0001;
     }
     .areachart-axis {
         stroke: #bbb;
@@ -110,14 +160,14 @@
     }
     .areachart-area {
         fill-opacity: 0.5;
-        transition: fill 0.15s;
+        transition: fill 100ms ease-in-out;
     }
     .areachart-dotline {
         stroke: #888;
         stroke-width: 1;
         stroke-dasharray: 4 3;
         opacity: 0.7;
-        transition: opacity 0.15s, filter 0.15s;
+        transition: opacity 100ms ease-in-out, filter 100ms ease-in-out;
         pointer-events: none;
     }
     .areachart-dotline.faded {
@@ -132,7 +182,7 @@
     .areachart-point {
         stroke: #fff;
         stroke-width: 1.5;
-        transition: r 0.15s, filter 0.15s, opacity 0.15s;
+        transition: r 100ms ease-in-out, filter 100ms ease-in-out, opacity 100ms ease-in-out;
         cursor: pointer;
     }
     .areachart-point.faded {
@@ -194,7 +244,7 @@
 </style>
 
 <div class="areachart-root">
-    <svg {width} {height} class="areachart-svg">
+    <svg {width} {height} class="areachart-svg shadowed">
         <defs>
             <linearGradient id="area-gradient" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
                 {#each gradientStops as stop}
@@ -206,6 +256,47 @@
         <line x1={margin} y1={height - margin} x2={width - margin} y2={height - margin} class="areachart-axis" />
         <line x1={margin} y1={margin} x2={margin} y2={height - margin} class="areachart-axis" />
 
+        {#each minorTicks as y}
+            <line
+                x1={margin - 3}
+                x2={margin + 3}
+                y1={scaleY(y)}
+                y2={scaleY(y)}
+                stroke="#bbb"
+                stroke-width="0.5"
+                stroke-dasharray="2 3"
+                opacity="0.5"
+            />
+        {/each}
+
+        {#each majorTicks as y}
+            <line
+                x1={margin - 6}
+                x2={width - margin + 6}
+                y1={scaleY(y)}
+                y2={scaleY(y)}
+                stroke="#888"
+                stroke-width="0.5"
+            />
+            <text
+                x={margin - 8}
+                y={scaleY(y) + 4}
+                font-size="9"
+                text-anchor="end"
+                fill="#555"
+            >{y}</text>
+        {/each}
+
+        {#each xLabels as {label, x}, i}
+            <text
+                x={x}
+                y={height - margin + 14}
+                font-size="11"
+                text-anchor="middle"
+                fill="#555"
+            >{label}</text>
+        {/each}
+    
         <path d={areaPath} class="areachart-area" style="fill: url(#area-gradient);" />
 
         {#each sortedData as point, i}

@@ -6,22 +6,78 @@
 </script>
 <script lang="ts">
     export let data: BarData[] = [];
+    export let maximumY: number | null = null;
+    export let minimumY: number | null = null;
+    export let majorTickScale: number | null = null;
+    export let minorTickScale: number | null = null;
 
     $: total = data.reduce((a, b) => a + b.value, 0);
+
+    function getTickScale(range: number, approxCount: number) {
+        const roughStep = range / approxCount;
+        const pow10 = Math.pow(10, Math.floor(Math.log10(roughStep)));
+        let step = pow10;
+        if (roughStep / pow10 > 5) {
+            step = 10 * pow10;
+        }
+        else if (roughStep / pow10 > 2) {
+            step = 5 * pow10;
+        }
+        else if (roughStep / pow10 > 1) {
+            step = 2 * pow10;
+        }
+        return Math.max(1, Math.round(step));
+    }
 
     function getColor(index: number, totalBars: number) {
         const hue = (index * 360) / totalBars;
         return `hsl(${hue}, 70%, 55%)`;
     }
 
+    function scaleY(y: number) {
+        if (maxY === minY) {
+            return height / 2;
+        }
+        return margin + (height - 2 * margin) * (1 - (y - minY) / (maxY - minY));
+    }
+
     let hoveredIndex: number | null = null;
 
     const width = 320;
     const height = 180;
-    const margin = 24;
-    
-    $: maxValue = Math.max(...data.map(d => d.value), 1);
+    const margin = 30;
+    const approxMajorTicks = 5;
+
     $: barWidth = data.length > 0 ? (width - 2 * margin) / data.length : 0;
+
+    $: yVals = data.map(d => d.value);
+    $: minY = minimumY ?? Math.min(...yVals, 0);
+    $: maxY = maximumY ?? Math.max(...yVals, 1);
+    $: yRange = maxY - minY;
+    $: majorStep = majorTickScale ?? getTickScale(yRange, approxMajorTicks);
+    $: minorStep = minorTickScale ?? Math.max(1, Math.round(majorStep / 3));
+
+    let majorTicks: number[] = [];
+    let minorTicks: number[] = [];
+    $: {
+        majorTicks = [];
+        minorTicks = [];
+        if (yRange > 0 && minorStep > 0 && majorStep > 0) {
+            let start = Math.ceil((minY + 1e-6) / minorStep) * minorStep;
+            let end = Math.floor((maxY - 1e-6) / minorStep) * minorStep;
+            for (let y = start; y < end + 1e-6; y += Number(minorStep)) {
+                if (y <= minY + 1e-6 || Math.abs(y) < 1e-6) {
+                    continue;
+                }
+                if (Math.abs(y % majorStep) < 1e-6) {
+                    majorTicks.push(y);
+                } else {
+                    minorTicks.push(y);
+                }
+            }
+        }
+    }
+
 </script>
 
 <style>
@@ -34,7 +90,6 @@
         background: var(--dark-background-e);
         border: 1px solid var(--node-border);
         border-radius: 0.5em;
-        box-shadow: 0 1px 4px #0001;
     }
     .barchart-bar {
         transition: filter 100ms, opacity 100ms;
@@ -98,33 +153,64 @@
 </style>
 
 <div class="barchart-root">
-    <svg {width} {height} class="barchart-svg">
+    <svg {width} {height} class="barchart-svg shadowed">
         <line x1={margin} y1={height - margin} x2={width - margin} y2={height - margin} stroke="#bbb" stroke-width="1" />
         <line x1={margin} y1={margin} x2={margin} y2={height - margin} stroke="#bbb" stroke-width="1" />
+
+        {#each minorTicks as y}
+            <line
+                x1={margin - 3}
+                x2={margin + 3}
+                y1={scaleY(y)}
+                y2={scaleY(y)}
+                stroke="#bbb"
+                stroke-width="0.5"
+                stroke-dasharray="2 3"
+                opacity="0.5"
+            />
+        {/each}
+
+        {#each majorTicks as y}
+            <line
+                x1={margin - 6}
+                x2={width - margin + 6}
+                y1={scaleY(y)}
+                y2={scaleY(y)}
+                stroke="#888"
+                stroke-width="0.5"
+            />
+            <text
+                x={margin - 8}
+                y={scaleY(y) + 4}
+                font-size="9"
+                text-anchor="end"
+                fill="#555"
+            >{y}</text>
+        {/each}
 
         {#each data as { category, value }, i}
             <rect
                 class="barchart-bar {hoveredIndex === i ? 'highlighted' : hoveredIndex !== null ? 'faded' : ''}"
                 x={margin + i * barWidth + barWidth * 0.1}
-                y={margin + (height - 2 * margin) * (1 - value / maxValue)}
+                y={scaleY(value)}
                 width={barWidth * 0.8}
-                height={(height - 2 * margin) * (value / maxValue)}
+                height={height - margin - scaleY(value) - 0.5}
                 fill={getColor(i, data.length)}
                 on:mouseenter={() => hoveredIndex = i}
                 on:mouseleave={() => hoveredIndex = null}
             />
             <text
                 x={margin + i * barWidth + barWidth * 0.5}
-                y={margin + (height - 2 * margin) * (1 - value / maxValue) - 6}
+                y={scaleY(value) - 6}
                 text-anchor="middle"
-                font-size="0.85em"
+                font-size="9"
                 fill="#555"
             >{value}</text>
             <text
                 x={margin + i * barWidth + barWidth * 0.5}
                 y={height - margin + 14}
                 text-anchor="middle"
-                font-size="0.9em"
+                font-size="11"
                 fill="#555"
             >{category}</text>
         {/each}

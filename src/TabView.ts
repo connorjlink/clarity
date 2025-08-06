@@ -80,9 +80,9 @@ class MyTabViewElement extends HTMLElement {
 
         const children = Array.from(this.querySelectorAll('my-tab'));
         children.forEach((element, index) => {
-            const label = element.getAttribute('label') || `Tab ${index + 1}`;
             const tabId = `tab-${index}`;
             const panelId = `tabpanel-${index}`;
+            const route = element.getAttribute('route') || 'home';
 
             const inputElement = document.createElement('input');
             inputElement.type = 'radio';
@@ -92,7 +92,12 @@ class MyTabViewElement extends HTMLElement {
 
             const labelElement = document.createElement('label');
             labelElement.htmlFor = tabId;
-            labelElement.textContent = label;
+
+            const correspondingLabel = this.querySelector(`#${route}-tab-label`);
+            if (correspondingLabel) {
+                labelElement.appendChild(correspondingLabel);
+            }
+
 
             const wrapper = document.createElement('span');
             wrapper.className = 'tab-radio-wrapper';

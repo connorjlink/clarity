@@ -29,7 +29,11 @@
                     </div>
                 </div>
             </my-header>
-            <my-tab label="Home" route="" class="home-tab shadowed">
+            <div class="tab-label" id="home-tab-label">
+                <!-- inject:./res/home.svg -->
+                <span>Home</span>
+            </div>
+            <my-tab route="" class="home-tab shadowed">
                 <pane-view>
                     <div class="pane-column" id="source-pane">
                         <pane-status dataHeader="Source Editor" id="source-editor-plugin"></pane-status>
@@ -57,13 +61,25 @@
                 
                 <!-- inject:./partials/StatusBar.html -->
             </my-tab>
-            <my-tab label="Statistics" route="statistics">
+            <div class="tab-label" id="statistics-tab-label">
+                <!-- inject:./res/pie-chart.svg -->
+                <span>Statistics</span>
+            </div>
+            <my-tab route="statistics" class="shadowed">
                 <div id="statistics-page"></div>
             </my-tab>
-            <my-tab label="Learn" route="learn">
+            <div class="tab-label" id="learn-tab-label">
+                <!-- inject:./res/graduate-cap.svg -->
+                <span>Learn</span>
+            </div>
+            <my-tab route="learn">
                 <div id="learn-page"></div>
             </my-tab>
-            <my-tab label="About" route="about">
+            <div class="tab-label" id="about-tab-label">
+                <!-- inject:./res/faq.svg -->
+                <span>About</span>
+            </div>
+            <my-tab route="about">
                 <div id="about-page"></div>
             </my-tab>
         </my-tabview>

@@ -211,9 +211,9 @@
         <div style="flex:1; display:flex; flex-direction:column; gap:5rem; align-items:center; justify-content:center;">
             <PieChart data={pieData} />
             
-            <LineChart data={lineData} />
+            <LineChart data={lineData} maximumY=25 minimumY=0 majorTickScale=4 minorTickScale=2 />
 
-            <BarChart data={barData} />
+            <BarChart data={barData} maximumY=13 majorTickScale=2 minorTickScale=1 />
 
             <AreaChart data={areaData} />
 

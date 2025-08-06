@@ -44,6 +44,7 @@
     
     .piechart-svg {
         flex-shrink: 0;
+        filter: drop-shadow(0 0 1em #0008);
     }
     
     .piechart-legend {

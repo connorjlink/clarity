@@ -7,6 +7,8 @@
 <script lang="ts">
     export let series: StackedAreaSeries[] = [];
 
+    const percentTicks = [0, 20, 40, 60, 80, 100];
+
     $: hasData = Array.isArray(series)
         && series.length > 0
         && series.every(s => Array.isArray(s.data) && s.data.length > 0)
@@ -16,23 +18,36 @@
     $: n = xLabels.length;
     $: m = series.length;
 
-    $: stacked = [];
-    if (hasData) {
-        for (let i = 0; i < n; i++) {
-            let acc = 0;
-            let row = [];
-            for (let j = 0; j < m; j++) {
-                const y = series[j].data[i]?.y ?? 0;
-                row.push({ y0: acc, y1: acc + y });
-                acc += y;
+    $: categoryTotals = hasData
+        ? series.map(s => s.data.reduce((sum, d) => sum + (d.y ?? 0), 0))
+        : [];
+
+    $: grandTotal = categoryTotals.reduce((a, b) => a + b, 0);
+
+    $: categoryPercents = grandTotal > 0
+        ? categoryTotals.map(total => (total / grandTotal) * 100)
+        : series.map(_ => 0);
+
+    let stacked: any[] = [];
+    $: {
+        stacked = [];
+        if (hasData) {
+            for (let i = 0; i < n; i++) {
+                let acc = 0;
+                let row = [];
+                for (let j = 0; j < m; j++) {
+                    const y = series[j].data[i]?.y ?? 0;
+                    row.push({ y0: acc, y1: acc + y });
+                    acc += y;
+                }
+                stacked.push(row);
             }
-            stacked.push(row);
         }
     }
 
     const width = 320;
     const height = 180;
-    const margin = 24;
+    const margin = 30;
 
     $: maxY = hasData && stacked.length > 0 ? Math.max(...stacked.map(row => row[m - 1]?.y1 ?? 0), 1) : 1;
 
@@ -62,10 +77,9 @@
         background: var(--dark-background-e);
         border: 1px solid var(--node-border);
         border-radius: 0.5em;
-        box-shadow: 0 1px 4px #0001;
     }
     .stackedarea-area {
-        fill-opacity: 0.6;
+        fill-opacity: 0.8;
         transition: filter 120ms, opacity 120ms;
         cursor: pointer;
     }
@@ -120,15 +134,32 @@
     }
     .stackedarea-legend-name {
         margin-right: 0.5em;
-        font-weight: bold;
     }
 </style>
 
 <div class="stackedarea-root">
     {#if hasData && n > 0 && m > 0}
-        <svg {width} {height} class="stackedarea-svg">
+        <svg {width} {height} class="stackedarea-svg shadowed">
             <line x1={margin} y1={height - margin} x2={width - margin} y2={height - margin} stroke="#bbb" stroke-width="1" />
             <line x1={margin} y1={margin} x2={margin} y2={height - margin} stroke="#bbb" stroke-width="1" />
+
+            {#each percentTicks as pct}
+                <line
+                    x1={margin - 6}
+                    x2={width - margin + 6}
+                    y1={scaleY((pct / 100) * maxY)}
+                    y2={scaleY((pct / 100) * maxY)}
+                    stroke="#888"
+                    stroke-width="0.5"
+                />
+                <text
+                    x={margin - 8}
+                    y={scaleY((pct / 100) * maxY) + 4}
+                    font-size="9"
+                    text-anchor="end"
+                    fill="#555"
+                >{pct}%</text>
+            {/each}
 
             {#each series as serie, j}
                 <path
@@ -162,7 +193,7 @@
                     x={scaleX(i)}
                     y={height - margin + 14}
                     text-anchor="middle"
-                    font-size="0.9em"
+                    font-size="11"
                     fill="#555"
                 >{x}</text>
             {/each}
@@ -180,7 +211,11 @@
                     on:mouseleave={() => hoveredSeries = null}
                 >
                     <span class="stackedarea-legend-color" style="background: {getColor(j, m)}"></span>
-                    <span class="stackedarea-legend-name">{serie.name}</span>
+                    <span class="stackedarea-legend-name">
+                        {serie.name}:
+                        {categoryTotals[j]} 
+                        <span style="color:#888;">({categoryPercents[j].toFixed(1)}%)</span>
+                    </span>
                 </li>
             {/each}
         </ul>
