@@ -152,10 +152,6 @@
 </script>
 
 <style>
-    *, *::before, *::after { 
-        box-sizing: border-box; 
-    }
-
     .hex-shell { 
         color: var(--light-foreground); 
         padding: 1rem; 

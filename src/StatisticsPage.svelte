@@ -108,10 +108,6 @@
 </script>
 
 <style>
-    *, *::before, *::after {
-        box-sizing: border-box;
-    }
-
     .statistics-container {
         display: flex;
         flex-direction: column;
@@ -206,7 +202,11 @@
                 <input type="radio" id="memory" name="statistics" value="memory" bind:group={selected} on:change={handleRadioChange}>
             </div>
         </nav>
-        <div class="resizer" on:mousedown={handleMouseDown}></div>
+
+        <div 
+            class="resizer" 
+            on:mousedown={handleMouseDown}
+        ></div>
         
         <div style="flex:1; display:flex; flex-direction:column; gap:5rem; align-items:center; justify-content:center;">
             <PieChart data={pieData} />
@@ -215,7 +215,7 @@
 
             <BarChart data={barData} maximumY=13 majorTickScale=2 minorTickScale=1 />
 
-            <AreaChart data={areaData} />
+            <AreaChart data={areaData} maximumY=30 minimumY=0 majorTickScale=4 minorTickScale=2 />
 
             <StackedAreaChart series={stackedSeries} />
         </div>

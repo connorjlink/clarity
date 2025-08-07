@@ -70,70 +70,87 @@
 <style>
     .stackedarea-root {
         display: flex;
-        gap: 2rem;
-        align-items: flex-start;
+        gap: var(--chart-gap);
+        align-items: center;
     }
+
     .stackedarea-svg {
         background: var(--dark-background-e);
         border: 1px solid var(--node-border);
-        border-radius: 0.5em;
+        border-radius: var(--chart-radius);
     }
+    
     .stackedarea-area {
         fill-opacity: 0.8;
         transition: filter 120ms, opacity 120ms;
         cursor: pointer;
     }
-    .stackedarea-area.faded {
-        opacity: 0.2;
-        filter: grayscale(0.7);
-    }
-    .stackedarea-area.highlighted {
-        opacity: 1;
-        filter: none;
-        outline: 2px solid var(--accent);
-        z-index: 1;
-    }
+        .stackedarea-area.faded {
+            opacity: var(--chart-faded-opacity);
+            filter: grayscale(var(--chart-faded-grayscale));
+        }
+        .stackedarea-area.highlighted {
+            opacity: 1;
+            filter: none;
+            outline: var(--chart-highlight-outline);
+            z-index: 1;
+        }
+    
     .stackedarea-legend {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        min-width: 140px;
+        gap: var(--chart-spacing);
+        min-width: var(--chart-legend-minwidth);
     }
-    .stackedarea-legend ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
+        .stackedarea-legend ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: var(--chart-spacing);
+        }
+    
     .stackedarea-legend-item {
         display: flex;
         align-items: center;
         transition: color 100ms, opacity 100ms, background-color 100ms;
         cursor: pointer;
-        border-radius: 0.5rem;
-        padding: 0.25rem;
+        border-radius: var(--chart-radius);
+        padding: var(--chart-padding);
     }
-    .stackedarea-legend-item.faded {
-        opacity: 0.3;
-        filter: grayscale(0.7);
-    }
-    .stackedarea-legend-item.highlighted {
-        opacity: 1;
-        filter: none;
-        outline: 2px solid var(--accent);
-    }
+        .stackedarea-legend-item.faded {
+            opacity: var(--chart-faded-opacity);
+            filter: grayscale(var(--chart-faded-grayscale));
+        }
+        .stackedarea-legend-item.highlighted {
+            opacity: 1;
+            filter: none;
+            outline: var(--chart-highlight-outline);
+        }
+    
     .stackedarea-legend-color {
         display: inline-block;
-        width: 1.2em;
-        height: 1.2em;
-        margin-right: 0.5em;
-        border-radius: 0.25em;
+        width: var(--chart-legend-color-size);
+        height: var(--chart-legend-color-size);
+        margin-right: var(--chart-spacing);
+        border-radius: var(--chart-legend-color-radius);
         border: 1px solid var(--dark-foreground-l);
     }
+    
     .stackedarea-legend-name {
-        margin-right: 0.5em;
+        margin-right: var(--chart-spacing);
+        color: var(--chart-label-color);
+    }
+    
+    .stackedarea-legend-total {
+        color: var(--dark-foreground-l);
+        font-style: italic;
+    }
+    
+    .stackedarea-nodata {
+        color: var(--dark-foreground-ll);
+        padding: 2em;
     }
 </style>
 
@@ -149,7 +166,7 @@
                     x2={width - margin + 6}
                     y1={scaleY((pct / 100) * maxY)}
                     y2={scaleY((pct / 100) * maxY)}
-                    stroke="#888"
+                    stroke="var(--chart-major-tick-color)"
                     stroke-width="0.5"
                 />
                 <text
@@ -157,7 +174,7 @@
                     y={scaleY((pct / 100) * maxY) + 4}
                     font-size="9"
                     text-anchor="end"
-                    fill="#555"
+                    fill="var(--chart-label-color)"
                 >{pct}%</text>
             {/each}
 
@@ -168,13 +185,17 @@
                         (() => {
                             let d = "";
                             for (let i = 0; i < n; i++) {
-                                if (!stacked[i] || !stacked[i][j]) continue;
+                                if (!stacked[i] || !stacked[i][j]) {
+                                    continue;
+                                }
                                 const x = scaleX(i);
                                 const y = scaleY(stacked[i][j].y1);
                                 d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
                             }
                             for (let i = n - 1; i >= 0; i--) {
-                                if (!stacked[i] || !stacked[i][j]) continue;
+                                if (!stacked[i] || !stacked[i][j]) {
+                                    continue;
+                                }
                                 const x = scaleX(i);
                                 const y = scaleY(stacked[i][j].y0);
                                 d += ` L ${x} ${y}`;
@@ -184,8 +205,21 @@
                         })()
                     }
                     fill={getColor(j, m)}
+                    role="figure"
                     on:mouseenter={() => hoveredSeries = j}
                     on:mouseleave={() => hoveredSeries = null}
+                />
+            {/each}
+            {#each xLabels as x, i}
+                <line
+                    x1={scaleX(i)}
+                    y1={margin}
+                    x2={scaleX(i)}
+                    y2={height - margin}
+                    stroke="var(--chart-minor-tick-color)"
+                    stroke-width="0.7"
+                    stroke-dasharray="4 3"
+                    opacity="0.6"
                 />
             {/each}
             {#each xLabels as x, i}
@@ -194,12 +228,12 @@
                     y={height - margin + 14}
                     text-anchor="middle"
                     font-size="11"
-                    fill="#555"
+                    fill="var(--chart-label-color)"
                 >{x}</text>
             {/each}
         </svg>
     {:else}
-        <div style="color:var(--dark-foreground-ll);padding:2em;">No data</div>
+        <div class="stackedarea-nodata">No data</div>
     {/if}
     <div class="stackedarea-legend">
         <strong>Legend</strong>
@@ -213,11 +247,14 @@
                     <span class="stackedarea-legend-color" style="background: {getColor(j, m)}"></span>
                     <span class="stackedarea-legend-name">
                         {serie.name}:
-                        {categoryTotals[j]} 
-                        <span style="color:#888;">({categoryPercents[j].toFixed(1)}%)</span>
+                        <span style="color: var(--dark-foreground);">{categoryTotals[j]}</span>
+                        <span style="color: var(--chart-label-color);">({categoryPercents[j].toFixed(1)}%)</span>
                     </span>
                 </li>
             {/each}
         </ul>
+        <div class="stackedarea-legend-total">
+            Total: {grandTotal}
+        </div>
     </div>
 </div>

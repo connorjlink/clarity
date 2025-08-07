@@ -47,12 +47,6 @@
     input[type="checkbox"]:not(:checked) ~ .off-icon {
         display: flex;
     }
-
-    svg {
-        width: 0.75rem;
-        height: 0.75rem;
-        color: white;
-    }
 </style>
 
 <div class="container" {title}>

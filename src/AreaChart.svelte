@@ -71,14 +71,26 @@
         return height - margin - ((y - minY) / (maxY - minY)) * (height - 2 * margin);
     }
 
-    function getActiveColor(index: number, total: number, hovered: number | null, spread = 0) {
+    function desaturateHSL(hsl: string, amount: number) {
+        const match = hsl.match(/hsl\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
+        if (!match) {
+            return hsl;
+        }
+        const h = match[1];
+        const s = Math.round(Number(match[2]) * (1 - amount));
+        const l = match[3];
+        return `hsl(${h}, ${s}%, ${l}%)`;
+    }
+
+    function getActiveColor(index: number, total: number, hovered: number | null) {
+        const baseColor = getColor(index, total);
         if (hovered === null) {
-            return getColor(index, total);
+            return baseColor;
         }
-        if (Math.abs(index - hovered) <= spread) {
-            return getColor(index, total);
+        if (index === hovered) {
+            return baseColor;
         }
-        return "#bbb";
+        return desaturateHSL(baseColor, 0.7);
     }
 
     function getColor(index: number, total: number) {
@@ -146,100 +158,100 @@
 <style>
     .areachart-root {
         display: flex;
-        gap: 2rem;
-        align-items: flex-start;
+        gap: var(--chart-gap);
+        align-items: center;
     }
+
     .areachart-svg {
         background: var(--dark-background-e);
         border: 1px solid var(--node-border);
-        border-radius: 0.5em;
+        border-radius: var(--chart-radius);
     }
+
     .areachart-axis {
-        stroke: #bbb;
+        stroke: var(--chart-axis-color);
         stroke-width: 1;
     }
+
     .areachart-area {
         fill-opacity: 0.5;
         transition: fill 100ms ease-in-out;
     }
+
     .areachart-dotline {
-        stroke: #888;
+        stroke: var(--chart-major-tick-color);
         stroke-width: 1;
         stroke-dasharray: 4 3;
         opacity: 0.7;
         transition: opacity 100ms ease-in-out, filter 100ms ease-in-out;
         pointer-events: none;
     }
-    .areachart-dotline.faded {
-        opacity: 0.2;
-        filter: grayscale(0.7);
-    }
-    .areachart-dotline.highlighted {
-        opacity: 1;
-        stroke: var(--accent, #0078d4);
-        filter: none;
-    }
+        .areachart-dotline.faded {
+            opacity: var(--chart-faded-opacity);
+            filter: grayscale(var(--chart-faded-grayscale));
+        }
+        .areachart-dotline.highlighted {
+            opacity: 1;
+            filter: none;
+        }
+
     .areachart-point {
-        stroke: #fff;
+        stroke: var(--chart-point-stroke);
         stroke-width: 1.5;
         transition: r 100ms ease-in-out, filter 100ms ease-in-out, opacity 100ms ease-in-out;
         cursor: pointer;
     }
-    .areachart-point.faded {
-        opacity: 0.3;
-        filter: grayscale(0.7);
-    }
-    .areachart-point.highlighted {
-        opacity: 1;
-        filter: none;
-        stroke: var(--accent);
-        stroke-width: 3;
-    }
+        .areachart-point.faded {
+            opacity: var(--chart-faded-opacity);
+        }
+        .areachart-point.highlighted {
+            opacity: 1;
+            stroke-width: 3;
+        }
+
     .areachart-legend {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        min-width: 120px;
+        gap: var(--chart-spacing);
+        min-width: var(--chart-legend-minwidth);
     }
-    .areachart-legend ul {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
+        .areachart-legend ul {
+            display: flex;
+            flex-direction: column;
+            gap: var(--chart-spacing);
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+    
     .areachart-legend-item {
         display: flex;
         align-items: center;
         transition: color 100ms, opacity 100ms, background-color 100ms;
         cursor: pointer;
-        border-radius: 0.5rem;
-        padding: 0.25rem;
+        border-radius: var(--chart-radius);
+        padding: var(--chart-padding);
     }
-    .areachart-legend-item.faded {
-        opacity: 0.3;
-        filter: grayscale(0.7);
-    }
-    .areachart-legend-item.highlighted {
-        opacity: 1;
-        filter: none;
-        outline: 2px solid var(--accent);
-    }
+        .areachart-legend-item.faded {
+            opacity: var(--chart-faded-opacity);
+        }
+        .areachart-legend-item.highlighted {
+            opacity: 1;
+            outline: var(--chart-highlight-outline);
+        }
+
     .areachart-legend-color {
         display: inline-block;
-        width: 1.2em;
-        height: 1.2em;
-        margin-right: 0.5em;
-        border-radius: 0.25em;
+        width: var(--chart-legend-color-size);
+        height: var(--chart-legend-color-size);
+        margin-right: var(--chart-spacing);
+        border-radius: var(--chart-legend-color-radius);
         border: 1px solid var(--dark-foreground-l);
     }
+
     .areachart-legend-x {
-        margin-right: 0.5em;
-        color: #555;
-    }
-    .areachart-legend-y {
-        font-weight: bold;
+        margin-right: var(--chart-spacing);
+        color: var(--chart-label-color);
     }
 </style>
 
@@ -321,6 +333,7 @@
                 fill={hoveredIndex === i
                     ? getColor(i, sortedData.length)
                     : getActiveColor(i, sortedData.length, hoveredIndex, 0)}
+                role="figure"
                 on:mouseenter={() => hoveredIndex = i}
                 on:mouseleave={() => hoveredIndex = null}
             />
@@ -337,9 +350,12 @@
                 >
                     <span class="areachart-legend-color" style="background: {getActiveColor(i, sortedData.length, hoveredIndex, 0)}"></span>
                     <span class="areachart-legend-x">{x}:</span>
-                    <span class="areachart-legend-y">{y}</span>
+                    {y}
                 </li>
             {/each}
         </ul>
+        <div class="areachart-total" style="color:var(--dark-foreground-l);font-style:italic;">
+            Total: {yVals.reduce((a, b) => a + b, 0)}
+        </div>
     </div>
 </div>

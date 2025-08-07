@@ -35,13 +35,6 @@
         margin-top: 1rem;
         width: 100%;
     }
-        .article-list hr {
-            width: 100%;
-            max-width: 700px;
-            border: none;
-            border-top: 1px solid #444;
-            margin: 0;
-        }
 
     .article-item {
         cursor: pointer;

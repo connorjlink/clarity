@@ -7,6 +7,36 @@
     --global-font: 'Consolas', 'Menlo', 'Cascadia Mono', monospace;
 
     --transform-size: 10000px;
+
+    --chart-margin: 30px;
+    --chart-gap: 2rem;
+    --chart-radius: 0.5em;
+    --chart-padding: 0.25rem;
+    --chart-legend-minwidth: 120px;
+    --chart-legend-minwidth-wide: 180px;
+    --chart-spacing: 0.5rem;
+
+    --chart-axis-color: #bbb;
+    --chart-major-tick-color: #888;
+    --chart-minor-tick-color: #aaa;
+    --chart-label-color: #555;
+    --chart-point-stroke: #fff;
+
+    --chart-legend-color-size: 1.2em;
+    --chart-legend-color-size-wide: 1.25rem;
+    --chart-legend-color-radius: 0.25em;
+
+    --chart-font-size-small: 9px;
+    --chart-font-size-medium: 11px;
+
+    /* Pie chart specific */
+    --piechart-size: 200px;
+    --piechart-radius: 40;
+
+    --chart-faded-opacity: 0.3;
+    --chart-faded-grayscale: 0.7;
+    --chart-highlight-outline: 2px solid var(--accent);
+    --chart-shadow: 0 0 1em #0008;
 }
 
 /* NOTE: supposedly, this is the highest-performance method to set global defaults for these rules */ 

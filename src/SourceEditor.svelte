@@ -207,10 +207,6 @@
 </script>
 
 <style>
-    *, *::before, *::after {
-        box-sizing: border-box;
-    }
-
     *::selection {
         background: color-mix(in srgb, var(--accent), transparent 50%);
         color: inherit;
@@ -323,9 +319,10 @@
                 {#each visualLineMap as v, i}
                     <div
                         class="gutter-line {v.line === cursorLine && v.isFirst ? 'active' : ''}"
+                        style="line-height: {lineHeightBasis * fontSize}rem;"
+                        role="figure"
                         on:mouseenter={() => v.isFirst && handleGutterHover(v.line)}
                         on:click={() => v.isFirst && handleGutterClick(v.line)}
-                        style="line-height: {lineHeightBasis * fontSize}rem;"
                     >
                         {#if v.isFirst}
                             {v.line}
@@ -350,8 +347,9 @@
                 {#each visualLineMap as v, i}
                     <div
                         class="gutter-line {v.line === cursorLine && v.isFirst ? 'active' : ''}"
-                        on:click={() => v.isFirst && handleRightGutter(v.line)}
                         style="line-height: {lineHeightBasis * fontSize}rem;"
+                        role="figure"
+                        on:click={() => v.isFirst && handleRightGutter(v.line)}
                     >
                         {#if v.isFirst}
                             G
