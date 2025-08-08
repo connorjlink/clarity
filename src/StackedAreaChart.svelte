@@ -64,6 +64,17 @@
         return `hsl(${hue}, 70%, 65%)`;
     }
 
+    function desaturateHSL(hsl: string, amount: number) {
+        const match = hsl.match(/hsl\((\d+),\s*(\d+)%?,\s*(\d+)%?\)/);
+        if (!match) {
+            return hsl;
+        }
+        const h = match[1];
+        const s = Math.round(Number(match[2]) * (1 - amount));
+        const l = Number(match[3]) * 0.75;
+        return `hsl(${h}, ${s}%, ${l}%)`;
+    }
+
     let hoveredSeries: number | null = null;
 </script>
 
@@ -157,8 +168,17 @@
 <div class="stackedarea-root">
     {#if hasData && n > 0 && m > 0}
         <svg {width} {height} class="stackedarea-svg shadowed">
-            <line x1={margin} y1={height - margin} x2={width - margin} y2={height - margin} stroke="#bbb" stroke-width="1" />
-            <line x1={margin} y1={margin} x2={margin} y2={height - margin} stroke="#bbb" stroke-width="1" />
+            <defs>
+                {#each series as serie, j}
+                    <linearGradient id={"area-gradient-" + j} x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color={getColor(j, m)} stop-opacity="0.95" />
+                        <stop offset="100%" stop-color={desaturateHSL(getColor(j, m), 0.1)} stop-opacity="0.55" />
+                    </linearGradient>
+                {/each}
+            </defs>
+
+            <line x1={margin} y1={height - margin} x2={width - margin} y2={height - margin} stroke="var(--chart-axis-color)" stroke-width="1" />
+            <line x1={margin} y1={margin} x2={margin} y2={height - margin} stroke="var(--chart-axis-color)" stroke-width="1" />
 
             {#each percentTicks as pct}
                 <line
@@ -204,7 +224,7 @@
                             return d;
                         })()
                     }
-                    fill={getColor(j, m)}
+                    fill={"url(#area-gradient-" + j}
                     role="figure"
                     on:mouseenter={() => hoveredSeries = j}
                     on:mouseleave={() => hoveredSeries = null}
@@ -219,7 +239,7 @@
                     stroke="var(--chart-minor-tick-color)"
                     stroke-width="0.7"
                     stroke-dasharray="4 3"
-                    opacity="0.6"
+                    opacity="var(--chart-faded-opacity)"
                 />
             {/each}
             {#each xLabels as x, i}

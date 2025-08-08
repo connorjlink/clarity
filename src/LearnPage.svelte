@@ -176,14 +176,14 @@
             },
             content: /*html*/`
                 <h2>Section 0</h2>
-                <blockquote>
+                <blockquote class="shadowed">
                     <p>Please mind the gap between the code and the platform.</p>
                 </blockquote>
                 <p>Although generating object code and linking translation units are rather complex, operating system authors seem to have consipired to make the last step, exporting an executable, even more complicated and infuriating. Not only does it require targeting a platform far narrower than processor architecture, but also it involves cryptic sigils that summon back the days of hex-editor debugging. Executable formats, be they ELF, PE, Mach-O or even the archaic a.out, are data structures that require a deep understanding of the program at hand, the operating system's loader, and&mdash;especially for Windows&mdash;the dynamic linker. For time limitations and brevity purposes, I focus solely on x86 Windows development for this series and the Haze compiler.</p>
                 <hr>
 
                 <h2>Section 1</h2>
-                <blockquote>
+                <blockquote class="shadowed">
                     <p>This program cannot be run in DOS mode.</p>
                 </blockquote>
                 <p>Windows PE&mdash;that's <i>Portable Executable</i>, not to be confused with <a href="https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment"><i>Pre-installation Environment</i></a>&mdash;suffers many shortfalls inherent to an API designed in the early '90s, which itself was more or less a bolt-on addition to the <a href="https://en.wikipedia.org/wiki/New_Executable"><i>New Exectuable</i></a> format pioneered by Windows 1.0 hailing from the mid-'80s. PE has aged remarkably well, no doubt owing to the original designer's ingenuity and forward thinking, but by now, the cracks have surfaced en masse and now mar the otherwise silky smooth surface of modern programs with indellible reminders of yesteryear's technology: MIPS compatibility, bound imports, and the deprecated COFF symbol table, among others.</p>
@@ -192,13 +192,13 @@
                 <hr>
 
                 <h2>Section 2</h2>
-                <blockquote>
+                <blockquote class="shadowed">
                     <p>Some assembly required.</p>                                
                 </blockquote>
                 <hr>
 
                 <h2>Section 3</h2>
-                <blockquote>
+                <blockquote class="shadowed">
                     <p>You wouldn't steal a function...</p>                                
                 </blockquote>   
             `

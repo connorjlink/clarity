@@ -179,20 +179,16 @@
     }
 
     .areachart-dotline {
-        stroke: var(--chart-major-tick-color);
         stroke-width: 1;
         stroke-dasharray: 4 3;
-        opacity: 0.7;
         transition: opacity 100ms ease-in-out, filter 100ms ease-in-out;
         pointer-events: none;
     }
         .areachart-dotline.faded {
             opacity: var(--chart-faded-opacity);
-            filter: grayscale(var(--chart-faded-grayscale));
         }
         .areachart-dotline.highlighted {
             opacity: 1;
-            filter: none;
         }
 
     .areachart-point {
@@ -318,9 +314,11 @@
                 y1={scaleY(point.y)}
                 x2={scaleX(point.x, i)}
                 y2={height - margin}
-                stroke={hoveredIndex === i
-                    ? getColor(i, sortedData.length)
-                    : undefined}
+                stroke={
+                    hoveredIndex === i
+                        ? getActiveColor(i, sortedData.length, hoveredIndex)
+                        : "var(--chart-major-tick-color)"
+                }
             />
         {/each}
 
@@ -332,7 +330,7 @@
                 r={hoveredIndex === i ? 6 : 4}
                 fill={hoveredIndex === i
                     ? getColor(i, sortedData.length)
-                    : getActiveColor(i, sortedData.length, hoveredIndex, 0)}
+                    : getActiveColor(i, sortedData.length, hoveredIndex)}
                 role="figure"
                 on:mouseenter={() => hoveredIndex = i}
                 on:mouseleave={() => hoveredIndex = null}

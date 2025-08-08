@@ -93,6 +93,12 @@
 </script>
 
 <style>
+    * {
+        --shadow-light: rgba(0, 0, 0, 0.25);
+        --shadow-heavy: rgba(0, 0, 0, 0.5);
+        --fade-opacity: 0.3;
+    }
+
     .barchart-root {
         display: flex;
         gap: var(--chart-gap);
@@ -106,30 +112,24 @@
     }
 
     .barchart-bar {
-        transition: filter 100ms, opacity 100ms;
         cursor: pointer;
-        outline: var(--dark-foreground-l);
-    }
-
-    .barchart-bar.faded,
-    .barchart-legend-item.faded {
-        opacity: var(--chart-faded-opacity);
-        filter: grayscale(var(--chart-faded-grayscale));
-    }
-
-    .barchart-bar.highlighted,
-    .barchart-legend-item.highlighted {
-        opacity: 1;
-        filter: none;
-        outline: var(--chart-highlight-outline);
-        z-index: 1;
-    }
-
-    .barchart-bar.highlighted {
-        outline: none;
-        stroke: var(--dark-foreground);
-        stroke-width: 2;
-    }
+        transition: transform 100ms ease-in-out, filter 100ms ease-in-out, opacity 100ms ease-in-out;
+        filter: drop-shadow(0 2px 6px var(--shadow-light));
+        transform-origin: 0 50%;
+        stroke: none;
+        opacity: 0.75;
+    }   
+        .barchart-bar.highlighted {
+            transform: scale(1.02);
+            filter: drop-shadow(0 4px 10px var(--shadow-heavy));
+            stroke: var(--dark-foreground);
+            stroke-width: 1;
+            opacity: 1;
+        }   
+        .barchart-bar.faded {
+            opacity: var(--fade-opacity);
+            filter: grayscale(var(--fade-opacity));
+        }
 
     .barchart-legend {
         display: flex;
@@ -154,6 +154,13 @@
         border-radius: var(--chart-radius);
         padding: var(--chart-padding);
     }
+        .barchart-legend-item.faded {
+            opacity: var(--chart-faded-opacity);
+        }
+        .barchart-legend-item.highlighted {
+            opacity: 1;
+            outline: var(--chart-highlight-outline);
+        }
 
     .barchart-legend-color {
         display: inline-block;
@@ -232,7 +239,6 @@
                 width={barWidth * 0.8}
                 height={height - margin - scaleY(value) - 0.5}
                 fill="url(#bar-gradient-{i})"
-                stroke="var(--dark-foreground-l)"
                 rx="4"
                 role="figure"
                 on:mouseenter={() => hoveredIndex = i}
