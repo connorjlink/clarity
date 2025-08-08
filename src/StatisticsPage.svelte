@@ -6,6 +6,7 @@
     import BarChart, { type BarData } from './BarChart.svelte';
     import AreaChart, { type AreaData } from './AreaChart.svelte';
     import StackedAreaChart, { type StackedAreaSeries } from './StackedAreaChart.svelte';
+    import DataTable from './DataTable.svelte';
 
     const minNavWidth = 150;
 
@@ -103,6 +104,12 @@
                 { x: "Apr", y: 9 }
             ]
         }
+    ];
+
+    let users = [
+        { id: 1, name: 'Ana', email: 'ana@email.com', age: 28 },
+        { id: 2, name: 'Luis', email: 'luis@email.com', age: 34 },
+        { id: 3, name: 'Sofia', email: 'sofia@email.com', age: 22 }
     ];
 
 </script>
@@ -209,6 +216,9 @@
         ></div>
         
         <div style="flex:1; display:flex; flex-direction:column; gap:5rem; align-items:center; justify-content:center;">
+
+            <DataTable data={users} />
+
             <PieChart data={pieData} />
             
             <LineChart data={lineData} maximumY=25 minimumY=0 majorTickScale=4 minorTickScale=2 />
