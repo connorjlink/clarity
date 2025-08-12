@@ -32,7 +32,7 @@
         flex-direction: column;
         align-items: center;
         gap: 1rem;
-        margin-top: 1rem;
+        padding: 1rem;
         width: 100%;
     }
 
@@ -45,8 +45,9 @@
         display: flex;
         align-items: center;
         gap: 1rem;
+        width: 100%;
         max-width: 700px;
-        width: 50%;
+        margin: auto;
         transition: all 100ms ease-in-out;
         text-align: left;
     }
@@ -64,9 +65,10 @@
         flex-direction: column;
         justify-content: center;
         font-family: Georgia;
-        width: 700px;
-        max-width: 50%;
+        width: 100%;
+        max-width: 700px;
         margin: auto;
+        padding: 0 1rem;
     }
         :global(.article-content-container hr) {
             border: none;
@@ -143,7 +145,7 @@
     {#if selectedIndex === null}
         <div class="article-list">
             {#each articles as article, idx}
-                <button class="article-item shadowed hoverable" on:click={() => selectArticle(idx)}>
+                <button class="article-item card interactive" on:click={() => selectArticle(idx)}>
                     <ArticleHeader {...article.header} />
                 </button>
             {/each}

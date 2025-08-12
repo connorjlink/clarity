@@ -10,7 +10,7 @@
     export let backgroundTopColor: string = 'var(--haze-color-background-top)';
     export let backgroundBottomColor: string = 'var(--haze-color-background-bottom)';
 
-    // Random string ID. Poor randomization, but sufficient for unique IDs given how few icons will appear at any given time.
+    // Random string ID. Poor randomization but sufficient for unique IDs given how few icons will appear at any given time.
     const uuid = Math.random().toString(36).substring(2, 9);
 
     const backgroundGradientId = `bgGradient-${uuid}`;
@@ -29,7 +29,7 @@
 </style>
 
 <svg
-    style={radius ? `border-radius: ${radius};` : ''}
+    style={`border-radius: ${radius}; box-shadow: 0 0 1em #000A;`}
     width={size}
     height={size}
     viewBox="0 0 300 300"

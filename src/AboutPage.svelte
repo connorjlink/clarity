@@ -7,10 +7,10 @@
         display: flex;
         flex-direction: column;
         gap: 1rem;
-        width: 50%;
+        width: 100%;
         max-width: 700px;
         margin: auto;
-        padding-top: 1rem;
+        padding: 1rem 0.5rem;
     }
 </style>
 
