@@ -138,6 +138,12 @@
     font-weight: bold;
 }
 
+.control-keyword {
+    color: var(--control-keyword);
+    font-style: italic;
+    font-weight: bold;
+}
+
 ::-webkit-scrollbar-button {
     display: none;
 }

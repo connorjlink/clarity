@@ -38,10 +38,7 @@
 
     .article-item {
         cursor: pointer;
-        background: var(--dark-background);
-        border: 1px solid var(--dark-background-l);
         padding: 1rem;
-        border-radius: 1rem;
         display: flex;
         align-items: center;
         gap: 1rem;

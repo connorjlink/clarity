@@ -37,6 +37,11 @@
     --chart-faded-grayscale: 0.7;
     --chart-highlight-outline: 2px solid var(--accent);
     --chart-shadow: 0 0 1em #0008;
+
+    --shadow: 0 0 1rem #0008;
+    --shadow-active: 0 0 1rem #000C;
+    --shadow-inset: inset 0 0 1em rgba(0, 0, 0, 0.3);
+    --shadow-inset-active: inset 0 0 1em rgba(0, 0, 0, 0.35);
 }
 
 /* NOTE: supposedly, this is the highest-performance method to set global defaults for these rules */ 
@@ -68,12 +73,15 @@ button {
     transition: background-color 100ms ease-in-out;
     border-radius: var(--corner-radius);
     border: 1px solid var(--dark-background-l);
+    box-shadow: var(--shadow), var(--shadow-inset);
 }
     button:hover {
         background: var(--accent-hovered);
+        box-shadow: var(--shadow-active), var(--shadow-inset-active);
     }
     button:active {
         background: var(--accent-selected);
+        box-shadow: var(--shadow-active), var(--shadow-inset-active);
     }
 
 a {
@@ -112,16 +120,16 @@ a {
 }
 
 .shadowed {
-    box-shadow: 0 0 1em #0008;
+    box-shadow: var(--shadow);
 }
     .shadowed.hoverable:hover {
-        box-shadow: 0 0 1em #000c;
+        box-shadow: var(--shadow-active);
     }
     .shadowed.hoverable:focus {
-        box-shadow: 0 0 1em #000c;
+        box-shadow: var(--shadow-active);
     }
     .shadowed.hoverable:active {
-        box-shadow: 0 0 1em #000c;
+        box-shadow: var(--shadow-active);
     }
 
 body {
@@ -248,7 +256,7 @@ program-tree {
     border-top-width: 2px;
     border-bottom-width: 2px;
     transition: 100ms border-color ease-in-out, 100ms background-color ease-in-out, 100ms box-shadow ease-in-out;
-    box-shadow: 0 0 1em #0008, inset 0 0 1em rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow), var(--shadow-inset);
     overflow: hidden;
 }
     .card::before {
@@ -270,7 +278,7 @@ program-tree {
     .card:hover {
         background: var(--dark-background-e);
         border-color: var(--dark-background-lll);
-        box-shadow: 0 0 1em #000A, inset 0 0 1em rgba(0, 0, 0, 0.35);
+        box-shadow: var(--shadow-active), var(--shadow-inset-active);
     }
 
 .card.interactive {
@@ -283,3 +291,28 @@ program-tree {
     .card.interactive:hover {
         scale: 1.01;
     }
+
+/* @property --rotation {
+    syntax: "<angle>";
+    inherits: false;
+    initial-value: 90deg;
+}
+
+@keyframes spin-gradient {
+    0%   { --rotation: 90deg; }
+    50%  { --rotation: 450deg; }
+    100% { --rotation: 90deg; }
+}
+
+.card.fancy {
+    border-radius: 0.5rem;
+    border-width: 100px;
+    border-style: solid;
+    border-image: linear-gradient(var(--rotation), var(--accent), var(--secondary)) 1;
+    transition: border-image 200ms;
+    position: relative;
+}
+
+.card.fancy:hover {
+    animation: spin-gradient 5s ease-in-out;
+} */
