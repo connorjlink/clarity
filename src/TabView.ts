@@ -52,6 +52,11 @@ class MyTabViewElement extends HTMLElement {
             const route = children[index].getAttribute('route') || '';
             window.location.hash = route;
         }
+
+        var header = document.querySelector('.title-container div') as HTMLElement;
+        if (header) {
+            header.classList.toggle('hidden', index === 0);
+        }
     }
 
     private render() {
