@@ -22,7 +22,7 @@
         <my-tabview>
             <my-header>
                 <div class="title-container">
-                    <a href="./"><symbol-icon text="Hz" size="128" radius="1.5rem"></symbol-icon></a>
+                    <a href="./"><symbol-icon text="Hz" size="64"></symbol-icon></a>
                     <div>
                         <h1><a class="emphasis" href="https://github.com/connorjlink/haze">Haze</a> Clarity</h1>
                         <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
@@ -33,7 +33,14 @@
                 <!-- inject:./res/home.svg -->
                 <span>Home</span>
             </div>
-            <my-tab route="" class="home-tab shadowed">
+            <my-tab route="" class="home-tab">
+                <div id="home-content"></div>
+            </my-tab>
+            <div class="tab-label" id="compiler-tab-label">
+                <!-- inject:./res/atom.svg -->
+                <span>Compiler</span>
+            </div>
+            <my-tab route="compiler" class="compiler-tab shadowed">
                 <pane-view>
                     <div class="pane-column" id="source-pane">
                         <pane-status dataHeader="Source Editor" id="source-editor-plugin"></pane-status>

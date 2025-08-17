@@ -11,6 +11,7 @@ import './HexViewer.svelte';
 import './SymbolToggle.svelte';
 import './SymbolTristate.svelte';
 import './OutputWindow.svelte';
+import HomePage from './HomePage.svelte';
 import StatisticsPage from './StatisticsPage.svelte';
 import LearnPage from './LearnPage.svelte';
 import AboutPage from './AboutPage.svelte'; 
@@ -63,6 +64,14 @@ customElements.whenDefined('output-window').then(() => {
         });
 
         paneView.setVisiblePanes(visible);
+
+        const homeContent = document.querySelector('#home-content');
+        if (homeContent) {
+            mount(HomePage, {
+                target: homeContent,
+                props: {}
+            });
+        }
 
         const sourceEditor2 = paneView.querySelector('#source-pane source-editor');
         if (sourceEditor2) {

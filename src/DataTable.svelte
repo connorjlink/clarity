@@ -97,24 +97,31 @@
     }
     
     .filter-box {
-        width: 80%;
-        margin-top: 0.25rem;
-        appearance: none;
+        width: 100%;
         border: 1px solid var(--node-border);
+        transition: 100ms border-color ease-in-out;
+        text-overflow: ellipsis;
+        margin-top: 0.25rem;
         border-radius: 0.25rem;
         padding: 0.25rem;
+        background: var(--dark-background-d);
     }
         .filter-box:focus {
             border-color: var(--accent);
         }
     
-    .clear-btn {
+    .clear-button {
         margin-left: 0.2em;
         cursor: pointer;
-        color: #888;
+        color:var(--chart-label-color);
         background: none;
         border: none;
         font-size: 1em;
+    }
+
+    .clickable { 
+        cursor: pointer;
+        user-select: none;
     }
 </style>
 
@@ -127,8 +134,8 @@
                 {#each columns as col}
                     <th>
                         <span 
-                                style="cursor:pointer;"
-                                on:click={() => sortBy(col)}
+                            class="clickable"
+                            on:click={() => sortBy(col)}
                         >
                             {prettify(col)}
                             {#if sortColumn === col}
@@ -137,14 +144,14 @@
                         </span>
                         <div>
                             <input
-                                class="filter-box"
+                                class="filter-box shadowed hoverable"
                                 type="text"
-                                placeholder="Type here to filter..."
+                                placeholder="Type here to filter&hellip;"
                                 bind:value={filters[col]}
                                 on:input={(e) => setFilter(col, e.target.value!)}
                             />
                             {#if filters[col]}
-                                <button class="clear-btn" on:click={() => clearFilter(col)}>✕</button>
+                                <button class="clear-button" on:click={() => clearFilter(col)}>✕</button>
                             {/if}
                         </div>
                     </th>

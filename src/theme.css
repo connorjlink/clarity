@@ -30,6 +30,7 @@
     --dark-background-e: rgb(50, 50, 50);
     --dark-background-l: rgb(69, 69, 69);
     --dark-background-ll: rgb(80, 80, 80);
+    --dark-background-lll: rgb(100, 100, 100);
     --dark-foreground: rgb(230, 230, 230);
     --dark-foreground-l: rgb(180, 180, 180);
     --dark-foreground-ll: rgb(130, 130, 130);
@@ -133,6 +134,12 @@
 
 .keyword {
     color: var(--keyword);
+    font-style: italic;
+    font-weight: bold;
+}
+
+.control-keyword {
+    color: var(--control-keyword);
     font-style: italic;
     font-weight: bold;
 }

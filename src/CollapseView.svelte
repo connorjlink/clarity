@@ -10,11 +10,7 @@
 
 <style>
     .collapse-view {
-        display: block;
-        border: 1px solid var(--dark-background-l);
-        border-radius: 0.5rem;
-        overflow: hidden;
-        background: var(--dark-background);
+        padding: 0;
     }
     
     .header {
@@ -33,7 +29,7 @@
         }
     
     .caret {
-        transition: transform 0.2s;
+        transition: transform 100ms ease-in-out;
         margin-right: 1rem;
         width: 1em;
         height: 1em;
@@ -54,7 +50,7 @@
         }
 </style>
 
-<div class="collapse-view shadowed" class:expanded={expanded}>
+<div class="collapse-view card interactive" class:expanded={expanded}>
     <button
         class="header"
         on:click={toggle}
