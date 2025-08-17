@@ -25,6 +25,7 @@
     }
     svg {
         filter: none;
+        text-shadow: none !important;
     }
 </style>
 
@@ -51,7 +52,7 @@
         </filter>
 
         <filter id={richShadowId} x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="25" dy="25" stdDeviation="25" flood-color="rgba(0,0,0,0.75)" />
+            <feDropShadow dx="20" dy="20" stdDeviation="20" flood-color="rgba(0,0,0,0.8)" />
         </filter>
     </defs>
 
