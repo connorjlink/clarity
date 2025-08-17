@@ -143,31 +143,3 @@
     font-style: italic;
     font-weight: bold;
 }
-
-::-webkit-scrollbar-button {
-    display: none;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--dark-background-e);
-    border: 1px solid var(--node-border);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--accent-selectble);
-    border-radius: 0px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-hovered);
-}
-::-webkit-scrollbar-thumb:active {
-    background: var(--accent-selected);
-}
-
-::-webkit-scrollbar-track-piece {
-    
-}
-
-::-webkit-scrollbar-corner {
-    background: var(--dark-background);
-}

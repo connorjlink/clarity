@@ -179,27 +179,41 @@
                 <blockquote class="shadowed">
                     <p>Please mind the gap between the code and the platform.</p>
                 </blockquote>
-                <p>Although generating object code and linking translation units are rather complex, operating system authors seem to have consipired to make the last step, exporting an executable, even more complicated and infuriating. Not only does it require targeting a platform far narrower than processor architecture, but also it involves cryptic sigils that summon back the days of hex-editor debugging. Executable formats, be they ELF, PE, Mach-O or even the archaic a.out, are data structures that require a deep understanding of the program at hand, the operating system's loader, and&mdash;especially for Windows&mdash;the dynamic linker. For time limitations and brevity purposes, I focus solely on x86 Windows development for this series and the Haze compiler.</p>
+                <p>While generating object code and linking translation units are no simple feat, operating systems ostensibly conspire to make the last step, packaging an executable, even more complicated and infuriating. Executable formats, be they ELF, PE, Mach-O or even the archaic a.out, are data structures that require a deep understanding of the program at hand, the operating system's loader, and&mdash;especially for Windows&mdash;the dynamic linker. For time limitations and brevity purposes, I focus solely on x86 Windows development for this series and the Haze compiler.</p>
                 <hr>
 
                 <h2>Section 1</h2>
                 <blockquote class="shadowed">
                     <p>This program cannot be run in DOS mode.</p>
                 </blockquote>
-                <p>Windows PE&mdash;that's <i>Portable Executable</i>, not to be confused with <a href="https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment"><i>Pre-installation Environment</i></a>&mdash;suffers many shortfalls inherent to an API designed in the early '90s, which itself was more or less a bolt-on addition to the <a href="https://en.wikipedia.org/wiki/New_Executable"><i>New Exectuable</i></a> format pioneered by Windows 1.0 hailing from the mid-'80s. PE has aged remarkably well, no doubt owing to the original designer's ingenuity and forward thinking, but by now, the cracks have surfaced en masse and now mar the otherwise silky smooth surface of modern programs with indellible reminders of yesteryear's technology: MIPS compatibility, bound imports, and the deprecated COFF symbol table, among others.</p>
+                <p>Windows PE&mdash;<i>Portable Executable</i>, not to be confused with <a href="https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment"><i>Pre-installation Environment</i></a> also abbreviated PE&mdash;suffers many shortfalls inherent to an API designed in the early '90s. Indeed, PE traces roots to the <a href="https://en.wikipedia.org/wiki/New_Executable"><i>New Exectuable</i></a> format pioneered by Windows 1.0 hailing from the mid-'80s and borrows design from the UNIX-oriented <a href="https://en.wikipedia.org/wiki/COFF"><i>Common Object File Format</i></a>. For its vintage, PE has aged well and proven remarkably extensible, carrying program compatibility through 16-bit, 32-bit, and 64-bit incarnations; however, cracks have begun to surface en masse and now mar the otherwise silky smooth surface of modern programs with indellible reminders of yesteryear's technology: MIPS compatibility, bound imports, and the deprecated COFF symbol table, among others.</p>
 
-                <p>Moreover, software needs, usage, and especially build tools have changed over time, but Microsoft's commitment to backwards compatibility has created a spaghetti bowl worthy of Italy's finest. Take for example the <code>TimeDateStamp</code> field: it seems a reasonable guess that the executable uses it to store a build (or perhaps link in the case of dynamic loading?) timestamp. Wrong. Indeed, as Raymond Chen helpfully explains <a href="https://devblogs.microsoft.com/oldnewthing/20240815-00/?p=110131">here</a>, build reproducibility issues mean this field now typically stores a compile hash. Because of course it does. Likewise, investigate the <code>COM Descriptor Directory</code> field: why is it typically omitted? The answer lay within the origins of .NET, the CLR for which continues to use it as metadata storage, though it remains now only a forlorn relic of forgotten times in native code.</p>
-                <hr>
+                <p>During this time, software needs, usage, and build tools have changed dramatically, but the unending commitment to backwards compatibility leaves forlorn relics of forgotten times in modern executables. A few such examples follow.</p>
+
+                <ol>
+                    <li>
+                        <h3>The <code>TimeDateStamp</code> Field</h3>
+                        <p>Despite its name, this field in present usage does not (and according to <a href="https://devblogs.microsoft.com/oldnewthing/20240815-00/?p=110131">Raymond Chen</a>, <i>should not</i>) store any kind of timestamp owing to build reproducibility concerns. Instead, developers typically omit or otherwise ignore the field and populate it with a compile hash that remains static for duplicate compilations of the same source, thereby preserving the overall EXE signature or hash.</p>
+                    </li>
+                    <li>
+                        <h3>The <code>COM Descriptor Directory</code> Field</h3>
+                        <p>Although native code&mdash;especially that expected to interface with Windows modules&mdash;uses COM extensively, it rarely requires the usage of this vestigial field. However, it remains present in the PE header for backwards compatibility, and has since re-emerged as a container specifier for the .NET Common Language Runtime (CLR) metadata storage.</p>
+                    </li>
+                    <li>
+                        <h3>The <code>Bound Import</code> Table</h3>
+                        <p>Once used as an optimization to pre-solve DLL addresses at link time, bound imports have fallen out of favor owing to their increase in complexity and limited utility. Since the advent of address space layout randomization (ASLR), pre-resolved imports immediately invalidate upon re-basing, which requires a secondary resolution nonetheless. The table remains as a deprecated entry in the COFF section for compatibility, but more modern techniques like delay-loading and dynamic linking supplant its usage with both improved security and performance.</p>
+                    </li>
+                </ol>
 
                 <h2>Section 2</h2>
                 <blockquote class="shadowed">
-                    <p>Some assembly required.</p>                                
+                    <p>Some assembly required.</p>
                 </blockquote>
                 <hr>
 
                 <h2>Section 3</h2>
                 <blockquote class="shadowed">
-                    <p>You wouldn't steal a function...</p>                                
+                    <p>You wouldn't steal a function...</p>
                 </blockquote>   
             `
         }

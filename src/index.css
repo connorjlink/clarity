@@ -331,3 +331,36 @@ program-tree {
 .card.fancy:hover {
     animation: spin-gradient 5s ease-in-out;
 } */
+
+:root {
+    scrollbar-color: var(--dark-background-lll) var(--dark-background-e);
+    scrollbar-width: thin;
+}
+
+::-webkit-scrollbar-button {
+    display: none;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--dark-background-e);
+    border: 1px solid var(--node-border);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent-selectable);
+    border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-hovered);
+}
+::-webkit-scrollbar-thumb:active {
+    background: var(--accent-selected);
+}
+
+::-webkit-scrollbar-track-piece {
+    background: none;
+}
+
+::-webkit-scrollbar-corner {
+    background: var(--dark-background);
+}

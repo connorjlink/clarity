@@ -157,8 +157,6 @@
         padding: 1rem; 
         overflow-x: hidden; 
         overflow-y: auto; 
-        height: 100%; 
-        width: 100%;
     }
     
     .hex-table { 
