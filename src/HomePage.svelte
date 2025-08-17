@@ -208,7 +208,7 @@
     <div class="features-list">
         {#each features as feature}
             <div class="card shadowed hoverable interactive fancy">
-                {#if feature.icon}
+                {#if feature.icon && feature.icon !== ""}
                     <div class="card-icon">
                         <LoadableIcon filepath={feature.icon} />
                     </div>
