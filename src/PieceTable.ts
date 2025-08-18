@@ -9,115 +9,79 @@ interface Piece {
 export class PieceTable {
     private original: string;
     private addBuffer: string;
-    private pieces: Piece[];    
+    private pieces: Piece[];
 
     constructor(initialText: string) {
         this.original = initialText;
         this.addBuffer = '';
-        this.pieces = [{ buffer: 'original', start: 0, length: initialText.length }];
-    }   
+        this.pieces = [];
+        const lines = initialText.split('\n');
+        let offset = 0;
+        for (const line of lines) {
+            this.pieces.push({
+                buffer: 'original',
+                start: offset,
+                length: line.length
+            });
+            // +1 for '\n'
+            offset += line.length + 1;
+        }
+    }
 
-    insert(position: number, text: string) {
-        if (text.length === 0) {
-            return;    
+    getLines(): string[] {
+        const lines: string[] = [];
+        for (const piece of this.pieces) {
+            const buffer = piece.buffer === 'original' ? this.original : this.addBuffer;
+            lines.push(buffer.substr(piece.start, piece.length));
+        }
+        return lines;
+    }
+
+    getText(): string {
+        return this.getLines().join('\n');
+    }
+
+    insertLine(index: number, line: string) {
+        const addStart = this.addBuffer.length;
+        this.addBuffer += line;
+        const newPiece: Piece = {
+            buffer: 'add',
+            start: addStart,
+            length: line.length
+        };
+        this.pieces.splice(index, 0, newPiece);
+    }
+
+    deleteLine(index: number) {
+        if (index >= 0 && index < this.pieces.length) {
+            this.pieces.splice(index, 1);
+        }
+    }
+
+    replaceLine(index: number, line: string) {
+        if (index < 0 || index >= this.pieces.length) {
+            return;
         }
         const addStart = this.addBuffer.length;
-        this.addBuffer += text;   
-        let offset = 0;
-        let i = 0;    
-    
-        // find the piece containing the insert position
-        for (; i < this.pieces.length; i++) {
-            const piece = this.pieces[i];
-            if (offset + piece.length >= position) {
-                break;
-            }
-            offset += piece.length;
-        }   
-    
-        // the position is at the end, the table requires appending a new piece
-        if (i === this.pieces.length) {
+        this.addBuffer += line;
+        this.pieces[index] = {
+            buffer: 'add',
+            start: addStart,
+            length: line.length
+        };
+    }
+
+    setLines(lines: string[]) {
+        this.pieces = [];
+        this.addBuffer = '';
+        for (const line of lines) {
+            const addStart = this.addBuffer.length;
+            this.addBuffer += line;
             this.pieces.push({
                 buffer: 'add',
                 start: addStart,
-                length: text.length
+                length: line.length
             });
-            return;
         }
-    
-        const piece = this.pieces[i];
-        const withinPieceOffset = position - offset;    
-        const newPieces: Piece[] = [];    
-        if (withinPieceOffset > 0) {
-            // left part of original piece
-            newPieces.push({
-                buffer: piece.buffer,
-                start: piece.start,
-                length: withinPieceOffset
-            });
-        }   
-        // insert text as new piece
-        newPieces.push({
-            buffer: 'add',
-            start: addStart,
-            length: text.length
-        });   
-        if (withinPieceOffset < piece.length) {
-            // right part of original piece
-            newPieces.push({
-                buffer: piece.buffer,
-                start: piece.start + withinPieceOffset,
-                length: piece.length - withinPieceOffset
-            });
-        }   
-        // splice in affected piece
-        this.pieces.splice(i, 1, ...newPieces);
-    }      
-
-    delete(position: number, length: number) {
-        let offset = 0;
-        let i = 0;    
-        while (i < this.pieces.length && offset + this.pieces[i].length <= position) {
-            offset += this.pieces[i].length;
-            i++;
-        }   
-
-        const startIndex = i;
-        const deleteStartOffset = position - offset;   
-        let deleteLength = length;
-        const newPieces: Piece[] = [];    
-        while (deleteLength > 0 && i < this.pieces.length) {
-            const piece = this.pieces[i];
-            const pieceStart = (i === startIndex) ? deleteStartOffset : 0;
-            const pieceLength = piece.length - pieceStart;
-            const keepLength = Math.max(0, piece.length - pieceLength);   
-            if (pieceStart > 0) {
-                newPieces.push({
-                    buffer: piece.buffer,
-                    start: piece.start,
-                    length: pieceStart
-                });
-            }   
-            if (pieceLength < piece.length) {
-                newPieces.push({
-                    buffer: piece.buffer,
-                    start: piece.start + pieceStart + deleteLength,
-                    length: piece.length - (pieceStart + deleteLength)
-                });
-            }   
-            deleteLength -= pieceLength;
-            i++;
-        }   
-
-        this.pieces.splice(startIndex, i - startIndex, ...newPieces);
-    }   
-
-    getText(): string {
-        let result = '';
-        for (const piece of this.pieces) {
-            const buffer = piece.buffer === 'original' ? this.original : this.addBuffer;
-            result += buffer.substr(piece.start, piece.length);
-        }
-        return result;
     }
 }

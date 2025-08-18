@@ -18,7 +18,9 @@ const treeNodeStyle = /*css*/`
         user-select: none;
         background: none;
         border-radius: var(--corner-radius);
-        will-change: transform;
+        box-shadow: var(--shadow);
+        transition: box-shadow 100ms ease-in-out;
+        will-change: transform, box-shadow;
     }
 
     .node-header {
@@ -226,12 +228,14 @@ export class TreeNodeElement extends HTMLElement {
             return;
         }
         this._isDragging = true;
+        if (this._contentRef) {
+            this._contentRef.style.boxShadow = 'var(--shadow-active)';
+        }
         const mouseWorld = this.screenToWorld!({ x: event.clientX, y: event.clientY });
         this._dragOffset = {
             x: mouseWorld.x - this._position.x,
             y: mouseWorld.y - this._position.y,
         };
-
         const onMouseMove = (e: MouseEvent) => {
             if (!this._isDragging) {
                 return;
@@ -245,6 +249,9 @@ export class TreeNodeElement extends HTMLElement {
 
         const onMouseUp = () => {
             this._isDragging = false;
+            if (this._contentRef) {
+                this._contentRef.style.boxShadow = 'var(--shadow)';
+            }
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mouseup', onMouseUp);
         }
@@ -376,7 +383,7 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     private render() {
-        this.shadowRoot!.innerHTML = `
+        this.shadowRoot!.innerHTML = /*html*/`
             <div
                 id="${this._nodeId}"
                 class="node shadowed"

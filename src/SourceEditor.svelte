@@ -12,18 +12,16 @@
 
     let pieceTable = new PieceTable(initialText);
 
-    let scrollSync: HTMLDivElement;
-    let editorRef: HTMLDivElement;
-    let leftGutterRef: HTMLDivElement;
-    let rightGutterRef: HTMLDivElement;
-    let measureRef: HTMLPreElement;
+    let editorRowsRef: HTMLDivElement;
     let pluginRef: HTMLElement;
 
     let lineCount = 1;
     let lines: string[] = [];
     let cursorLine = 1;
     let cursorColumn = 1;
-    let visualLineMap: { line: number, isFirst: boolean }[] = [];
+    let ghostRows = 2;
+
+    const rootEmSize = parseInt(getComputedStyle(document.documentElement).fontSize);
 
     function onEditorAction(action: string, payload?: any) { /* stub */ }
     function onGutterClick(line: number) { /* stub */ }
@@ -64,34 +62,6 @@
         }
     }
 
-    function updateVisualLineMap() {
-        visualLineMap = [];
-        if (!measureRef || !editorRef) {
-            return;
-        }
-        measureRef.style.width = editorRef.clientWidth + 'px';
-        measureRef.style.fontSize = fontSize + 'rem';
-        measureRef.style.fontFamily = 'Consolas, monospace';
-        measureRef.style.whiteSpace = softWrap ? 'pre-wrap' : 'pre';
-        measureRef.style.lineHeight = `${lineHeightBasis * fontSize}rem`;
-
-        for (let i = 0; i < lines.length; i++) {
-            measureRef.textContent = lines[i] || ' ';
-            const computed = getComputedStyle(measureRef);
-            let lineHeight = parseFloat(computed.lineHeight);
-            if (!isFinite(lineHeight) || lineHeight === 0) {
-                lineHeight = lineHeightBasis * fontSize * 16;
-            }
-            const height = measureRef.scrollHeight;
-            const visualLines = Math.max(1, Math.ceil(height / lineHeight));
-            for (let v = 0; v < visualLines; v++) {
-                visualLineMap.push({ line: i + 1, isFirst: v === 0 });
-            }
-        }
-    }
-
-    $: updateVisualLineMap();
-
     function openFileDialog() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -104,10 +74,16 @@
             const text = await file.text();
             pieceTable = new PieceTable(text);
             updateLines();
-            updateEditorContent();
             onFileLoaded(text);
         };
         input.click();
+    }
+
+    function updateGhostRows() {
+        const scrollHeight = editorRowsRef?.parentElement?.offsetHeight || 0;
+        const lineHeight = lineHeightBasis * fontSize * rootEmSize;
+        const visibleLines = Math.floor(scrollHeight / lineHeight);
+        ghostRows = Math.max(visibleLines - 1, 0);
     }
 
     function updateLines() {
@@ -116,49 +92,25 @@
         lineCount = lines.length;
     }
 
-    function updateEditorContent() {
-        if (editorRef) {
-            editorRef.innerText = pieceTable.getText();
-        }
-    }
-
-    function handleInput(e: InputEvent) {
-        const text = editorRef.innerText;
-        pieceTable = new PieceTable(text);
+    function handleInput(e: InputEvent, i: number) {
+        // Actualiza solo la línea editada
+        const div = e.target as HTMLDivElement;
+        lines[i] = div.innerText;
+        pieceTable = new PieceTable(lines.join('\n'));
         updateLines();
-        onEditorAction('input', { text });
+        onEditorAction('input', { text: pieceTable.getText() });
     }
 
-    function updateCursorPosition() {
+    function updateCursorPosition(e: FocusEvent | KeyboardEvent | MouseEvent, i: number) {
+        cursorLine = i + 1;
+        // Calcula columna (simplemente la posición del caret en la línea)
         const selection = window.getSelection();
-        if (!selection || !editorRef.contains(selection.anchorNode)) return;
-        const caretOffset = getCaretCharacterOffsetWithin(editorRef);
-        let text = editorRef.innerText;
-        let line = 1, col = 1, idx = 0;
-        for (; idx < caretOffset; idx++) {
-            if (text[idx] === '\n') {
-                line++;
-                col = 1;
-            } else {
-                col++;
-            }
+        if (selection && selection.anchorNode && selection.anchorNode.parentElement === e.target) {
+            cursorColumn = selection.anchorOffset + 1;
+        } else {
+            cursorColumn = 1;
         }
-        cursorLine = line;
-        cursorColumn = col;
         onCursorChange(cursorLine, cursorColumn);
-    }
-
-    function getCaretCharacterOffsetWithin(element: HTMLElement): number {
-        let caretOffset = 0;
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            const preCaretRange = range.cloneRange();
-            preCaretRange.selectNodeContents(element);
-            preCaretRange.setEnd(range.endContainer, range.endOffset);
-            caretOffset = preCaretRange.toString().length;
-        }
-        return caretOffset;
     }
 
     function handleGutterClick(line: number) { onGutterClick(line); }
@@ -167,42 +119,28 @@
 
     $: editorStyle = `
         font-size: ${fontSize}rem;
+        line-height: ${lineHeightBasis * fontSize}rem;
+        font-family: 'Consolas', 'Menlo', 'Fira Code', 'Monaco', monospace;;
+    `;
+    $: codeLineStyle = `
+        font-size: ${fontSize}rem;
         white-space: ${softWrap ? 'pre-wrap' : 'pre'};
         overflow-x: ${softWrap ? 'hidden' : 'auto'};
-        line-height: ${lineHeightBasis * fontSize}rem;
+        word-break: break-word;
+        padding: 0 0.5em;
     `;
-
-    function syncScroll(e) {
-        editorRef.scrollLeft = e.target.scrollLeft;
-    }
-
-    function mirrorScroll() {
-        scrollSync.scrollLeft = editorRef.scrollLeft;
-    }
 
     onMount(() => {
         pluginRef = document.querySelector(`#${pluginId}`)!;
         updateLines();
-        updateEditorContent();
         updatePlugin();
-        setTimeout(updateVisualLineMap, 0);
-        editorRef.addEventListener('input', handleInput);
-        editorRef.addEventListener('keyup', updateCursorPosition);
-        editorRef.addEventListener('mouseup', updateCursorPosition);
-        editorRef.addEventListener('focus', updateCursorPosition);
-        editorRef.addEventListener('blur', updateCursorPosition);
-        editorRef.addEventListener('wheel', handleWheel, { passive: false });
+        window.addEventListener('wheel', handleWheel, { passive: false });
     });
     afterUpdate(() => {
-        updateVisualLineMap();
+        updateGhostRows();
     });
     onDestroy(() => {
-        editorRef?.removeEventListener('input', handleInput);
-        editorRef?.removeEventListener('keyup', updateCursorPosition);
-        editorRef?.removeEventListener('mouseup', updateCursorPosition);
-        editorRef?.removeEventListener('focus', updateCursorPosition);
-        editorRef?.removeEventListener('blur', updateCursorPosition);
-        editorRef?.removeEventListener('wheel', handleWheel);
+        window.removeEventListener('wheel', handleWheel);
     });
 </script>
 
@@ -225,9 +163,6 @@
     }
 
     .editor-wrapper {
-        flex: 1;
-        min-height: 0;
-        height: 100%;
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -240,13 +175,6 @@
         gap: 0.5rem;
         background: var(--dark-background-e);
         border-bottom: 1px solid var(--dark-background-ll);
-    }
-
-    .editor-row {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        align-items: start;
-        height: 100%;
     }
 
     .scroll-vertical {
@@ -264,6 +192,12 @@
 
     .gutter-line {
         color: var(--dark-foreground-ll);
+        padding: 0 0.25rem;
+        display: flex;
+        width: auto;
+        min-width: 1rem;
+        max-width: 3rem;
+        justify-content: end;
     }
         .gutter-line.active {
             color: var(--dark-foreground);
@@ -297,13 +231,66 @@
         margin: 0; 
         padding: 0; 
     }
+
+    .editor-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .editor-table td {
+        vertical-align: top;
+        padding: 0;
+    }
+    .editor-table .left-gutter,
+    .editor-table .right-gutter {
+        text-align: right;
+    }
+    .editor-table .editor-content-wrapper {
+        height: 100%;
+        outline: none;
+        display: flex;
+        align-items: center;
+    }
+
+.outer-wrapper {
+  max-height: 300px;
+  overflow-y: auto; /* shared vertical scroll */
+  font-family: sans-serif;
+}
+
+.row {
+  display: flex;
+  align-items: flex-start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+}
+
+.left-column,
+.right-column {
+  flex: 0 0 100px;
+  background: #f0f0f0;
+}
+
+.middle-column {
+  flex: 1;
+  overflow-x: auto; /* shared horizontal scroll */
+}
+
+.scroll-inner {
+  display: flex;
+  flex-direction: column;
+  min-width: max-content; /* triggers horizontal scroll */
+}
+
+.cell {
+  padding: 8px;
+  border: 1px solid #ccc;
+  white-space: nowrap;
+}
 </style>
 
-<pre
-    bind:this={measureRef}
-    class="measure"
-    style="line-height: {lineHeightBasis * fontSize}rem;"
-></pre>
 <div class="editor-toolbar">
     {#if allowLoadFromDisk}
         <button on:click={openFileDialog}>Open File...</button>
@@ -314,55 +301,99 @@
 </div>
 <div class="editor-wrapper">
     <div class="scroll-vertical">
-        <div class="editor-row">
-            <div class="gutter left-gutter" bind:this={leftGutterRef} style="font-size: {fontSize}rem;">
-                {#each visualLineMap as v, i}
-                    <div
-                        class="gutter-line {v.line === cursorLine && v.isFirst ? 'active' : ''}"
-                        style="line-height: {lineHeightBasis * fontSize}rem;"
-                        role="figure"
-                        on:mouseenter={() => v.isFirst && handleGutterHover(v.line)}
-                        on:click={() => v.isFirst && handleGutterClick(v.line)}
-                    >
-                        {#if v.isFirst}
-                            {v.line}
-                        {:else}
-                            <span style="visibility:hidden">0</span>
-                        {/if}
-                    </div>
+        <table class="editor-table" style={editorStyle}>
+            <tbody>
+                {#each lines as line, i}
+                    <tr>
+                        <td class="gutter left-gutter">
+                            <div
+                                class="gutter-line {i + 1 === cursorLine ? 'active' : ''}"
+                                style="line-height: {lineHeightBasis * fontSize}rem;"
+                                role="figure"
+                                on:mouseenter={() => handleGutterHover(i + 1)}
+                                on:click={() => handleGutterClick(i + 1)}
+                            >
+                                {i + 1}
+                            </div>
+                        </td>
+                        <td class="editor-content-wrapper" contenteditable spellcheck="false" style={codeLineStyle}>
+                            {lines[i]}
+                        </td>
+                        <td class="gutter right-gutter">
+                            <div
+                                class="gutter-line {i + 1 === cursorLine ? 'active' : ''}"
+                                style="line-height: {lineHeightBasis * fontSize}rem;"
+                                role="figure"
+                                on:click={() => handleRightGutter(i + 1)}
+                            >
+                                G
+                            </div>
+                        </td>
+                    </tr>
                 {/each}
-            </div>
-            <div class="editor-content-wrapper">
-                <div
-                    class="editor-content"
-                    bind:this={editorRef}
-                    bind:this={editorRef}
-                    on:scroll={mirrorScroll}
-                    contenteditable={!readOnly}
-                    spellcheck="false"
-                    style={editorStyle}
-                ></div>
-            </div>
-            <div class="gutter right-gutter" bind:this={rightGutterRef} style="font-size: {fontSize}rem;">
-                {#each visualLineMap as v, i}
-                    <div
-                        class="gutter-line {v.line === cursorLine && v.isFirst ? 'active' : ''}"
-                        style="line-height: {lineHeightBasis * fontSize}rem;"
-                        role="figure"
-                        on:click={() => v.isFirst && handleRightGutter(v.line)}
-                    >
-                        {#if v.isFirst}
-                            G
-                        {:else}
-                            <span style="visibility:hidden">0</span>
-                        {/if}
-                    </div>
-                {/each}
-            </div>
-        </div>
+            </tbody>
+        </table>
     </div>  
+</div>
 
-    <div bind:this={scrollSync} class="scrollbar-container" on:scroll={syncScroll}>
-        <div class="scroll-sync"></div>
+<div class="outer-wrapper">
+  <div class="row">
+    <div class="column left-column">
+      <div class="cell">A1</div>
+      <div class="cell">A2</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
+      <div class="cell">A3</div>
     </div>
+
+    <div class="column middle-column">
+      <div class="scroll-inner">
+        <div class="cell">Very long content that should scroll horizontally</div>
+        <div class="cell">Another long content line that matches scroll</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+        <div class="cell">Even more overflowing content that stays aligned</div>
+      </div>
+    </div>
+
+    <div class="column right-column">
+      <div class="cell">C1</div>
+      <div class="cell">C2</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+      <div class="cell">C3</div>
+    </div>
+  </div>
 </div>

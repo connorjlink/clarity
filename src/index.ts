@@ -84,7 +84,7 @@ customElements.whenDefined('output-window').then(() => {
             mount(SourceEditor, {
                 target: sourceEditor,
                 props: {
-                    initialText: ';; Source Code\n\n(module\n  (func $main (export "main")\n    (nop)\n  )\n)',
+                    initialText: ';; Source Code\n\n(module\n  (func $main (export "main")\n    (nop)\n  )\n)\n\n\n\n\n\n\n\n',
                     softWrap: true,
                     readOnly: false,
                     allowLoadFromDisk: true,
