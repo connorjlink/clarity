@@ -4,6 +4,7 @@
     const articles = [
         {
             header: {
+                isComplete: false,
                 title: "Preprocessor",
                 subtitle: "The definition of micro-managing macros",
                 text: "Pp",
@@ -20,6 +21,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "Lexical Analysis",
                 subtitle: "Read it and reap: scanning between the lines.",
                 text: "Lx",
@@ -36,6 +38,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "Parsing",
                 subtitle: "A spiraling descent into where things began.",
                 text: "Pa",
@@ -52,6 +55,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "Abstract Syntax Tree Optimization",
                 subtitle: "Miss the forest for the trees no more.",
                 text: "As",
@@ -68,6 +72,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "IR Code Generation",
                 subtitle: "Distilled semantics. 200 proof(s).",
                 text: "Ir",
@@ -84,6 +89,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "Three-Address Code Optimization",
                 subtitle: "Less is more.",
                 text: "To",
@@ -100,6 +106,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "x86 Code Generation",
                 subtitle: "An unspoken archaic dialect understood only by pedants.",
                 text: "Cg",
@@ -116,6 +123,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "Peephole Optimization",
                 subtitle: "Seeing the bigger picture through a tiny window.",
                 text: "Po",
@@ -132,6 +140,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "Translation Unit Linking",
                 subtitle: "Here's my address, so call me, maybe.",
                 text: "Tu",
@@ -148,6 +157,7 @@
         },
         {
             header: {
+                isComplete: false,
                 title: "Link-Time Optimization",
                 subtitle: "Caching in on visibility without bound.",
                 text: "Li",

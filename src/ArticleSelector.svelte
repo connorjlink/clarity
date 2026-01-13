@@ -1,27 +1,67 @@
 <script lang="ts">
     import ArticleHeader from './ArticleHeader.svelte';
     
-    export let articles = [];
+    type ArticleHeaderModel = {
+        isComplete?: boolean;
+        title?: string;
+        subtitle?: string;
+        text?: string;
+        size?: string;
+        shadowColor?: string;
+        foregroundTopColor?: string;
+        foregroundBottomColor?: string;
+        backgroundTopColor?: string;
+        backgroundBottomColor?: string;
+    };
+
+    type ArticleModel = {
+        header: ArticleHeaderModel;
+        content: string;
+    };
+
+    export let articles: ArticleModel[] = [];
+
+    const INCOMPLETE_TOOLTIP = "This article is not yet complete";
 
     let selectedIndex: number | null = null;
 
     let showPreviousPreview = false;
     let showNextPreview = false;
 
+    function isHeaderComplete(header: ArticleHeaderModel | undefined) {
+        return header?.isComplete !== false;
+    }
+
+    function isIndexComplete(idx: number) {
+        return isHeaderComplete(articles[idx]?.header);
+    }
+
+    $: prevIndex = selectedIndex === null ? -1 : selectedIndex - 1;
+    $: nextIndex = selectedIndex === null ? -1 : selectedIndex + 1;
+    $: prevIsIncomplete = prevIndex >= 0 && !isIndexComplete(prevIndex);
+    $: nextIsIncomplete = nextIndex >= 0 && nextIndex < articles.length && !isIndexComplete(nextIndex);
+    $: prevDisabled = selectedIndex === null || selectedIndex === 0 || prevIsIncomplete;
+    $: nextDisabled = selectedIndex === null || selectedIndex === articles.length - 1 || nextIsIncomplete;
+
     function selectArticle(idx: number) {
+        if (!isIndexComplete(idx)) return;
         selectedIndex = idx;
     }
     function backToList() {
         selectedIndex = null;
     }
     function prevArticle() {
-        if (selectedIndex !== null && selectedIndex > 0) {
-            selectedIndex -= 1;
+        if (selectedIndex === null) return;
+        const target = selectedIndex - 1;
+        if (target >= 0 && isIndexComplete(target)) {
+            selectedIndex = target;
         }
     }
     function nextArticle() {
-        if (selectedIndex !== null && selectedIndex < articles.length - 1) {
-            selectedIndex += 1;
+        if (selectedIndex === null) return;
+        const target = selectedIndex + 1;
+        if (target < articles.length && isIndexComplete(target)) {
+            selectedIndex = target;
         }
     }
 </script>
@@ -51,6 +91,21 @@
         .article-item:hover {
             background: var(--dark-background-e);
             border-color: var(--dark-background-ll);
+        }
+
+    .article-item-wrapper {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+    }
+
+    .article-item.incomplete {
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+        .article-item.incomplete:hover {
+            background: transparent;
+            border-color: var(--dark-background-l);
         }
 
     .wrapper {
@@ -94,6 +149,10 @@
         max-width: 50%;
         margin-left: auto;
         margin-right: auto;
+        position: relative;
+    }
+
+    .nav-button-wrapper {
         position: relative;
     }
 
@@ -142,30 +201,42 @@
     {#if selectedIndex === null}
         <div class="article-list">
             {#each articles as article, idx}
-                <button class="article-item card interactive" on:click={() => selectArticle(idx)}>
-                    <ArticleHeader {...article.header} />
-                </button>
+                {@const complete = isHeaderComplete(article.header)}
+                <div class="article-item-wrapper" title={complete ? undefined : INCOMPLETE_TOOLTIP}>
+                    <button
+                        type="button"
+                        class="article-item card interactive {complete ? '' : 'incomplete'}"
+                        aria-disabled={!complete}
+                        on:click={() => selectArticle(idx)}
+                    >
+                        <ArticleHeader {...article.header} isComplete={complete} />
+                    </button>
+                </div>
             {/each}
         </div>
     {:else}
         <div class="nav-buttons">
-            <div style="position: relative;">
+            <div
+                class="nav-button-wrapper"
+                role="group"
+                title={prevIsIncomplete ? INCOMPLETE_TOOLTIP : undefined}
+                on:mouseenter={() => showPreviousPreview = true}
+                on:mouseleave={() => showPreviousPreview = false}
+            >
                 <button
                     class="nav-button shadowed"
                     on:click={prevArticle}
-                    disabled={selectedIndex === 0}
-                    on:mouseenter={() => showPreviousPreview = true}
-                    on:mouseleave={() => showPreviousPreview = false}
+                    disabled={prevDisabled}
                 >
                     &larr; Previous
                 </button>
-                {#if showPreviousPreview && selectedIndex > 0}
+                {#if showPreviousPreview && prevIndex >= 0}
                     <div class="preview-callout shadowed">
-                        <ArticleHeader {...articles[selectedIndex - 1].header} />
+                        <ArticleHeader {...articles[prevIndex].header} isComplete={isIndexComplete(prevIndex)} />
                     </div>
                 {/if}
             </div>
-            <div style="position: relative;">
+            <div class="nav-button-wrapper">
                 <button 
                     class="nav-button shadowed" 
                     on:click={backToList}
@@ -173,25 +244,29 @@
                     &uparrow; Back to List
                 </button>
             </div>
-            <div style="position: relative;">
+            <div
+                class="nav-button-wrapper"
+                role="group"
+                title={nextIsIncomplete ? INCOMPLETE_TOOLTIP : undefined}
+                on:mouseenter={() => showNextPreview = true}
+                on:mouseleave={() => showNextPreview = false}
+            >
                 <button
                     class="nav-button shadowed"
                     on:click={nextArticle}
-                    disabled={selectedIndex === articles.length - 1}
-                    on:mouseenter={() => showNextPreview = true}
-                    on:mouseleave={() => showNextPreview = false}
+                    disabled={nextDisabled}
                 >
                     Next &rarr;
                 </button>
-                {#if showNextPreview && selectedIndex < articles.length - 1}
+                {#if showNextPreview && nextIndex >= 0 && nextIndex < articles.length}
                     <div class="preview-callout shadowed right">
-                        <ArticleHeader {...articles[selectedIndex + 1].header} />
+                        <ArticleHeader {...articles[nextIndex].header} isComplete={isIndexComplete(nextIndex)} />
                     </div>
                 {/if}
             </div>
         </div>
         <div class="article-content-container">
-            <ArticleHeader {...articles[selectedIndex].header} />
+            <ArticleHeader {...articles[selectedIndex].header} isComplete={isIndexComplete(selectedIndex)} />
             {@html articles[selectedIndex].content}
         </div>
     {/if}

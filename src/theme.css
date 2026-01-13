@@ -42,6 +42,8 @@
     --light-background-lll: rgb(140, 140, 140);
     --light-foreground: rgb(50, 50, 50);
 
+    --breakpoint: #D34;
+
     --node-border: var(--dark-background-ll);
 
 

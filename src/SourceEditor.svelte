@@ -21,6 +21,8 @@
     let cursorColumn = 1;
     let ghostRows = 2;
 
+    let breakpoints = new Set<number>();
+
     const rootEmSize = parseInt(getComputedStyle(document.documentElement).fontSize);
 
     function onEditorAction(action: string, payload?: any) { /* stub */ }
@@ -74,6 +76,9 @@
             const text = await file.text();
             pieceTable = new PieceTable(text);
             updateLines();
+            if (editorRowsRef) {
+                editorRowsRef.innerText = pieceTable.getText();
+            }
             onFileLoaded(text);
         };
         input.click();
@@ -92,30 +97,48 @@
         lineCount = lines.length;
     }
 
-    function handleInput(e: InputEvent, i: number) {
-        // Actualiza solo la línea editada
-        const div = e.target as HTMLDivElement;
-        lines[i] = div.innerText;
-        pieceTable = new PieceTable(lines.join('\n'));
+    function handleEditorInput() {
+        if (!editorRowsRef) return;
+        const text = editorRowsRef.innerText;
+        pieceTable = new PieceTable(text);
         updateLines();
         onEditorAction('input', { text: pieceTable.getText() });
     }
 
-    function updateCursorPosition(e: FocusEvent | KeyboardEvent | MouseEvent, i: number) {
-        cursorLine = i + 1;
-        // Calcula columna (simplemente la posición del caret en la línea)
+    function updateCursorFromEditor() {
+        if (!editorRowsRef) return;
         const selection = window.getSelection();
-        if (selection && selection.anchorNode && selection.anchorNode.parentElement === e.target) {
-            cursorColumn = selection.anchorOffset + 1;
-        } else {
-            cursorColumn = 1;
+        if (!selection || selection.rangeCount === 0 || !selection.anchorNode) return;
+
+        const range = selection.getRangeAt(0).cloneRange();
+        range.selectNodeContents(editorRowsRef);
+        try {
+            range.setEnd(selection.anchorNode, selection.anchorOffset);
+        } catch {
+            return;
         }
+
+        const beforeText = range.toString();
+        const parts = beforeText.split('\n');
+        cursorLine = Math.max(parts.length, 1);
+        const last = parts[parts.length - 1] ?? '';
+        cursorColumn = last.length + 1;
         onCursorChange(cursorLine, cursorColumn);
     }
 
     function handleGutterClick(line: number) { onGutterClick(line); }
     function handleGutterHover(line: number) { onGutterHover(line); }
     function handleRightGutter(line: number) { onRightGutterAction(line); }
+
+    function toggleBreakpoint(line: number) {
+        const next = new Set(breakpoints);
+        if (next.has(line)) {
+            next.delete(line);
+        } else {
+            next.add(line);
+        }
+        breakpoints = next;
+    }
 
     $: editorStyle = `
         font-size: ${fontSize}rem;
@@ -125,14 +148,16 @@
     $: codeLineStyle = `
         font-size: ${fontSize}rem;
         white-space: ${softWrap ? 'pre-wrap' : 'pre'};
-        overflow-x: ${softWrap ? 'hidden' : 'auto'};
-        word-break: break-word;
+        word-break: ${softWrap ? 'break-word' : 'normal'};
         padding: 0 0.5em;
     `;
 
     onMount(() => {
         pluginRef = document.querySelector(`#${pluginId}`)!;
         updateLines();
+        if (editorRowsRef) {
+            editorRowsRef.innerText = pieceTable.getText();
+        }
         updatePlugin();
         window.addEventListener('wheel', handleWheel, { passive: false });
     });
@@ -151,15 +176,14 @@
     }
 
     .editor-content-wrapper {
-        overflow: hidden;
+        flex: 1;
+        min-width: 0;
+        overflow-x: hidden;
+        overflow-y: hidden;
     }
 
-    .editor-content {
-        font-family: var(--global-font);
-        width: 100%;
+    .editor-content-wrapper.scroll-x-enabled {
         overflow-x: auto;
-        outline: none;
-        padding: 0 0.5rem;
     }
 
     .editor-wrapper {
@@ -180,24 +204,35 @@
     .scroll-vertical {
         flex: 1;
         overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .editor-row {
+        display: flex;
+        align-items: flex-start;
+        width: 100%;
     }
 
     .gutter {
+        flex: 0 0 auto;
+        width: max-content;
         background: var(--dark-background-e);
         padding: 0 8px;
         user-select: none;
         white-space: nowrap;
         height: 100%;
+        overflow: visible;
     }
 
     .gutter-line {
+        all: unset;
         color: var(--dark-foreground-ll);
-        padding: 0 0.25rem;
         display: flex;
-        width: auto;
-        min-width: 1rem;
-        max-width: 3rem;
+        width: 100%;
         justify-content: end;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        font-variant-numeric: tabular-nums;
     }
         .gutter-line.active {
             color: var(--dark-foreground);
@@ -205,90 +240,70 @@
 
     .left-gutter {
         border-right: 1px solid var(--dark-background-ll);
+        overflow: visible;
+        text-align: right;
     }
     .right-gutter {
         border-left: 1px solid var(--dark-background-ll);
     }  
 
-    .scrollbar-container {
-        height: 16px;
-        overflow-x: auto;
-        overflow-y: hidden;
+    .gutter-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        width: max-content;
     }
 
-    .scroll-sync {
-        height: 1px;
+    .left-gutter .gutter-line {
+        justify-content: flex-end;
+        align-items: center;
+        gap: 0.4ch;
+        padding-right: 0.5ch;
+    }
+
+    .left-gutter .gutter-line::before {
+        content: '';
+        height: 0.4rem;
+        border-radius: 50%;
+        background: var(--breakpoint);
+        box-shadow: 0 0 0.5rem #0008;
+        padding-right: 0.4rem;
+        margin-right: 0.2rem;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 100ms ease-in-out;
+    }
+
+    .left-gutter .gutter-line.breakpoint {
+        color: var(--breakpoint);
+        transition: color 100ms ease-in-out, background-color 100ms ease-in-out;
+    }
+        .left-gutter .gutter-line.breakpoint::before {
+            opacity: 1;
+        }
+        .left-gutter .gutter-line.breakpoint:hover {
+            color: color-mix(in srgb, var(--breakpoint), #fff 25%);
+            background: color-mix(in srgb, var(--breakpoint), transparent 90%);
+        }
+
+    .left-gutter .gutter-line:not(.breakpoint):hover {
+        color: color-mix(in srgb, var(--breakpoint), var(--dark-foreground) 70%);
+    }
+
+    .left-gutter .gutter-line:not(.breakpoint):hover::before {
+        opacity: 0.35;
+        box-shadow: none;
+    }
+
+    .editor-code {
+        width: 100%;
+        outline: none;
+    }
+
+    .editor-code.scroll-x-enabled {
+        width: max-content;
         min-width: max-content;
     }
-
-    .measure {
-        visibility: hidden; 
-        position: absolute; 
-        left: -9999px; 
-        top: 0; 
-        width: 100%; 
-        pointer-events: none; 
-        margin: 0; 
-        padding: 0; 
-    }
-
-    .editor-table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    .editor-table td {
-        vertical-align: top;
-        padding: 0;
-    }
-    .editor-table .left-gutter,
-    .editor-table .right-gutter {
-        text-align: right;
-    }
-    .editor-table .editor-content-wrapper {
-        height: 100%;
-        outline: none;
-        display: flex;
-        align-items: center;
-    }
-
-.outer-wrapper {
-  max-height: 300px;
-  overflow-y: auto; /* shared vertical scroll */
-  font-family: sans-serif;
-}
-
-.row {
-  display: flex;
-  align-items: flex-start;
-}
-
-.column {
-  display: flex;
-  flex-direction: column;
-}
-
-.left-column,
-.right-column {
-  flex: 0 0 100px;
-  background: #f0f0f0;
-}
-
-.middle-column {
-  flex: 1;
-  overflow-x: auto; /* shared horizontal scroll */
-}
-
-.scroll-inner {
-  display: flex;
-  flex-direction: column;
-  min-width: max-content; /* triggers horizontal scroll */
-}
-
-.cell {
-  padding: 8px;
-  border: 1px solid #ccc;
-  white-space: nowrap;
-}
 </style>
 
 <div class="editor-toolbar">
@@ -301,99 +316,54 @@
 </div>
 <div class="editor-wrapper">
     <div class="scroll-vertical">
-        <table class="editor-table" style={editorStyle}>
-            <tbody>
-                {#each lines as line, i}
-                    <tr>
-                        <td class="gutter left-gutter">
-                            <div
-                                class="gutter-line {i + 1 === cursorLine ? 'active' : ''}"
-                                style="line-height: {lineHeightBasis * fontSize}rem;"
-                                role="figure"
-                                on:mouseenter={() => handleGutterHover(i + 1)}
-                                on:click={() => handleGutterClick(i + 1)}
-                            >
-                                {i + 1}
-                            </div>
-                        </td>
-                        <td class="editor-content-wrapper" contenteditable spellcheck="false" style={codeLineStyle}>
-                            {lines[i]}
-                        </td>
-                        <td class="gutter right-gutter">
-                            <div
-                                class="gutter-line {i + 1 === cursorLine ? 'active' : ''}"
-                                style="line-height: {lineHeightBasis * fontSize}rem;"
-                                role="figure"
-                                on:click={() => handleRightGutter(i + 1)}
-                            >
-                                G
-                            </div>
-                        </td>
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
-    </div>  
-</div>
+        <div class="editor-row" style={editorStyle}>
+            <div class="gutter left-gutter">
+                <div class="gutter-stack">
+                    {#each lines as line, i}
+                        <button
+                            type="button"
+                            class="gutter-line {i + 1 === cursorLine ? 'active' : ''} {breakpoints.has(i + 1) ? 'breakpoint' : ''}"
+                            style="line-height: {lineHeightBasis * fontSize}rem;"
+                            on:mouseenter={() => handleGutterHover(i + 1)}
+                            on:click={() => { toggleBreakpoint(i + 1); handleGutterClick(i + 1); }}
+                        >
+                            {i + 1}
+                        </button>
+                    {/each}
+                </div>
+            </div>
 
-<div class="outer-wrapper">
-  <div class="row">
-    <div class="column left-column">
-      <div class="cell">A1</div>
-      <div class="cell">A2</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-      <div class="cell">A3</div>
-    </div>
+            <div class="editor-content-wrapper" class:scroll-x-enabled={!softWrap}>
+                <div
+                    class="editor-code"
+                    class:scroll-x-enabled={!softWrap}
+                    bind:this={editorRowsRef}
+                    contenteditable={!readOnly}
+                    role="textbox"
+                    tabindex="0"
+                    spellcheck="false"
+                    style={codeLineStyle}
+                    on:input={handleEditorInput}
+                    on:focus={updateCursorFromEditor}
+                    on:keyup={updateCursorFromEditor}
+                    on:mouseup={updateCursorFromEditor}
+                ></div>
+            </div>
 
-    <div class="column middle-column">
-      <div class="scroll-inner">
-        <div class="cell">Very long content that should scroll horizontally</div>
-        <div class="cell">Another long content line that matches scroll</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-        <div class="cell">Even more overflowing content that stays aligned</div>
-      </div>
+            <div class="gutter right-gutter">
+                <div class="gutter-stack">
+                    {#each lines as line, i}
+                        <button
+                            type="button"
+                            class="gutter-line {i + 1 === cursorLine ? 'active' : ''}"
+                            style="line-height: {lineHeightBasis * fontSize}rem;"
+                            on:click={() => handleRightGutter(i + 1)}
+                        >
+                            G
+                        </button>
+                    {/each}
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="column right-column">
-      <div class="cell">C1</div>
-      <div class="cell">C2</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-      <div class="cell">C3</div>
-    </div>
-  </div>
 </div>
