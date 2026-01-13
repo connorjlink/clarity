@@ -9,10 +9,13 @@
     export let allowLoadFromDisk: boolean = false;
     export let lineHeightBasis: number = 1.5;
     export let pluginId: string = 'ir-editor-plugin';
+    export let tabSize: number = 4;
 
     let pieceTable = new PieceTable(initialText);
 
     let editorRowsRef: HTMLDivElement;
+    let contentWrapperRef: HTMLDivElement;
+    let measureRef: HTMLSpanElement;
     let pluginRef: HTMLElement;
 
     let lineCount = 1;
@@ -23,7 +26,36 @@
 
     let breakpoints = new Set<number>();
 
+    let contentWidthPx = 0;
+    let charWidthPx = 0;
+
+    type GutterRow = {
+        logicalLine: number; // 1-based
+        isFirstVisualRow: boolean;
+    };
+
+    let gutterRows: GutterRow[] = [];
+
+    let cursorUpdateRaf = 0;
+
     const rootEmSize = parseInt(getComputedStyle(document.documentElement).fontSize);
+
+    function normalizeEditorText(text: string) {
+        return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    }
+
+    function countMonospaceCells(text: string) {
+        let col = 0;
+        for (const ch of text) {
+            if (ch === '\t') {
+                const advance = tabSize - (col % tabSize);
+                col += advance;
+                continue;
+            }
+            col += 1;
+        }
+        return col;
+    }
 
     function onEditorAction(action: string, payload?: any) { /* stub */ }
     function onGutterClick(line: number) { /* stub */ }
@@ -32,7 +64,7 @@
     function onFontSizeChange(newSize: number) {
         updatePlugin();
     }
-    function onCursorChange(line: number, column: number) { 
+    function onCursorChange(line: number, column: number) {
         updatePlugin();
     }
     function onFileLoaded(text: string) { /* stub */ }
@@ -75,10 +107,16 @@
             }
             const text = await file.text();
             pieceTable = new PieceTable(text);
-            updateLines();
             if (editorRowsRef) {
                 editorRowsRef.innerText = pieceTable.getText();
+                const normalized = normalizeEditorText(editorRowsRef.innerText);
+                if (normalized !== pieceTable.getText()) {
+                    pieceTable = new PieceTable(normalized);
+                }
             }
+            updateLines();
+            rebuildGutterRows();
+            scheduleCursorUpdate();
             onFileLoaded(text);
         };
         input.click();
@@ -91,24 +129,79 @@
         ghostRows = Math.max(visibleLines - 1, 0);
     }
 
-    function updateLines() {
-        const text = pieceTable.getText();
-        lines = text.split('\n');
+    function updateLinesFromText(text: string) {
+        const normalized = normalizeEditorText(text);
+        lines = normalized.split('\n');
         lineCount = lines.length;
+    }
+
+    function updateLines() {
+        // Keep gutters/line counting aligned with what the browser actually renders.
+        const text = editorRowsRef ? editorRowsRef.innerText : pieceTable.getText();
+        updateLinesFromText(text);
+    }
+
+    function updateCharWidth() {
+        if (!measureRef) {
+            return;
+        }
+        // NOTE: susceptible to subpixel rounding
+        const sample = measureRef.getBoundingClientRect().width;
+        charWidthPx = sample > 0 ? sample / 10 : 0;
+    }
+
+    function updateContentWidth() {
+        if (!contentWrapperRef) return;
+        contentWidthPx = contentWrapperRef.clientWidth;
+    }
+
+    function rebuildGutterRows() {
+        const horizontalPaddingPx = fontSize * rootEmSize; // 0.5em left + 0.5em right
+        const availablePx = Math.max(0, contentWidthPx - horizontalPaddingPx);
+        const charsPerRow = charWidthPx > 0 ? Math.max(1, Math.floor(availablePx / charWidthPx)) : 1;
+
+        const next: GutterRow[] = [];
+        for (let i = 0; i < lines.length; i++) {
+            const lineNumber = i + 1;
+            const cells = softWrap ? countMonospaceCells(lines[i] ?? '') : 0;
+            const wrapCount = softWrap ? Math.max(1, Math.ceil(Math.max(cells, 0) / charsPerRow)) : 1;
+            next.push({ logicalLine: lineNumber, isFirstVisualRow: true });
+            for (let k = 1; k < wrapCount; k++) {
+                next.push({ logicalLine: lineNumber, isFirstVisualRow: false });
+            }
+        }
+        gutterRows = next;
     }
 
     function handleEditorInput() {
         if (!editorRowsRef) return;
-        const text = editorRowsRef.innerText;
+        const text = normalizeEditorText(editorRowsRef.innerText);
         pieceTable = new PieceTable(text);
-        updateLines();
+        updateLinesFromText(text);
+        rebuildGutterRows();
         onEditorAction('input', { text: pieceTable.getText() });
+        scheduleCursorUpdate();
+    }
+
+    function scheduleCursorUpdate() {
+        if (cursorUpdateRaf) return;
+        cursorUpdateRaf = requestAnimationFrame(() => {
+            cursorUpdateRaf = 0;
+            updateCursorFromEditor();
+        });
     }
 
     function updateCursorFromEditor() {
-        if (!editorRowsRef) return;
+        if (!editorRowsRef) {
+            return;
+        }
         const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0 || !selection.anchorNode) return;
+        if (!selection || selection.rangeCount === 0 || !selection.anchorNode) {
+            return;
+        }
+        if (!editorRowsRef.contains(selection.anchorNode)) {
+            return;
+        }
 
         const range = selection.getRangeAt(0).cloneRange();
         range.selectNodeContents(editorRowsRef);
@@ -118,7 +211,11 @@
             return;
         }
 
-        const beforeText = range.toString();
+        // Use the browser's innerText algorithm to preserve line breaks from <div>/<br>.
+        const tmp = document.createElement('div');
+        tmp.appendChild(range.cloneContents());
+        const beforeText = normalizeEditorText(tmp.innerText);
+
         const parts = beforeText.split('\n');
         cursorLine = Math.max(parts.length, 1);
         const last = parts[parts.length - 1] ?? '';
@@ -148,27 +245,58 @@
     $: codeLineStyle = `
         font-size: ${fontSize}rem;
         white-space: ${softWrap ? 'pre-wrap' : 'pre'};
-        word-break: ${softWrap ? 'break-word' : 'normal'};
+        overflow-wrap: ${softWrap ? 'anywhere' : 'normal'};
+        word-break: ${softWrap ? 'break-all' : 'normal'};
         padding: 0 0.5em;
     `;
 
     onMount(() => {
         pluginRef = document.querySelector(`#${pluginId}`)!;
-        updateLines();
+
         if (editorRowsRef) {
             editorRowsRef.innerText = pieceTable.getText();
+            const normalized = normalizeEditorText(editorRowsRef.innerText);
+            if (normalized !== pieceTable.getText()) {
+                pieceTable = new PieceTable(normalized);
+            }
         }
+
+        updateLines();
+        updateCharWidth();
+        updateContentWidth();
+        rebuildGutterRows();
+        scheduleCursorUpdate();
+
+        const ro = new ResizeObserver(() => {
+            updateCharWidth();
+            updateContentWidth();
+            rebuildGutterRows();
+        });
+        if (contentWrapperRef) {
+            ro.observe(contentWrapperRef);
+        }
+
         updatePlugin();
         window.addEventListener('wheel', handleWheel, { passive: false });
+
+        return () => ro.disconnect();
     });
+
     afterUpdate(() => {
         updateGhostRows();
+        updateCharWidth();
+        updateContentWidth();
+        rebuildGutterRows();
     });
+
     onDestroy(() => {
         window.removeEventListener('wheel', handleWheel);
+        if (cursorUpdateRaf) {
+            cancelAnimationFrame(cursorUpdateRaf);
+            cursorUpdateRaf = 0;
+        }
     });
 </script>
-
 <style>
     *::selection {
         background: color-mix(in srgb, var(--accent), transparent 50%);
@@ -245,13 +373,20 @@
     }
     .right-gutter {
         border-left: 1px solid var(--dark-background-ll);
-    }  
+    }
 
     .gutter-stack {
         display: flex;
         flex-direction: column;
         align-items: stretch;
         width: max-content;
+    }
+
+    .gutter-placeholder {
+        display: flex;
+        width: 100%;
+        border-radius: 0.25rem;
+        user-select: none;
     }
 
     .left-gutter .gutter-line {
@@ -263,15 +398,24 @@
 
     .left-gutter .gutter-line::before {
         content: '';
+        width: 0.4rem;
         height: 0.4rem;
         border-radius: 50%;
         background: var(--breakpoint);
         box-shadow: 0 0 0.5rem #0008;
-        padding-right: 0.4rem;
         margin-right: 0.2rem;
         opacity: 0;
         pointer-events: none;
         transition: opacity 100ms ease-in-out;
+    }
+
+    .measure {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        visibility: hidden;
+        white-space: pre;
+        pointer-events: none;
     }
 
     .left-gutter .gutter-line.breakpoint {
@@ -319,21 +463,25 @@
         <div class="editor-row" style={editorStyle}>
             <div class="gutter left-gutter">
                 <div class="gutter-stack">
-                    {#each lines as line, i}
-                        <button
-                            type="button"
-                            class="gutter-line {i + 1 === cursorLine ? 'active' : ''} {breakpoints.has(i + 1) ? 'breakpoint' : ''}"
-                            style="line-height: {lineHeightBasis * fontSize}rem;"
-                            on:mouseenter={() => handleGutterHover(i + 1)}
-                            on:click={() => { toggleBreakpoint(i + 1); handleGutterClick(i + 1); }}
-                        >
-                            {i + 1}
-                        </button>
+                    {#each gutterRows as row, idx (idx)}
+                        {#if row.isFirstVisualRow}
+                            <button
+                                type="button"
+                                class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''} {breakpoints.has(row.logicalLine) ? 'breakpoint' : ''}"
+                                style="line-height: {lineHeightBasis * fontSize}rem;"
+                                on:mouseenter={() => handleGutterHover(row.logicalLine)}
+                                on:click={() => { toggleBreakpoint(row.logicalLine); handleGutterClick(row.logicalLine); }}
+                            >
+                                {row.logicalLine}
+                            </button>
+                        {:else}
+                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                        {/if}
                     {/each}
                 </div>
             </div>
 
-            <div class="editor-content-wrapper" class:scroll-x-enabled={!softWrap}>
+            <div class="editor-content-wrapper" class:scroll-x-enabled={!softWrap} bind:this={contentWrapperRef}>
                 <div
                     class="editor-code"
                     class:scroll-x-enabled={!softWrap}
@@ -352,18 +500,23 @@
 
             <div class="gutter right-gutter">
                 <div class="gutter-stack">
-                    {#each lines as line, i}
-                        <button
-                            type="button"
-                            class="gutter-line {i + 1 === cursorLine ? 'active' : ''}"
-                            style="line-height: {lineHeightBasis * fontSize}rem;"
-                            on:click={() => handleRightGutter(i + 1)}
-                        >
-                            G
-                        </button>
+                    {#each gutterRows as row, idx (idx)}
+                        {#if row.isFirstVisualRow}
+                            <button
+                                type="button"
+                                class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''}"
+                                style="line-height: {lineHeightBasis * fontSize}rem;"
+                                on:click={() => handleRightGutter(row.logicalLine)}
+                            >
+                                G
+                            </button>
+                        {:else}
+                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                        {/if}
                     {/each}
                 </div>
             </div>
         </div>
+        <span class="measure" bind:this={measureRef} style={editorStyle}>0000000000</span>
     </div>
 </div>
