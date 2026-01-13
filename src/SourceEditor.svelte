@@ -36,13 +36,7 @@
 
     let gutterRows: GutterRow[] = [];
 
-    let cursorUpdateRaf = 0;
-
     const rootEmSize = parseInt(getComputedStyle(document.documentElement).fontSize);
-
-    function normalizeEditorText(text: string) {
-        return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    }
 
     function countMonospaceCells(text: string) {
         let col = 0;
@@ -64,7 +58,7 @@
     function onFontSizeChange(newSize: number) {
         updatePlugin();
     }
-    function onCursorChange(line: number, column: number) {
+    function onCursorChange(line: number, column: number) { 
         updatePlugin();
     }
     function onFileLoaded(text: string) { /* stub */ }
@@ -107,16 +101,10 @@
             }
             const text = await file.text();
             pieceTable = new PieceTable(text);
+            updateLines();
             if (editorRowsRef) {
                 editorRowsRef.innerText = pieceTable.getText();
-                const normalized = normalizeEditorText(editorRowsRef.innerText);
-                if (normalized !== pieceTable.getText()) {
-                    pieceTable = new PieceTable(normalized);
-                }
             }
-            updateLines();
-            rebuildGutterRows();
-            scheduleCursorUpdate();
             onFileLoaded(text);
         };
         input.click();
@@ -129,16 +117,10 @@
         ghostRows = Math.max(visibleLines - 1, 0);
     }
 
-    function updateLinesFromText(text: string) {
-        const normalized = normalizeEditorText(text);
-        lines = normalized.split('\n');
-        lineCount = lines.length;
-    }
-
     function updateLines() {
-        // Keep gutters/line counting aligned with what the browser actually renders.
-        const text = editorRowsRef ? editorRowsRef.innerText : pieceTable.getText();
-        updateLinesFromText(text);
+        const text = pieceTable.getText();
+        lines = text.split('\n');
+        lineCount = lines.length;
     }
 
     function updateCharWidth() {
@@ -174,21 +156,14 @@
     }
 
     function handleEditorInput() {
-        if (!editorRowsRef) return;
-        const text = normalizeEditorText(editorRowsRef.innerText);
+        if (!editorRowsRef) {
+            return;
+        }
+        const text = editorRowsRef.innerText;
         pieceTable = new PieceTable(text);
-        updateLinesFromText(text);
+        updateLines();
         rebuildGutterRows();
         onEditorAction('input', { text: pieceTable.getText() });
-        scheduleCursorUpdate();
-    }
-
-    function scheduleCursorUpdate() {
-        if (cursorUpdateRaf) return;
-        cursorUpdateRaf = requestAnimationFrame(() => {
-            cursorUpdateRaf = 0;
-            updateCursorFromEditor();
-        });
     }
 
     function updateCursorFromEditor() {
@@ -197,9 +172,6 @@
         }
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0 || !selection.anchorNode) {
-            return;
-        }
-        if (!editorRowsRef.contains(selection.anchorNode)) {
             return;
         }
 
@@ -211,11 +183,7 @@
             return;
         }
 
-        // Use the browser's innerText algorithm to preserve line breaks from <div>/<br>.
-        const tmp = document.createElement('div');
-        tmp.appendChild(range.cloneContents());
-        const beforeText = normalizeEditorText(tmp.innerText);
-
+        const beforeText = range.toString();
         const parts = beforeText.split('\n');
         cursorLine = Math.max(parts.length, 1);
         const last = parts[parts.length - 1] ?? '';
@@ -245,27 +213,19 @@
     $: codeLineStyle = `
         font-size: ${fontSize}rem;
         white-space: ${softWrap ? 'pre-wrap' : 'pre'};
-        overflow-wrap: ${softWrap ? 'anywhere' : 'normal'};
-        word-break: ${softWrap ? 'break-all' : 'normal'};
+        word-break: ${softWrap ? 'break-word' : 'normal'};
         padding: 0 0.5em;
     `;
 
     onMount(() => {
         pluginRef = document.querySelector(`#${pluginId}`)!;
-
+        updateLines();
         if (editorRowsRef) {
             editorRowsRef.innerText = pieceTable.getText();
-            const normalized = normalizeEditorText(editorRowsRef.innerText);
-            if (normalized !== pieceTable.getText()) {
-                pieceTable = new PieceTable(normalized);
-            }
         }
-
-        updateLines();
         updateCharWidth();
         updateContentWidth();
         rebuildGutterRows();
-        scheduleCursorUpdate();
 
         const ro = new ResizeObserver(() => {
             updateCharWidth();
@@ -281,22 +241,17 @@
 
         return () => ro.disconnect();
     });
-
     afterUpdate(() => {
         updateGhostRows();
         updateCharWidth();
         updateContentWidth();
         rebuildGutterRows();
     });
-
     onDestroy(() => {
         window.removeEventListener('wheel', handleWheel);
-        if (cursorUpdateRaf) {
-            cancelAnimationFrame(cursorUpdateRaf);
-            cursorUpdateRaf = 0;
-        }
     });
 </script>
+
 <style>
     *::selection {
         background: color-mix(in srgb, var(--accent), transparent 50%);
@@ -373,7 +328,7 @@
     }
     .right-gutter {
         border-left: 1px solid var(--dark-background-ll);
-    }
+    }  
 
     .gutter-stack {
         display: flex;
