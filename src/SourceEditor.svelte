@@ -146,8 +146,6 @@
     }
 
     function findLineIndexForOffset(offset: number) {
-        // Returns 0-based line index for a 0-based character offset.
-        // Invariant: lineStarts is sorted ascending.
         let lo = 0;
         let hi = lineStarts.length - 1;
         while (lo <= hi) {
@@ -183,7 +181,6 @@
         if (!editorRowsRef) {
             return;
         }
-        // Auto-size to fit content (including soft-wrapped visual lines) so gutters and editor stay aligned.
         editorRowsRef.style.height = '0px';
         editorRowsRef.style.height = `${editorRowsRef.scrollHeight}px`;
     }
