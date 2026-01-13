@@ -13,13 +13,15 @@
 
     let pieceTable = new PieceTable(initialText);
 
-    let editorRowsRef: HTMLDivElement;
+    let editorRowsRef: HTMLTextAreaElement;
     let contentWrapperRef: HTMLDivElement;
     let measureRef: HTMLSpanElement;
     let pluginRef: HTMLElement;
 
     let lineCount = 1;
     let lines: string[] = [];
+    // 0-based character offsets in the full text where each logical line starts.
+    let lineStarts: number[] = [0];
     let cursorLine = 1;
     let cursorColumn = 1;
     let ghostRows = 2;
@@ -56,9 +58,10 @@
     function onGutterHover(line: number) { /* stub */ }
     function onRightGutterAction(line: number) { /* stub */ }
     function onFontSizeChange(newSize: number) {
+        recalcLayout();
         updatePlugin();
     }
-    function onCursorChange(line: number, column: number) { 
+    function onCursorChange(line: number, column: number) {
         updatePlugin();
     }
     function onFileLoaded(text: string) { /* stub */ }
@@ -101,9 +104,11 @@
             }
             const text = await file.text();
             pieceTable = new PieceTable(text);
-            updateLines();
+            updateLinesFromText(text);
             if (editorRowsRef) {
-                editorRowsRef.innerText = pieceTable.getText();
+                editorRowsRef.value = pieceTable.getText();
+                resizeEditorToContent();
+                updateCursorFromEditor();
             }
             onFileLoaded(text);
         };
@@ -117,10 +122,47 @@
         ghostRows = Math.max(visibleLines - 1, 0);
     }
 
-    function updateLines() {
-        const text = pieceTable.getText();
+    function rebuildLineIndex(text: string) {
+        const starts: number[] = [0];
+        for (let i = 0; i < text.length; i++) {
+            if (text.charCodeAt(i) === 10 /* \n */) {
+                starts.push(i + 1);
+            }
+        }
+        lineStarts = starts;
+    }
+
+    function updateLinesFromText(text: string) {
         lines = text.split('\n');
         lineCount = lines.length;
+        rebuildLineIndex(text);
+    }
+
+    function updateLinesFromEditor() {
+        if (!editorRowsRef) {
+            return;
+        }
+        updateLinesFromText(editorRowsRef.value);
+    }
+
+    function findLineIndexForOffset(offset: number) {
+        // Returns 0-based line index for a 0-based character offset.
+        // Invariant: lineStarts is sorted ascending.
+        let lo = 0;
+        let hi = lineStarts.length - 1;
+        while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            const start = lineStarts[mid];
+            if (start === offset) {
+                return mid;
+            }
+            if (start < offset) {
+                lo = mid + 1;
+            } else {
+                hi = mid - 1;
+            }
+        }
+        return Math.max(0, hi);
     }
 
     function updateCharWidth() {
@@ -135,6 +177,23 @@
     function updateContentWidth() {
         if (!contentWrapperRef) return;
         contentWidthPx = contentWrapperRef.clientWidth;
+    }
+
+    function resizeEditorToContent() {
+        if (!editorRowsRef) {
+            return;
+        }
+        // Auto-size to fit content (including soft-wrapped visual lines) so gutters and editor stay aligned.
+        editorRowsRef.style.height = '0px';
+        editorRowsRef.style.height = `${editorRowsRef.scrollHeight}px`;
+    }
+
+    function recalcLayout() {
+        updateGhostRows();
+        updateCharWidth();
+        updateContentWidth();
+        rebuildGutterRows();
+        resizeEditorToContent();
     }
 
     function rebuildGutterRows() {
@@ -159,10 +218,12 @@
         if (!editorRowsRef) {
             return;
         }
-        const text = editorRowsRef.innerText;
+        const text = editorRowsRef.value;
         pieceTable = new PieceTable(text);
-        updateLines();
+        updateLinesFromText(text);
         rebuildGutterRows();
+        resizeEditorToContent();
+        updateCursorFromEditor();
         onEditorAction('input', { text: pieceTable.getText() });
     }
 
@@ -170,24 +231,16 @@
         if (!editorRowsRef) {
             return;
         }
-        const selection = window.getSelection();
-        if (!selection || selection.rangeCount === 0 || !selection.anchorNode) {
-            return;
+        const text = editorRowsRef.value;
+        const rawOffset = editorRowsRef.selectionStart ?? 0;
+        const offset = Math.max(0, Math.min(rawOffset, text.length));
+        if (lineStarts.length === 0 || lineStarts[0] !== 0) {
+            rebuildLineIndex(text);
         }
-
-        const range = selection.getRangeAt(0).cloneRange();
-        range.selectNodeContents(editorRowsRef);
-        try {
-            range.setEnd(selection.anchorNode, selection.anchorOffset);
-        } catch {
-            return;
-        }
-
-        const beforeText = range.toString();
-        const parts = beforeText.split('\n');
-        cursorLine = Math.max(parts.length, 1);
-        const last = parts[parts.length - 1] ?? '';
-        cursorColumn = last.length + 1;
+        const lineIndex = findLineIndexForOffset(offset);
+        const lineStart = lineStarts[lineIndex] ?? 0;
+        cursorLine = lineIndex + 1;
+        cursorColumn = (offset - lineStart) + 1;
         onCursorChange(cursorLine, cursorColumn);
     }
 
@@ -212,6 +265,8 @@
     `;
     $: codeLineStyle = `
         font-size: ${fontSize}rem;
+        line-height: ${lineHeightBasis * fontSize}rem;
+        font-family: 'Consolas', 'Menlo', 'Fira Code', 'Monaco', monospace;
         white-space: ${softWrap ? 'pre-wrap' : 'pre'};
         word-break: ${softWrap ? 'break-word' : 'normal'};
         padding: 0 0.5em;
@@ -219,18 +274,14 @@
 
     onMount(() => {
         pluginRef = document.querySelector(`#${pluginId}`)!;
-        updateLines();
+        updateLinesFromText(pieceTable.getText());
         if (editorRowsRef) {
-            editorRowsRef.innerText = pieceTable.getText();
+            editorRowsRef.value = pieceTable.getText();
         }
-        updateCharWidth();
-        updateContentWidth();
-        rebuildGutterRows();
+        recalcLayout();
 
         const ro = new ResizeObserver(() => {
-            updateCharWidth();
-            updateContentWidth();
-            rebuildGutterRows();
+            recalcLayout();
         });
         if (contentWrapperRef) {
             ro.observe(contentWrapperRef);
@@ -242,10 +293,8 @@
         return () => ro.disconnect();
     });
     afterUpdate(() => {
+        // synchronize ghost rows without expensive gutter rebuilds
         updateGhostRows();
-        updateCharWidth();
-        updateContentWidth();
-        rebuildGutterRows();
     });
     onDestroy(() => {
         window.removeEventListener('wheel', handleWheel);
@@ -313,6 +362,7 @@
         display: flex;
         width: 100%;
         justify-content: end;
+        align-items: baseline;
         border-radius: 0.25rem;
         cursor: pointer;
         font-variant-numeric: tabular-nums;
@@ -346,7 +396,7 @@
 
     .left-gutter .gutter-line {
         justify-content: flex-end;
-        align-items: center;
+        align-items: baseline;
         gap: 0.4ch;
         padding-right: 0.5ch;
     }
@@ -359,6 +409,7 @@
         background: var(--breakpoint);
         box-shadow: 0 0 0.5rem #0008;
         margin-right: 0.2rem;
+        align-self: center;
         opacity: 0;
         pointer-events: none;
         transition: opacity 100ms ease-in-out;
@@ -397,10 +448,17 @@
     .editor-code {
         width: 100%;
         outline: none;
+        border: none;
+        background: transparent;
+        color: inherit;
+        resize: none;
+        overflow: hidden;
+        display: block;
+        box-sizing: border-box;
     }
 
     .editor-code.scroll-x-enabled {
-        width: max-content;
+        width: 100%;
         min-width: max-content;
     }
 </style>
@@ -411,7 +469,7 @@
     {/if}
     <button on:click={onIncreaseFontSize}>A<sup>&uparrow;</sup></button>
     <button on:click={OnDecreaseFontSize}>A<sub>&downarrow;</sub></button>
-    <button on:click={() => softWrap = !softWrap}>{softWrap ? 'Soft Wrap: ON' : 'Soft Wrap: OFF'}</button>
+    <button on:click={() => { softWrap = !softWrap; recalcLayout(); }}>{softWrap ? 'Soft Wrap: ON' : 'Soft Wrap: OFF'}</button>
 </div>
 <div class="editor-wrapper">
     <div class="scroll-vertical">
@@ -423,26 +481,26 @@
                             <button
                                 type="button"
                                 class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''} {breakpoints.has(row.logicalLine) ? 'breakpoint' : ''}"
-                                style="line-height: {lineHeightBasis * fontSize}rem;"
+                                style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;"
                                 on:mouseenter={() => handleGutterHover(row.logicalLine)}
                                 on:click={() => { toggleBreakpoint(row.logicalLine); handleGutterClick(row.logicalLine); }}
                             >
                                 {row.logicalLine}
                             </button>
                         {:else}
-                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
                         {/if}
                     {/each}
                 </div>
             </div>
 
             <div class="editor-content-wrapper" class:scroll-x-enabled={!softWrap} bind:this={contentWrapperRef}>
-                <div
+                <textarea
                     class="editor-code"
                     class:scroll-x-enabled={!softWrap}
                     bind:this={editorRowsRef}
-                    contenteditable={!readOnly}
-                    role="textbox"
+                    wrap={softWrap ? 'soft' : ('off' as any)}
+                    readonly={readOnly}
                     tabindex="0"
                     spellcheck="false"
                     style={codeLineStyle}
@@ -450,7 +508,8 @@
                     on:focus={updateCursorFromEditor}
                     on:keyup={updateCursorFromEditor}
                     on:mouseup={updateCursorFromEditor}
-                ></div>
+                    on:select={updateCursorFromEditor}
+                ></textarea>
             </div>
 
             <div class="gutter right-gutter">
@@ -460,13 +519,13 @@
                             <button
                                 type="button"
                                 class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''}"
-                                style="line-height: {lineHeightBasis * fontSize}rem;"
+                                style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;"
                                 on:click={() => handleRightGutter(row.logicalLine)}
                             >
                                 G
                             </button>
                         {:else}
-                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
                         {/if}
                     {/each}
                 </div>
