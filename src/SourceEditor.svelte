@@ -175,11 +175,9 @@
         if (!editorRowsRef) {
             return;
         }
-        const viewportHeight = scrollVerticalRef?.clientHeight || 0;
         editorRowsRef.style.height = '0px';
         const contentHeight = editorRowsRef.scrollHeight;
-        const targetHeight = Math.max(contentHeight, viewportHeight);
-        editorRowsRef.style.height = `${targetHeight}px`;
+        editorRowsRef.style.height = `${contentHeight}px`;
     }
 
     function recalcLayout() {
@@ -301,6 +299,8 @@
         min-width: 0;
         overflow-x: hidden;
         overflow-y: hidden;
+        display: flex;
+        flex-direction: column;
     }
 
     .editor-content-wrapper.scroll-x-enabled {
@@ -335,6 +335,7 @@
         display: flex;
         align-items: stretch;
         width: 100%;
+        min-height: 100%;
     }
 
     .gutter {
@@ -470,6 +471,13 @@
         width: 100%;
         min-width: max-content;
     }
+
+    .editor-filler {
+        flex: 1;
+        min-height: 0;
+        pointer-events: none;
+        user-select: none;
+    }
 </style>
 
 <div class="source-editor-root">
@@ -522,6 +530,7 @@
                         on:mouseup={updateCursorFromEditor}
                         on:select={updateCursorFromEditor}
                     ></textarea>
+                    <div class="editor-filler" aria-hidden="true"></div>
                 </div>
 
                 <div class="gutter right-gutter">
