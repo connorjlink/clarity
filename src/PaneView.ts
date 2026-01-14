@@ -27,10 +27,17 @@ const paneViewStyle = /*css*/`
         background: var(--dark-background-d);
         z-index: 1;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
     }
         .pane-column.hidden {
             display: none;
         }
+
+    .pane-column > :not(pane-status) {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
     
     .handle {
         width: 1px;
