@@ -17,6 +17,7 @@
     let contentWrapperRef: HTMLDivElement;
     let measureRef: HTMLSpanElement;
     let pluginRef: HTMLElement;
+    let scrollVerticalRef: HTMLDivElement;
 
     let lineCount = 1;
     let lines: string[] = [];
@@ -24,7 +25,7 @@
     let lineStarts: number[] = [0];
     let cursorLine = 1;
     let cursorColumn = 1;
-    let ghostRows = 2;
+    let ghostRows = 0;
 
     let breakpoints = new Set<number>();
 
@@ -116,10 +117,10 @@
     }
 
     function updateGhostRows() {
-        const scrollHeight = editorRowsRef?.parentElement?.offsetHeight || 0;
+        const viewportHeight = scrollVerticalRef?.clientHeight || 0;
         const lineHeight = lineHeightBasis * fontSize * rootEmSize;
-        const visibleLines = Math.floor(scrollHeight / lineHeight);
-        ghostRows = Math.max(visibleLines - 1, 0);
+        const visibleLines = lineHeight > 0 ? Math.floor(viewportHeight / lineHeight) : 0;
+        ghostRows = Math.max(0, visibleLines - gutterRows.length);
     }
 
     function rebuildLineIndex(text: string) {
@@ -181,16 +182,19 @@
         if (!editorRowsRef) {
             return;
         }
+        const viewportHeight = scrollVerticalRef?.clientHeight || 0;
         editorRowsRef.style.height = '0px';
-        editorRowsRef.style.height = `${editorRowsRef.scrollHeight}px`;
+        const contentHeight = editorRowsRef.scrollHeight;
+        const targetHeight = Math.max(contentHeight, viewportHeight);
+        editorRowsRef.style.height = `${targetHeight}px`;
     }
 
     function recalcLayout() {
-        updateGhostRows();
         updateCharWidth();
         updateContentWidth();
         rebuildGutterRows();
         resizeEditorToContent();
+        updateGhostRows();
     }
 
     function rebuildGutterRows() {
@@ -320,6 +324,8 @@
         flex-direction: column;
         overflow: hidden;
         position: relative;
+        flex: 1;
+        min-height: 0;
     }
 
     .editor-toolbar {
@@ -334,6 +340,7 @@
         flex: 1;
         overflow-y: auto;
         overflow-x: hidden;
+        min-height: 0;
     }
 
     .editor-row {
@@ -389,6 +396,17 @@
         width: 100%;
         border-radius: 0.25rem;
         user-select: none;
+    }
+
+    .source-editor-root {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .gutter-ghost {
+        opacity: 0.7;
     }
 
     .left-gutter .gutter-line {
@@ -460,74 +478,84 @@
     }
 </style>
 
-<div class="editor-toolbar">
-    {#if allowLoadFromDisk}
-        <button on:click={openFileDialog}>Open File...</button>
-    {/if}
-    <button on:click={onIncreaseFontSize}>A<sup>&uparrow;</sup></button>
-    <button on:click={OnDecreaseFontSize}>A<sub>&downarrow;</sub></button>
-    <button on:click={() => { softWrap = !softWrap; recalcLayout(); }}>{softWrap ? 'Soft Wrap: ON' : 'Soft Wrap: OFF'}</button>
-</div>
-<div class="editor-wrapper">
-    <div class="scroll-vertical">
-        <div class="editor-row" style={editorStyle}>
-            <div class="gutter left-gutter">
-                <div class="gutter-stack">
-                    {#each gutterRows as row, idx (idx)}
-                        {#if row.isFirstVisualRow}
-                            <button
-                                type="button"
-                                class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''} {breakpoints.has(row.logicalLine) ? 'breakpoint' : ''}"
-                                style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;"
-                                on:mouseenter={() => handleGutterHover(row.logicalLine)}
-                                on:click={() => { toggleBreakpoint(row.logicalLine); handleGutterClick(row.logicalLine); }}
-                            >
-                                {row.logicalLine}
-                            </button>
-                        {:else}
-                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
-                        {/if}
-                    {/each}
+<div class="source-editor-root">
+    <div class="editor-toolbar">
+        {#if allowLoadFromDisk}
+            <button on:click={openFileDialog}>Open File...</button>
+        {/if}
+        <button on:click={onIncreaseFontSize}>A<sup>&uparrow;</sup></button>
+        <button on:click={OnDecreaseFontSize}>A<sub>&downarrow;</sub></button>
+        <button on:click={() => { softWrap = !softWrap; recalcLayout(); }}>{softWrap ? 'Soft Wrap: ON' : 'Soft Wrap: OFF'}</button>
+    </div>
+    <div class="editor-wrapper">
+        <div class="scroll-vertical" bind:this={scrollVerticalRef}>
+            <div class="editor-row" style={editorStyle}>
+                <div class="gutter left-gutter">
+                    <div class="gutter-stack">
+                        {#each gutterRows as row, idx (idx)}
+                            {#if row.isFirstVisualRow}
+                                <button
+                                    type="button"
+                                    class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''} {breakpoints.has(row.logicalLine) ? 'breakpoint' : ''}"
+                                    style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;"
+                                    on:mouseenter={() => handleGutterHover(row.logicalLine)}
+                                    on:click={() => { toggleBreakpoint(row.logicalLine); handleGutterClick(row.logicalLine); }}
+                                >
+                                    {row.logicalLine}
+                                </button>
+                            {:else}
+                                <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                            {/if}
+                        {/each}
+
+                        {#each Array.from({ length: ghostRows }) as _, idx (idx)}
+                            <div class="gutter-placeholder gutter-ghost" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                        {/each}
+                    </div>
+                </div>
+
+                <div class="editor-content-wrapper" class:scroll-x-enabled={!softWrap} bind:this={contentWrapperRef}>
+                    <textarea
+                        class="editor-code"
+                        class:scroll-x-enabled={!softWrap}
+                        bind:this={editorRowsRef}
+                        wrap={softWrap ? 'soft' : ('off' as any)}
+                        readonly={readOnly}
+                        tabindex="0"
+                        spellcheck="false"
+                        style={codeLineStyle}
+                        on:input={handleEditorInput}
+                        on:focus={updateCursorFromEditor}
+                        on:keyup={updateCursorFromEditor}
+                        on:mouseup={updateCursorFromEditor}
+                        on:select={updateCursorFromEditor}
+                    ></textarea>
+                </div>
+
+                <div class="gutter right-gutter">
+                    <div class="gutter-stack">
+                        {#each gutterRows as row, idx (idx)}
+                            {#if row.isFirstVisualRow}
+                                <button
+                                    type="button"
+                                    class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''}"
+                                    style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;"
+                                    on:click={() => handleRightGutter(row.logicalLine)}
+                                >
+                                    G
+                                </button>
+                            {:else}
+                                <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                            {/if}
+                        {/each}
+
+                        {#each Array.from({ length: ghostRows }) as _, idx (idx)}
+                            <div class="gutter-placeholder gutter-ghost" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
+                        {/each}
+                    </div>
                 </div>
             </div>
-
-            <div class="editor-content-wrapper" class:scroll-x-enabled={!softWrap} bind:this={contentWrapperRef}>
-                <textarea
-                    class="editor-code"
-                    class:scroll-x-enabled={!softWrap}
-                    bind:this={editorRowsRef}
-                    wrap={softWrap ? 'soft' : ('off' as any)}
-                    readonly={readOnly}
-                    tabindex="0"
-                    spellcheck="false"
-                    style={codeLineStyle}
-                    on:input={handleEditorInput}
-                    on:focus={updateCursorFromEditor}
-                    on:keyup={updateCursorFromEditor}
-                    on:mouseup={updateCursorFromEditor}
-                    on:select={updateCursorFromEditor}
-                ></textarea>
-            </div>
-
-            <div class="gutter right-gutter">
-                <div class="gutter-stack">
-                    {#each gutterRows as row, idx (idx)}
-                        {#if row.isFirstVisualRow}
-                            <button
-                                type="button"
-                                class="gutter-line {row.logicalLine === cursorLine ? 'active' : ''}"
-                                style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;"
-                                on:click={() => handleRightGutter(row.logicalLine)}
-                            >
-                                G
-                            </button>
-                        {:else}
-                            <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
-                        {/if}
-                    {/each}
-                </div>
-            </div>
+            <span class="measure" bind:this={measureRef} style={editorStyle}>0000000000</span>
         </div>
-        <span class="measure" bind:this={measureRef} style={editorStyle}>0000000000</span>
     </div>
 </div>
