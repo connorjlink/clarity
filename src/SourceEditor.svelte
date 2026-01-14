@@ -25,7 +25,6 @@
     let lineStarts: number[] = [0];
     let cursorLine = 1;
     let cursorColumn = 1;
-    let ghostRows = 0;
 
     let breakpoints = new Set<number>();
 
@@ -116,12 +115,6 @@
         input.click();
     }
 
-    function updateGhostRows() {
-        const viewportHeight = scrollVerticalRef?.clientHeight || 0;
-        const lineHeight = lineHeightBasis * fontSize * rootEmSize;
-        const visibleLines = lineHeight > 0 ? Math.ceil(viewportHeight / lineHeight) : 0;
-        ghostRows = Math.max(0, visibleLines - gutterRows.length);
-    }
 
     function rebuildLineIndex(text: string) {
         const starts: number[] = [0];
@@ -194,7 +187,6 @@
         updateContentWidth();
         rebuildGutterRows();
         resizeEditorToContent();
-        updateGhostRows();
     }
 
     function rebuildGutterRows() {
@@ -293,10 +285,6 @@
 
         return () => ro.disconnect();
     });
-    afterUpdate(() => {
-        // synchronize ghost rows without expensive gutter rebuilds
-        updateGhostRows();
-    });
     onDestroy(() => {
         window.removeEventListener('wheel', handleWheel);
     });
@@ -345,7 +333,7 @@
 
     .editor-row {
         display: flex;
-        align-items: flex-start;
+        align-items: stretch;
         width: 100%;
     }
 
@@ -356,8 +344,9 @@
         padding: 0 8px;
         user-select: none;
         white-space: nowrap;
-        height: 100%;
         overflow: visible;
+        display: flex;
+        flex-direction: column;
     }
 
     .gutter-line {
@@ -389,6 +378,15 @@
         flex-direction: column;
         align-items: stretch;
         width: max-content;
+        flex: 1;
+        min-height: 100%;
+    }
+
+    .gutter-filler {
+        flex: 1;
+        min-height: 0;
+        user-select: none;
+        pointer-events: none;
     }
 
     .gutter-placeholder {
@@ -403,10 +401,6 @@
         flex-direction: column;
         height: 100%;
         min-height: 0;
-    }
-
-    .gutter-ghost {
-        opacity: 0.7;
     }
 
     .left-gutter .gutter-line {
@@ -508,9 +502,7 @@
                             {/if}
                         {/each}
 
-                        {#each Array.from({ length: ghostRows }) as _, idx (idx)}
-                            <div class="gutter-placeholder gutter-ghost" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
-                        {/each}
+                        <div class="gutter-filler" aria-hidden="true"></div>
                     </div>
                 </div>
 
@@ -549,9 +541,7 @@
                             {/if}
                         {/each}
 
-                        {#each Array.from({ length: ghostRows }) as _, idx (idx)}
-                            <div class="gutter-placeholder gutter-ghost" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
-                        {/each}
+                        <div class="gutter-filler" aria-hidden="true"></div>
                     </div>
                 </div>
             </div>
