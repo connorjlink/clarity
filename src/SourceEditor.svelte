@@ -119,7 +119,7 @@
     function updateGhostRows() {
         const viewportHeight = scrollVerticalRef?.clientHeight || 0;
         const lineHeight = lineHeightBasis * fontSize * rootEmSize;
-        const visibleLines = lineHeight > 0 ? Math.floor(viewportHeight / lineHeight) : 0;
+        const visibleLines = lineHeight > 0 ? Math.ceil(viewportHeight / lineHeight) : 0;
         ghostRows = Math.max(0, visibleLines - gutterRows.length);
     }
 
