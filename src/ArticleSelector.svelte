@@ -1,5 +1,6 @@
 <script lang="ts">
     import ArticleHeader from './ArticleHeader.svelte';
+    import FancyHoverText from './FancyHoverText.svelte';
     
     type ArticleHeaderModel = {
         isComplete?: boolean;
@@ -267,7 +268,10 @@
         </div>
         <div class="article-content-container">
             <ArticleHeader {...articles[selectedIndex].header} isComplete={isIndexComplete(selectedIndex)} />
-            {@html articles[selectedIndex].content}
+            {#each articles[selectedIndex].content as section, index}
+                <FancyHoverText baseText={index.toString()} beforeText="Section[" afterText="]" />
+                {@html section}
+            {/each}
         </div>
     {/if}
 </div>

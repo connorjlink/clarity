@@ -1,5 +1,6 @@
 <script lang="ts">
     import ArticleSelector from "./ArticleSelector.svelte";
+    import FancyHoverText from "./FancyHoverText.svelte";
 
     const articles = [
         {
@@ -15,9 +16,11 @@
                 backgroundTopColor: "var(--preprocessor-color-background-top)",
                 backgroundBottomColor: "var(--preprocessor-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example preprocessor article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example preprocessor article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -32,9 +35,11 @@
                 backgroundTopColor: "var(--lexer-color-background-top)",
                 backgroundBottomColor: "var(--lexer-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example lexer article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example lexer article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -49,9 +54,11 @@
                 backgroundTopColor: "var(--parser-color-background-top)",
                 backgroundBottomColor: "var(--parser-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example parsing article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example parsing article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -66,9 +73,11 @@
                 backgroundTopColor: "var(--ast-color-background-top)",
                 backgroundBottomColor: "var(--ast-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example AST article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example AST article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -83,9 +92,11 @@
                 backgroundTopColor: "var(--ir-color-background-top)",
                 backgroundBottomColor: "var(--ir-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example IR article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example IR article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -100,9 +111,11 @@
                 backgroundTopColor: "var(--tac-color-background-top)",
                 backgroundBottomColor: "var(--tac-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example TAC article content.</p>
-            `
+            content: [
+                    /*html*/`
+                    <p>Example TAC article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -117,9 +130,11 @@
                 backgroundTopColor: "var(--codegen-color-background-top)",
                 backgroundBottomColor: "var(--codegen-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example x86 code generation article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example x86 code generation article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -134,9 +149,11 @@
                 backgroundTopColor: "var(--peephole-color-background-top)",
                 backgroundBottomColor: "var(--peephole-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example peephole optimization article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example peephole optimization article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -151,9 +168,11 @@
                 backgroundTopColor: "var(--link-color-background-top)",
                 backgroundBottomColor: "var(--link-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example translation unit linking article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example translation unit linking article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -168,9 +187,11 @@
                 backgroundTopColor: "var(--lto-color-background-top)",
                 backgroundBottomColor: "var(--lto-color-background-bottom)"
             },
-            content: /*html*/`
-                <p>Example LTO article content.</p>
-            `
+            content: [
+                /*html*/`
+                    <p>Example LTO article content.</p>
+                `
+            ]
         },
         {
             header: {
@@ -184,48 +205,50 @@
                 backgroundTopColor: "var(--executable-color-background-top)",
                 backgroundBottomColor: "var(--executable-color-background-bottom)"
             },
-            content: /*html*/`
-                <h2>Section 0</h2>
-                <blockquote class="shadowed">
-                    <p>Please mind the gap between the code and the platform.</p>
-                </blockquote>
-                <p>While generating object code and linking translation units are no simple feat, operating systems ostensibly conspire to make the last step, packaging an executable, even more complicated and infuriating. Executable formats, be they ELF, PE, Mach-O or even the archaic a.out, are data structures that require a deep understanding of the program at hand, the operating system's loader, and&mdash;especially for Windows&mdash;the dynamic linker. For time limitations and brevity purposes, I focus solely on x86 Windows development for this series and the Haze compiler.</p>
-                <hr>
+            content: [
+                /*html*/`
+                    <blockquote class="shadowed">
+                        <p>Please mind the gap between the code and the platform.</p>
+                    </blockquote>
+                    <p>While generating object code and linking translation units are no simple feat, operating systems ostensibly conspire to make the last step, packaging an executable, even more complicated and infuriating. Executable formats, be they ELF, PE, Mach-O or even the archaic a.out, are data structures that require a deep understanding of the program at hand, the operating system's loader, and&mdash;especially for Windows&mdash;the dynamic linker. For time limitations and brevity purposes, I focus solely on x86 Windows development for this series and the Haze compiler.</p>
+                    <hr>
+                `,
+                /*html*/`
+                    <blockquote class="shadowed">
+                        <p>This program cannot be run in DOS mode.</p>
+                    </blockquote>
+                    <p>Windows PE&mdash;<i>Portable Executable</i>, not to be confused with <a href="https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment"><i>Pre-installation Environment</i></a> also abbreviated PE&mdash;suffers many shortfalls inherent to an API designed in the early '90s. Indeed, PE traces roots to the <a href="https://en.wikipedia.org/wiki/New_Executable"><i>New Exectuable</i></a> format pioneered by Windows 1.0 hailing from the mid-'80s and borrows design from the UNIX-oriented <a href="https://en.wikipedia.org/wiki/COFF"><i>Common Object File Format</i></a>. For its vintage, PE has aged well and proven remarkably extensible, carrying program compatibility through 16-bit, 32-bit, and 64-bit incarnations; however, cracks have begun to surface en masse and now mar the otherwise silky smooth surface of modern programs with indellible reminders of yesteryear's technology: MIPS compatibility, bound imports, and the deprecated COFF symbol table, among others.</p>
 
-                <h2>Section 1</h2>
-                <blockquote class="shadowed">
-                    <p>This program cannot be run in DOS mode.</p>
-                </blockquote>
-                <p>Windows PE&mdash;<i>Portable Executable</i>, not to be confused with <a href="https://en.wikipedia.org/wiki/Windows_Preinstallation_Environment"><i>Pre-installation Environment</i></a> also abbreviated PE&mdash;suffers many shortfalls inherent to an API designed in the early '90s. Indeed, PE traces roots to the <a href="https://en.wikipedia.org/wiki/New_Executable"><i>New Exectuable</i></a> format pioneered by Windows 1.0 hailing from the mid-'80s and borrows design from the UNIX-oriented <a href="https://en.wikipedia.org/wiki/COFF"><i>Common Object File Format</i></a>. For its vintage, PE has aged well and proven remarkably extensible, carrying program compatibility through 16-bit, 32-bit, and 64-bit incarnations; however, cracks have begun to surface en masse and now mar the otherwise silky smooth surface of modern programs with indellible reminders of yesteryear's technology: MIPS compatibility, bound imports, and the deprecated COFF symbol table, among others.</p>
+                    <p>During this time, software needs, usage, and build tools have changed dramatically, but the unending commitment to backwards compatibility leaves forlorn relics of forgotten times in modern executables. A few such examples follow.</p>
 
-                <p>During this time, software needs, usage, and build tools have changed dramatically, but the unending commitment to backwards compatibility leaves forlorn relics of forgotten times in modern executables. A few such examples follow.</p>
-
-                <ol>
-                    <li>
-                        <h3>The <code>TimeDateStamp</code> Field</h3>
-                        <p>Despite its name, this field in present usage does not (and according to <a href="https://devblogs.microsoft.com/oldnewthing/20240815-00/?p=110131">Raymond Chen</a>, <i>should not</i>) store any kind of timestamp owing to build reproducibility concerns. Instead, developers typically omit or otherwise ignore the field and populate it with a compile hash that remains static for duplicate compilations of the same source, thereby preserving the overall EXE signature or hash.</p>
-                    </li>
-                    <li>
-                        <h3>The <code>COM Descriptor Directory</code> Field</h3>
-                        <p>Although native code&mdash;especially that expected to interface with Windows modules&mdash;uses COM extensively, it rarely requires the usage of this vestigial field. However, it remains present in the PE header for backwards compatibility, and has since re-emerged as a container specifier for the .NET Common Language Runtime (CLR) metadata storage.</p>
-                    </li>
-                    <li>
-                        <h3>The <code>Bound Import</code> Table</h3>
-                        <p>Once used as an optimization to pre-solve DLL addresses at link time, bound imports have fallen out of favor owing to their increase in complexity and limited utility. Since the advent of address space layout randomization (ASLR), pre-resolved imports immediately invalidate upon re-basing, which requires a secondary resolution nonetheless. The table remains as a deprecated entry in the COFF section for compatibility, but more modern techniques like delay-loading and dynamic linking supplant its usage with both improved security and performance.</p>
-                    </li>
-                </ol>
-
-                <h2>Section 2</h2>
-                <blockquote class="shadowed">
-                    <p>Some assembly required.</p>
-                </blockquote>
-                <hr>
-
-                <h2>Section 3</h2>
-                <blockquote class="shadowed">
-                    <p>You wouldn't steal a function...</p>
-                </blockquote>   
-            `
+                    <ol>
+                        <li>
+                            <h3>The <code>TimeDateStamp</code> Field</h3>
+                            <p>Despite its name, this field in present usage does not (and according to <a href="https://devblogs.microsoft.com/oldnewthing/20240815-00/?p=110131">Raymond Chen</a>, <i>should not</i>) store any kind of timestamp owing to build reproducibility concerns. Instead, developers typically omit or otherwise ignore the field and populate it with a compile hash that remains static for duplicate compilations of the same source, thereby preserving the overall EXE signature or hash.</p>
+                        </li>
+                        <li>
+                            <h3>The <code>COM Descriptor Directory</code> Field</h3>
+                            <p>Although native code&mdash;especially that expected to interface with Windows modules&mdash;uses COM extensively, it rarely requires the usage of this vestigial field. However, it remains present in the PE header for backwards compatibility, and has since re-emerged as a container specifier for the .NET Common Language Runtime (CLR) metadata storage.</p>
+                        </li>
+                        <li>
+                            <h3>The <code>Bound Import</code> Table</h3>
+                            <p>Once used as an optimization to pre-solve DLL addresses at link time, bound imports have fallen out of favor owing to their increase in complexity and limited utility. Since the advent of address space layout randomization (ASLR), pre-resolved imports immediately invalidate upon re-basing, which requires a secondary resolution nonetheless. The table remains as a deprecated entry in the COFF section for compatibility, but more modern techniques like delay-loading and dynamic linking supplant its usage with both improved security and performance.</p>
+                        </li>
+                    </ol>
+                    <hr>
+                `,
+                /*html*/`
+                    <blockquote class="shadowed">
+                        <p>Some assembly required.</p>
+                    </blockquote>
+                    <hr>
+                `,
+                /*html*/`
+                    <blockquote class="shadowed">
+                        <p>You wouldn't steal a function...</p>
+                    </blockquote>   
+                `
+            ]
         }
     ];
 </script>
