@@ -141,7 +141,6 @@
                 d += ` L ${x} ${y}`;
             }
         }
-        // cerrar el área hacia el eje X
         const lastX = scaleX(sortedData[sortedData.length - 1].x, sortedData.length - 1);
         d += ` L ${lastX} ${height - margin} Z`;
         return d;
