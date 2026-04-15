@@ -3,7 +3,7 @@ const path = require('path');
 
 const sourceDir = path.resolve(__dirname, './');
 const outputDir = path.resolve(__dirname, 'temp');
-const MAX_DEPTH = 10; // Puedes ajustar este límite
+const MAX_DEPTH = 10;
 
 fs.mkdirSync(outputDir, { recursive: true });
 
