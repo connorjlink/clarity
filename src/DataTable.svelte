@@ -18,27 +18,27 @@
 
     let sortColumn: string | null = null;
     let sortAscending = true;   
-    function sortBy(col: string) {
-      if (sortColumn === col) {
+    function sortBy(column: string) {
+      if (sortColumn === column) {
         sortAscending = !sortAscending;
       } else {
-        sortColumn = col;
+        sortColumn = column;
         sortAscending = true;
       }
     }   
 
     let filters: Record<string, string> = {};   
-    function setFilter(col: string, value: string) {
-      filters = { ...filters, [col]: value };
+    function setFilter(column: string, value: string) {
+      filters = { ...filters, [column]: value };
     }   
-    function clearFilter(col: string) {
-      filters = { ...filters, [col]: '' };
+    function clearFilter(column: string) {
+      filters = { ...filters, [column]: '' };
     }   
 
     $: filteredData = data
         .filter(row =>
-            Object.entries(filters).every(([col, val]) =>
-                !val || String(row[col]).toLowerCase().includes(val.toLowerCase())
+            Object.entries(filters).every(([column, val]) =>
+                !val || String(row[column]).toLowerCase().includes(val.toLowerCase())
             )
         )
         .sort((a, b) => {
@@ -131,14 +131,14 @@
     <table>
         <thead>
             <tr>
-                {#each columns as col}
+                {#each columns as column}
                     <th>
                         <span 
                             class="clickable"
-                            on:click={() => sortBy(col)}
+                            on:click={() => sortBy(column)}
                         >
-                            {prettify(col)}
-                            {#if sortColumn === col}
+                            {prettify(column)}
+                            {#if sortColumn === column}
                                 <span class="sort-indicator">{sortAscending ? '▲' : '▼'}</span>
                             {/if}
                         </span>
@@ -147,11 +147,11 @@
                                 class="filter-box shadowed hoverable"
                                 type="text"
                                 placeholder="Type here to filter&hellip;"
-                                bind:value={filters[col]}
-                                on:input={(e) => setFilter(col, e.target.value!)}
+                                bind:value={filters[column]}
+                                on:input={(e) => setFilter(column, e.target.value!)}
                             />
-                            {#if filters[col]}
-                                <button class="clear-button" on:click={() => clearFilter(col)}>✕</button>
+                            {#if filters[column]}
+                                <button class="clear-button" on:click={() => clearFilter(column)}>✕</button>
                             {/if}
                         </div>
                     </th>
@@ -161,8 +161,8 @@
         <tbody>
             {#each filteredData as row, i}
                 <tr>
-                    {#each columns as col}
-                        <td>{row[col]}</td>
+                    {#each columns as column}
+                        <td>{row[column]}</td>
                     {/each}
                 </tr>
             {/each}

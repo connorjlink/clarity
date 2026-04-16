@@ -134,42 +134,42 @@ export class LSPDocument {
     }
     
     getSymbolsByName(name: string): InternalSymbol[] {
-        const syms = this.symbolsByName.get(name);
-        if (!syms) {
+        const symbols = this.symbolsByName.get(name);
+        if (!symbols) {
             return [];
         }
-        return syms.map(sym => ({
+        return symbols.map(symbol => ({
             symbol: {
-                ...sym.symbol,
+                ...symbol.symbol,
                 location: {
-                    ...sym.symbol.location,
+                    ...symbol.symbol.location,
                     range: {
-                        start: this.applyDeltasToPosition(sym.symbol.location.range.start),
-                        end: this.applyDeltasToPosition(sym.symbol.location.range.end)
+                        start: this.applyDeltasToPosition(symbol.symbol.location.range.start),
+                        end: this.applyDeltasToPosition(symbol.symbol.location.range.end)
                     }
                 }
             },
-            isDeclaration: sym.isDeclaration
+            isDeclaration: symbol.isDeclaration
         }));
     }
 
     getSymbolsByNamePrefix(prefix: string): InternalSymbol[] {
         const results: InternalSymbol[] = [];
-        for (const [name, syms] of this.symbolsByName.entries()) {
+        for (const [name, symbols] of this.symbolsByName.entries()) {
             if (name.startsWith(prefix)) {
-                for (const sym of syms) {
+                for (const symbol of symbols) {
                     results.push({
                         symbol: {
-                            ...sym.symbol,
+                            ...symbol.symbol,
                             location: {
-                                ...sym.symbol.location,
+                                ...symbol.symbol.location,
                                 range: {
-                                    start: this.applyDeltasToPosition(sym.symbol.location.range.start),
-                                    end: this.applyDeltasToPosition(sym.symbol.location.range.end)
+                                    start: this.applyDeltasToPosition(symbol.symbol.location.range.start),
+                                    end: this.applyDeltasToPosition(symbol.symbol.location.range.end)
                                 }
                             }
                         },
-                        isDeclaration: sym.isDeclaration
+                        isDeclaration: symbol.isDeclaration
                     });
                 }
             }
@@ -241,13 +241,13 @@ export class LSPDocument {
     }
 
     getAllSymbols(): InternalSymbol[] {
-        return this.symbols.map(sym => ({
-            ...sym,
+        return this.symbols.map(symbol => ({
+            ...symbol,
             location: {
-                ...sym.symbol.location,
+                ...symbol.symbol.location,
                 range: {
-                    start: this.applyDeltasToPosition(sym.symbol.location.range.start),
-                    end: this.applyDeltasToPosition(sym.symbol.location.range.end)
+                    start: this.applyDeltasToPosition(symbol.symbol.location.range.start),
+                    end: this.applyDeltasToPosition(symbol.symbol.location.range.end)
                 }
             }
         }));
@@ -303,8 +303,8 @@ export class LSPDocument {
         this.addOrUpdateSymbol(internalSymbol, symbol.name);
     }
 
-    applyDeltasToPosition(pos: lsp.Position): lsp.Position {
-        let newPosition = { ...pos };
+    applyDeltasToPosition(position: lsp.Position): lsp.Position {
+        let newPosition = { ...position };
         for (const delta of this.editDeltas) {
             // only apply the deltas that could affect this position
             if (
@@ -320,8 +320,8 @@ export class LSPDocument {
         return newPosition;
     }
 
-    revertDeltasFromPosition(pos: lsp.Position): lsp.Position {
-        let origPosition = { ...pos };
+    revertDeltasFromPosition(position: lsp.Position): lsp.Position {
+        let origPosition = { ...position };
         for (let i = this.editDeltas.length - 1; i >= 0; i--) {
             const delta = this.editDeltas[i];
             // only revert the deltas that could affect this position
@@ -401,8 +401,8 @@ export class LSPDocument {
 
     ////////////////////////////////////////////////////
 
-    private static compositeKey(name: string, pos: lsp.Position): string {
-        return `${name}:${pos.line}:${pos.character}`;
+    private static compositeKey(name: string, position: lsp.Position): string {
+        return `${name}:${position.line}:${position.character}`;
     }
 }
 

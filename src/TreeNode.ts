@@ -102,7 +102,7 @@ export class TreeNodeElement extends HTMLElement {
     }
 
     // NOTE: Parent must set callbacks set externally!
-    onMove?: (pos: nt.Point) => void;
+    onMove?: (position: nt.Point) => void;
     onConnectStart?: (from: nt.ClickspotInfo) => void;
     onConnectEnd?: (from: nt.ClickspotInfo, to: nt.ClickspotInfo) => void;
     onDisconnect?: (info: nt.ClickspotInfo) => void;
@@ -114,7 +114,7 @@ export class TreeNodeElement extends HTMLElement {
     private _areCallbacksSet = false;
 
     setCallbacks(callbacks: {
-        onMove?: (pos: nt.Point) => void;
+        onMove?: (position: nt.Point) => void;
         onConnectStart?: (from: nt.ClickspotInfo) => void;
         onConnectEnd?: (from: nt.ClickspotInfo, to: nt.ClickspotInfo) => void;
         onDisconnect?: (info: nt.ClickspotInfo) => void;
@@ -185,8 +185,8 @@ export class TreeNodeElement extends HTMLElement {
         return this.shadowRoot!.querySelector(`#${this._nodeId}`) as TreeNodeElement | null;
     }
 
-    updateTransform(pos: nt.Point) {
-        this._position = pos;
+    updateTransform(position: nt.Point) {
+        this._position = position;
         if (this._contentRef) {
             this._contentRef.style.transform = `translate3d(${this._position.x}px, ${this._position.y}px, 0)`;
         }

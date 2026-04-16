@@ -220,7 +220,7 @@ class PaneViewElement extends HTMLElement {
     };
 
     private getCurrentWidths(): number[] {
-        return this.columns.map(col => col.getBoundingClientRect().width);
+        return this.columns.map(column => column.getBoundingClientRect().width);
     }
 
     private applyWidths() {
@@ -240,9 +240,9 @@ class PaneViewElement extends HTMLElement {
         row.style.gridTemplateColumns = template.trim();
 
         let gridIndex = 1;
-        this.columns.forEach(col => {
-            if (!col.classList.contains('hidden')) {
-                col.style.gridColumn = `${gridIndex}`;
+        this.columns.forEach(column => {
+            if (!column.classList.contains('hidden')) {
+                column.style.gridColumn = `${gridIndex}`;
                 gridIndex += 2;
             }
         });

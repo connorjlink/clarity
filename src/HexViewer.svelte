@@ -26,19 +26,19 @@
     let container: HTMLElement;
     let selectedIndex: number | null = null;
 
-    function getSymbolAt(addr: number) {
-        for (const sym of symbols) {
-            if (addr >= sym.address && addr < sym.address + sym.length) {
-                return sym;
+    function getSymbolAt(address: number) {
+        for (const symbol of symbols) {
+            if (address >= symbol.address && address < symbol.address + symbol.length) {
+                return symbol;
             }
         }
         return null;
     }
 
-    function renderAscii(addr: number) {
+    function renderAscii(address: number) {
         let ascii = '';
-        for (let col = 0; col < columns; col++) {
-            const i = addr + col;
+        for (let column = 0; column < columns; column++) {
+            const i = address + column;
             if (i < data.length) {
                 const byte = data[i];
                 ascii += (byte >= 32 && byte <= 126) ? String.fromCharCode(byte) : '.';
@@ -220,8 +220,8 @@
                 <tr class="header-spacer-row"></tr>
                 <tr class="hex-offset-row">
                     <th></th>
-                    {#each Array(columns) as _, col}
-                        <th class="hex-offset">+{col.toString(16).toUpperCase()}</th>
+                    {#each Array(columns) as _, column}
+                        <th class="hex-offset">+{column.toString(16).toUpperCase()}</th>
                     {/each}
                     <th></th>
                 </tr>
@@ -231,14 +231,14 @@
                 {#each Array(rows) as _, row}
                     <tr>
                         <td class="hex-address">{(row * columns).toString(16).padStart(8, '0')}</td>
-                        {#each Array(columns) as _, col}
-                            {#if (row * columns + col) < data.length}
+                        {#each Array(columns) as _, column}
+                            {#if (row * columns + column) < data.length}
                                 <td
-                                    class="hex-byte {selectedIndex === (row * columns + col) ? 'selected' : ''}"
-                                    style="color: {getSymbolAt(row * columns + col)?.color || '#ccc'}"
-                                    on:click|stopPropagation={() => handleByteClick(row * columns + col)}
+                                    class="hex-byte {selectedIndex === (row * columns + column) ? 'selected' : ''}"
+                                    style="color: {getSymbolAt(row * columns + column)?.color || '#ccc'}"
+                                    on:click|stopPropagation={() => handleByteClick(row * columns + column)}
                                 >
-                                    {data[row * columns + col].toString(16).padStart(2, '0')}
+                                    {data[row * columns + column].toString(16).padStart(2, '0')}
                                 </td>
                             {:else}
                                 <td></td>

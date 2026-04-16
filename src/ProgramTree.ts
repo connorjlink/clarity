@@ -142,12 +142,12 @@ export class ProgramTreeElement extends HTMLElement {
         this.renderLines();
     };
 
-    private handleNodeMove(id: string, pos: nt.Point) {
-        this._nodeManager.updateNodePosition(id, pos);
+    private handleNodeMove(id: string, position: nt.Point) {
+        this._nodeManager.updateNodePosition(id, position);
         
         const node = this.shadowRoot!.querySelector(`tree-node[data-node-id="${id}"]`) as tn.TreeNodeElement | null;
         if (node) {
-            node.updateTransform(pos);
+            node.updateTransform(position);
         }
         
         // since moving a node can repath multiple lines, it makes sense to re-render everything for now
@@ -389,7 +389,7 @@ export class ProgramTreeElement extends HTMLElement {
                 };
 
                 nodeElement.setCallbacks({
-                    onMove: (pos) => this.handleNodeMove(node.id, pos),
+                    onMove: (position) => this.handleNodeMove(node.id, position),
                     onConnectStart: (info) => this.handleConnectStart(info),
                     onConnectEnd: (from, to) => this.handleConnectEnd(from, to),
                     onDisconnect: (info) => this.handleRemoveLines(info),

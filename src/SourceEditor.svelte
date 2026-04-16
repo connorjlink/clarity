@@ -41,16 +41,16 @@
     const rootEmSize = parseInt(getComputedStyle(document.documentElement).fontSize);
 
     function countMonospaceCells(text: string) {
-        let col = 0;
+        let column = 0;
         for (const ch of text) {
             if (ch === '\t') {
-                const advance = tabSize - (col % tabSize);
-                col += advance;
+                const advance = tabSize - (column % tabSize);
+                column += advance;
                 continue;
             }
-            col += 1;
+            column += 1;
         }
-        return col;
+        return column;
     }
 
     function onEditorAction(action: string, payload?: any) { /* stub */ }
