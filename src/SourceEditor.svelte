@@ -58,7 +58,7 @@
     function onGutterHover(line: number) { /* stub */ }
     function onRightGutterAction(line: number) { /* stub */ }
     function onFontSizeChange(newSize: number) {
-        recalcLayout();
+        recalculateLayout();
         updatePlugin();
     }
     function onCursorChange(line: number, column: number) {
@@ -132,13 +132,6 @@
         rebuildLineIndex(text);
     }
 
-    function updateLinesFromEditor() {
-        if (!editorRowsRef) {
-            return;
-        }
-        updateLinesFromText(editorRowsRef.value);
-    }
-
     function findLineIndexForOffset(offset: number) {
         let lo = 0;
         let hi = lineStarts.length - 1;
@@ -180,7 +173,7 @@
         editorRowsRef.style.height = `${contentHeight}px`;
     }
 
-    function recalcLayout() {
+    function recalculateLayout() {
         updateCharWidth();
         updateContentWidth();
         rebuildGutterRows();
@@ -269,10 +262,10 @@
         if (editorRowsRef) {
             editorRowsRef.value = pieceTable.getText();
         }
-        recalcLayout();
+        recalculateLayout();
 
         const ro = new ResizeObserver(() => {
-            recalcLayout();
+            recalculateLayout();
         });
         if (contentWrapperRef) {
             ro.observe(contentWrapperRef);
@@ -487,7 +480,7 @@
         {/if}
         <button on:click={onIncreaseFontSize}>A<sup>&uparrow;</sup></button>
         <button on:click={OnDecreaseFontSize}>A<sub>&downarrow;</sub></button>
-        <button on:click={() => { softWrap = !softWrap; recalcLayout(); }}>{softWrap ? 'Soft Wrap: ON' : 'Soft Wrap: OFF'}</button>
+        <button on:click={() => { softWrap = !softWrap; recalculateLayout(); }}>{softWrap ? 'Soft Wrap: ON' : 'Soft Wrap: OFF'}</button>
     </div>
     <div class="editor-wrapper">
         <div class="scroll-vertical" bind:this={scrollVerticalRef}>
