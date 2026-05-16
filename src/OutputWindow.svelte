@@ -1,5 +1,3 @@
-<svelte:options customElement="output-window" />
-
 <script context="module" lang="ts">
     export type OutputWindowMessage = {
         id: string;

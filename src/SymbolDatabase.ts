@@ -1,9 +1,9 @@
 import * as lsp from './LSP'
 import * as cd from './CompilerDriver'
 
-export const TypeStorages = ['value', 'ptr'];
-export const TypeSpecifiers = ['byte', 'word', 'dword', 'qword', 'string', 'struct', 'nvr'];
-export const TypeQualifiers = ['const', 'volatile'];
+export const StorageClasses = ['auto', 'extern', 'static', 'register'];
+export const TypeSpecifiers = ['void', 'char', 'short', 'int', 'long', 'float', 'double', 'struct', 'union', 'enum'];
+export const TypeQualifiers = ['const', 'volatile', 'restrict'];
 export const TypeSignedness = ['signed', 'unsigned'];
 export const TypeStages = ['source', 'ast', 'ir', 'asm', 'o'];
 

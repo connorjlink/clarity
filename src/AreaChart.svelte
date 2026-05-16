@@ -4,6 +4,7 @@
         y: number;
     }
 </script>
+
 <script lang="ts">
     export let data: AreaData[] = [];
     

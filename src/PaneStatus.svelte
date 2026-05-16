@@ -1,15 +1,10 @@
-<svelte:options customElement="pane-status" />
-
 <script lang="ts">
+    // restrict to string only props for rendering
     export let dataHeader: string = '';
     export let dataPlugin: string = '';
 </script>
 
 <style>
-    *, *::before, *::after {
-        box-sizing: border-box;
-    }
-
     .pane-descriptor {
         display: flex;
         padding: 0.5rem;

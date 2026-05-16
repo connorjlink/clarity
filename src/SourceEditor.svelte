@@ -542,7 +542,6 @@
                                 <div class="gutter-placeholder" style="line-height: {lineHeightBasis * fontSize}rem; height: {lineHeightBasis * fontSize}rem;">&nbsp;</div>
                             {/if}
                         {/each}
-
                         <div class="gutter-filler" aria-hidden="true"></div>
                     </div>
                 </div>

@@ -1,22 +1,27 @@
-<svelte:options customElement="symbol-tristate" />
-
 <script lang="ts">
-    import { createEventDispatcher } from 'svelte';
+    import type { Snippet } from 'svelte';
 
-    export let state: 0 | 1 | 2 = 0;
-    export let title: string = '';
+    interface Props {
+        state?: 0 | 1 | 2;
+        title?: string;
+        ontristatechange?: (state: 0 | 1 | 2) => void;
+        state0Icon?: Snippet;
+        state1Icon?: Snippet;
+        state2Icon?: Snippet;
+    }
 
-    const dispatch = createEventDispatcher();
+    let {
+        state = $bindable(0),
+        title = '',
+        ontristatechange,
+        state0Icon,
+        state1Icon,
+        state2Icon
+    }: Props = $props();
 
     function handleClick() {
         state = ((state + 1) % 3) as 0 | 1 | 2;
-        dispatch('tristate-change', { state });
-    }
-
-    export function attributeChangedCallback(name: string, oldValue: string | null, newValue: string | null) {
-        if (name === 'state') {
-            state = parseInt(newValue) as 0 | 1 | 2;
-        }
+        ontristatechange?.(state);
     }
 </script>
 
@@ -27,51 +32,35 @@
         width: fit-content;
         position: relative;
         display: inline-block;
-    }
-    .icon {
-        display: none;
-        align-items: center;
-        justify-content: center;
-        width: 1rem;
-        height: 1rem;
-    }
-
-    .state0 .state0,
-    .state1 .state1,
-    .state2 .state2 {
-        display: flex;
-    }
-    .state0 .state1,
-    .state0 .state2,
-    .state1 .state0,
-    .state1 .state2,
-    .state2 .state0,
-    .state2 .state1 {
-        display: none;
-    }
-
-    button {
         appearance: none;
         outline: none;
         border: none;
         background: none;
         padding: 0;
     }
+    
+    .icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 1rem;
+        height: 1rem;
+    }
 </style>
 
 <button
-    class="container state{state}"
+    class="container"
     type="button"
     {title}
-    on:click={handleClick}
+    onclick={handleClick}
 >
-    <span class="icon state0">
-        <slot name="state0-icon" />
-    </span>
-    <span class="icon state1">
-        <slot name="state1-icon" />
-    </span>
-    <span class="icon state2">
-        <slot name="state2-icon" />
+    <span class="icon">
+        {#if state === 0 && state0Icon}
+            {@render state0Icon()}
+        {:else if state === 1 && state1Icon}
+            {@render state1Icon()}
+        {:else if state === 2 && state2Icon}
+            {@render state2Icon()}
+        {/if}
     </span>
 </button>

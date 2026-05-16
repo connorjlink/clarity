@@ -215,7 +215,7 @@
         {/each}
     </div>
     <div class="item-list">
-        {#each actions as action}   
+        {#each actions as action}
             <a class="card shadowed hoverable interactive action" href={action.href}>{action.title}</a>
         {/each}
     </div>

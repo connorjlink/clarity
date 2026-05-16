@@ -310,31 +310,6 @@ program-tree {
         scale: 1.01;
     }
 
-/* @property --rotation {
-    syntax: "<angle>";
-    inherits: false;
-    initial-value: 90deg;
-}
-
-@keyframes spin-gradient {
-    0%   { --rotation: 90deg; }
-    50%  { --rotation: 450deg; }
-    100% { --rotation: 90deg; }
-}
-
-.card.fancy {
-    border-radius: 0.5rem;
-    border-width: 100px;
-    border-style: solid;
-    border-image: linear-gradient(var(--rotation), var(--accent), var(--secondary)) 1;
-    transition: border-image 200ms;
-    position: relative;
-}
-
-.card.fancy:hover {
-    animation: spin-gradient 5s ease-in-out;
-} */
-
 :root {
     scrollbar-color: var(--dark-background-lll) var(--dark-background-e);
     scrollbar-width: thin;
