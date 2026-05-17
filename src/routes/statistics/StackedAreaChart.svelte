@@ -7,7 +7,7 @@
 
 <script lang="ts">
     import ChartBase from "./ChartBase.svelte";
-    import { getColor, desaturateHSL } from "./Chart";
+    import { getColor, desaturateHSL, scaleX, scaleY } from "./Chart";
 
     let { series = [] }: { series?: StackedAreaSeries[] } = $props();
 
@@ -52,15 +52,14 @@
 
     let maxY = $derived(hasData && stacked.length > 0 ? Math.max(...stacked.map(row => row[m - 1]?.y1 ?? 0), 1) : 1);
 
-    function scaleX(i: number) {
-        if (n <= 1) {
-            return width / 2;
-        }
-        return margin + (i / (n - 1)) * (width - 2 * margin);
-    }
-    function scaleY(y: number) {
-        return height - margin - (y / maxY) * (height - 2 * margin);
-    }
+    let newScaleX = (i: number) => {
+        return scaleX(i, i, width, margin, 0, n - 1, false, series[0].data);
+    };
+
+    let newScaleY = (y: number) => {
+        return scaleY(y, height, margin, 0, maxY);
+    };
+
 </script>
 
 <ChartBase 
@@ -85,10 +84,10 @@
         {#each percentTicks as pct}
             <line
                 x1={margin - 6} x2={width - margin + 6}
-                y1={scaleY((pct / 100) * maxY)} y2={scaleY((pct / 100) * maxY)}
+                y1={newScaleY((pct / 100) * maxY)} y2={newScaleY((pct / 100) * maxY)}
                 stroke="var(--chart-major-tick-color)" stroke-width="0.5"
             />
-            <text x={margin - 8} y={scaleY((pct / 100) * maxY) + 4} font-size="9" text-anchor="end" fill="var(--chart-label-color, #ccc)">{pct}%</text>
+            <text x={margin - 8} y={newScaleY((pct / 100) * maxY) + 4} font-size="9" text-anchor="end" fill="var(--chart-label-color, #ccc)">{pct}%</text>
         {/each}
 
         {#each series as _, j}
@@ -102,16 +101,16 @@
                         if (!stacked[i] || !stacked[i][j]) {
                             continue;
                         }
-                        const x = scaleX(i);
-                        const y = scaleY(stacked[i][j].y1);
+                        const x = newScaleX(i);
+                        const y = newScaleY(stacked[i][j].y1);
                         d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`);
                     }
                     for (let i = n - 1; i >= 0; i--) {
                         if (!stacked[i] || !stacked[i][j]) {
                             continue;
                         }
-                        const x = scaleX(i);
-                        const y = scaleY(stacked[i][j].y0);
+                        const x = newScaleX(i);
+                        const y = newScaleY(stacked[i][j].y0);
                         d += ` L ${x} ${y}`;
                     }
                     return d + " Z";
@@ -124,8 +123,8 @@
         {/each}
 
         {#each xLabels as _, i}
-            <line x1={scaleX(i)} y1={margin} x2={scaleX(i)} y2={height - margin} stroke="var(--chart-minor-tick-color)" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.3" />
-            <text x={scaleX(i)} y={height - margin + 14} text-anchor="middle" font-size="11" fill="var(--chart-label-color)">{xLabels[i]}</text>
+            <line x1={newScaleX(i)} y1={margin} x2={newScaleX(i)} y2={height - margin} stroke="var(--chart-minor-tick-color)" stroke-width="0.7" stroke-dasharray="4 3" opacity="0.3" />
+            <text x={newScaleX(i)} y={height - margin + 14} text-anchor="middle" font-size="11" fill="var(--chart-label-color)">{xLabels[i]}</text>
         {/each}
     {/snippet}
 

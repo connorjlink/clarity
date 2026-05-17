@@ -1,68 +1,69 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { writable, derived } from 'svelte/store';   
+    let { data = [] }: { data: any[] } = $props();
     
-    export let data: any[] = [];    
-    
-    $: columns = data.length ? Object.keys(data[0]) : [];
+    let columns = $derived(data.length ? Object.keys(data[0]) : []);
 
     function prettify(name: string) {
-      return name
-          .replace(/([A-Z])/g, ' $1')
-          .replace(/_/g, ' ')
-          .replace(/-/g, ' ')
-          .replace(/\s+/g, ' ')
-          .replace(/^./, (str) => str.toUpperCase())
-          .trim();
+        return name
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/_/g, ' ')
+            .replace(/-/g, ' ')
+            .replace(/\s+/g, ' ')
+            .replace(/^./, (str) => str.toUpperCase())
+            .trim();
     }   
 
-    let sortColumn: string | null = null;
-    let sortAscending = true;   
+    let sortColumn: string | null = $state(null);
+    let sortAscending = $state(true);   
+    let filters: Record<string, string> = $state({});   
+
     function sortBy(column: string) {
-      if (sortColumn === column) {
-        sortAscending = !sortAscending;
-      } else {
-        sortColumn = column;
-        sortAscending = true;
-      }
+        if (sortColumn === column) {
+            sortAscending = !sortAscending;
+        } else {
+            sortColumn = column;
+            sortAscending = true;
+        }
     }   
 
-    let filters: Record<string, string> = {};   
-    function setFilter(column: string, value: string) {
-      filters = { ...filters, [column]: value };
-    }   
     function clearFilter(column: string) {
-      filters = { ...filters, [column]: '' };
+        filters[column] = '';
     }   
 
-    $: filteredData = data
-        .filter(row =>
-            Object.entries(filters).every(([column, val]) =>
-                !val || String(row[column]).toLowerCase().includes(val.toLowerCase())
+    let filteredData = $derived(
+        data
+            .filter(row =>
+                Object.entries(filters).every(([column, val]) =>
+                    !val || String(row[column]).toLowerCase().includes(val.toLowerCase())
+                )
             )
-        )
-        .sort((a, b) => {
-            if (!sortColumn) {
-                return 0;
-            }
-            const av = a[sortColumn];
-            const bv = b[sortColumn];
-            if (av == null && bv == null) {
-                return 0;
-            }
-            if (av == null) {
-                return sortAscending ? -1 : 1;
-            }
-            if (bv == null) {
-                return sortAscending ? 1 : -1;
-            }
-            if (typeof av === 'number' && typeof bv === 'number') {
-                return sortAscending ? av - bv : bv - av;
-            }
-            return sortAscending
-                ? String(av).localeCompare(String(bv))
-                : String(bv).localeCompare(String(av));
-        });
+            .sort((a, b) => {
+                if (!sortColumn) {
+                    return 0;
+                }
+                
+                const av = a[sortColumn];
+                const bv = b[sortColumn];
+                
+                if (av == null && bv == null) {
+                    return 0;
+                }
+                if (av == null) {
+                    return sortAscending ? -1 : 1;
+                }
+                if (bv == null) {
+                    return sortAscending ? 1 : -1;
+                }
+                
+                if (typeof av === 'number' && typeof bv === 'number') {
+                    return sortAscending ? av - bv : bv - av;
+                }
+                
+                return sortAscending
+                    ? String(av).localeCompare(String(bv))
+                    : String(bv).localeCompare(String(av));
+            })
+    );
 </script>
 
 <style>
@@ -135,7 +136,10 @@
                     <th>
                         <span 
                             class="clickable"
-                            on:click={() => sortBy(column)}
+                            onclick={() => sortBy(column)}
+                            role="button"
+                            tabindex="0"
+                            onkeypress={(e) => e.key === 'Enter' && sortBy(column)}
                         >
                             {prettify(column)}
                             {#if sortColumn === column}
@@ -148,10 +152,9 @@
                                 type="text"
                                 placeholder="Type here to filter&hellip;"
                                 bind:value={filters[column]}
-                                on:input={(e) => setFilter(column, e.target.value!)}
                             />
                             {#if filters[column]}
-                                <button class="clear-button" on:click={() => clearFilter(column)}>✕</button>
+                                <button class="clear-button" onclick={() => clearFilter(column)}>✕</button>
                             {/if}
                         </div>
                     </th>
