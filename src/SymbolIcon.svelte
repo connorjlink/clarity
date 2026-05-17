@@ -1,16 +1,16 @@
-<svelte:options customElement="symbol-icon" />
-
 <script lang="ts">
-    export let text: string = 'Hz';
-    export let size: number = 300;
-    export let radius: string = '0.5rem';
-    export let shadowColor: string = 'var(--haze-color-shadow)';
-    export let foregroundTopColor: string = 'var(--haze-color-foreground-top)';
-    export let foregroundBottomColor: string = 'var(--haze-color-foreground-bottom)';
-    export let backgroundTopColor: string = 'var(--haze-color-background-top)';
-    export let backgroundBottomColor: string = 'var(--haze-color-background-bottom)';
+    let { 
+        text = 'Hz', 
+        size = 300, 
+        radius = '0.5rem', 
+        shadowColor = 'var(--haze-color-shadow)', 
+        foregroundTopColor = 'var(--haze-color-foreground-top)', 
+        foregroundBottomColor = 'var(--haze-color-foreground-bottom)', 
+        backgroundTopColor = 'var(--haze-color-background-top)', 
+        backgroundBottomColor = 'var(--haze-color-background-bottom)'
+    } = $props();
 
-    // Random string ID. Poor randomization but sufficient for unique IDs given how few icons will appear at any given time.
+    // random string ID -- poor randomization but sufficient for unique IDs given how few icons will appear at any given time.
     const uuid = Math.random().toString(36).substring(2, 9);
 
     const backgroundGradientId = `bgGradient-${uuid}`;
@@ -26,11 +26,12 @@
     svg {
         filter: none;
         text-shadow: none !important;
+        box-shadow: 0 0 1em #000A;
     }
 </style>
 
 <svg
-    style={`border-radius: ${radius}; box-shadow: 0 0 1em #000A;`}
+    style={`border-radius: ${radius};`}
     width={size}
     height={size}
     viewBox="0 0 300 300"

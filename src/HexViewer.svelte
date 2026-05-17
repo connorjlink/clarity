@@ -1,16 +1,3 @@
-<svelte:options customElement="hex-viewer" />
-
-<script context="module" lang="ts">
-    export function setup(element: HTMLElement) {
-        // @ts-ignore
-        element.initialize = (uri: string, d: Uint8Array, c: Worker | null = null) => {
-            element.data = d;
-            element.client = c;
-            element.sourceUri = uri;
-        };
-    }
-</script>
-
 <script lang="ts">
     import { onMount } from 'svelte';
 

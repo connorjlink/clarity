@@ -59,7 +59,7 @@
     >
         <span class="caret" class:expanded={expanded}>
             <svg viewBox="0 0 16 16" fill="none" width="16" height="16">
-                <path d="M5 6l3 3 3-3" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M5 6l3 3 3-3" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
         </span>
         <span class="header-text">{header}</span>

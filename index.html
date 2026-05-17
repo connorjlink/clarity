@@ -20,24 +20,22 @@
 
     <body>
         <my-tabview>
-            <my-header>
-                <div class="title-container">
-                    <a href="./"><symbol-icon text="Hz" size="64"></symbol-icon></a>
-                    <div>
-                        <h1><a class="emphasis" href="https://github.com/connorjlink/haze">Haze</a> Clarity</h1>
-                        <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
-                    </div>
+            <div class="title-container">
+                <a href="./"><symbol-icon text="Hz" size="64"></symbol-icon></a>
+                <div>
+                    <h1><a class="emphasis" href="https://github.com/connorjlink/haze">Haze</a> Clarity</h1>
+                    <span>&copy; 2025 Connor J. Link. All Rights Reserved.</span>
                 </div>
-            </my-header>
+            </div>
             <div class="tab-label" id="home-tab-label">
-                <!-- inject:./res/home.svg -->
+                <Home />
                 <span>Home</span>
             </div>
             <my-tab route="" class="home-tab">
                 <div id="home-content"></div>
             </my-tab>
             <div class="tab-label" id="compiler-tab-label">
-                <!-- inject:./res/atom.svg -->
+                <Atom />
                 <span>Compiler</span>
             </div>
             <my-tab route="compiler" class="compiler-tab shadowed">
@@ -66,24 +64,80 @@
 
                 <output-window></output-window>
                 
-                <!-- inject:./partials/StatusBar.html -->
+                <div class="status-bar">
+                    <!-- inject:../res/expression.svg -->
+                    <span>Idle.</span>
+                    <span style="flex-grow: 1;"></span>
+                    <span style="width:2rem;"></span>
+                    <SymbolTristate title="Control Output Window Visibility" state={0}>
+                        {#snippet state0Icon()}
+                            <OutputIcon state="auto" />
+                        {/snippet}
+                        {#snippet state1Icon()}
+                            <OutputIcon state="open" />
+                        {/snippet}
+                        {#snippet state2Icon()}
+                            <OutputIcon state="closed" />
+                        {/snippet}
+                    </SymbolTristate>
+                    <SymbolToggle title="Toggle Source Editor Pane">
+                        {#snippet state0Icon()}
+                            <PaneIcon paneNumber={0} isOpen={true} />
+                        {/snippet}
+                        {#snippet state1Icon()}
+                            <PaneIcon paneNumber={0} isOpen={false} />
+                        {/snippet}
+                    </SymbolToggle>
+                    <SymbolToggle title="Toggle Abstract Syntax Tree Pane">
+                        {#snippet state0Icon()}
+                            <PaneIcon paneNumber={1} isOpen={true} />
+                        {/snippet}
+                        {#snippet state1Icon()}
+                            <PaneIcon paneNumber={1} isOpen={false} />
+                        {/snippet}
+                    </SymbolToggle>
+                    <SymbolToggle title="Toggle Intermediate Representation Pane">
+                        {#snippet state0Icon()}
+                            <PaneIcon paneNumber={2} isOpen={true} />
+                        {/snippet}
+                        {#snippet state1Icon()}
+                            <PaneIcon paneNumber={2} isOpen={false} />
+                        {/snippet}
+                    </SymbolToggle>
+                    <SymbolToggle title="Toggle Assembly Pane">
+                        {#snippet state0Icon()}
+                            <PaneIcon paneNumber={3} isOpen={true} />
+                        {/snippet}
+                        {#snippet state1Icon()}
+                            <PaneIcon paneNumber={3} isOpen={false} />
+                        {/snippet}
+                    </SymbolToggle>
+                    <SymbolToggle title="Toggle Executable Pane">
+                        {#snippet state0Icon()}
+                            <PaneIcon paneNumber={4} isOpen={true} />
+                        {/snippet}
+                        {#snippet state1Icon()}
+                            <PaneIcon paneNumber={4} isOpen={false} />
+                        {/snippet}
+                    </SymbolToggle>
+                </div>
             </my-tab>
             <div class="tab-label" id="statistics-tab-label">
-                <!-- inject:./res/pie-chart.svg -->
+                <PieChart />
                 <span>Statistics</span>
             </div>
             <my-tab route="statistics" class="shadowed">
                 <div id="statistics-page"></div>
             </my-tab>
             <div class="tab-label" id="learn-tab-label">
-                <!-- inject:./res/graduate-cap.svg -->
+                <GraduateCap />
                 <span>Learn</span>
             </div>
             <my-tab route="learn">
                 <div id="learn-page"></div>
             </my-tab>
             <div class="tab-label" id="about-tab-label">
-                <!-- inject:./res/faq.svg -->
+                <FAQ />
                 <span>About</span>
             </div>
             <my-tab route="about">

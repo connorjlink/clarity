@@ -1,6 +1,6 @@
 import * as pt from './ProgramTree';
 import './TabView';
-import './PaneView';
+import PaneView from './PaneView.svelte';
 
 import { mount } from 'svelte';
 
