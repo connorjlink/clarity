@@ -30,39 +30,38 @@
         filters[column] = '';
     }   
 
-    let filteredData = $derived(
-        data
-            .filter(row =>
-                Object.entries(filters).every(([column, val]) =>
-                    !val || String(row[column]).toLowerCase().includes(val.toLowerCase())
-                )
+    let filteredData = $derived(data
+        .filter(row =>
+            Object.entries(filters).every(([column, val]) =>
+                !val || String(row[column]).toLowerCase().includes(val.toLowerCase())
             )
-            .sort((a, b) => {
-                if (!sortColumn) {
-                    return 0;
-                }
-                
-                const av = a[sortColumn];
-                const bv = b[sortColumn];
-                
-                if (av == null && bv == null) {
-                    return 0;
-                }
-                if (av == null) {
-                    return sortAscending ? -1 : 1;
-                }
-                if (bv == null) {
-                    return sortAscending ? 1 : -1;
-                }
-                
-                if (typeof av === 'number' && typeof bv === 'number') {
-                    return sortAscending ? av - bv : bv - av;
-                }
-                
-                return sortAscending
-                    ? String(av).localeCompare(String(bv))
-                    : String(bv).localeCompare(String(av));
-            })
+        )
+        .sort((a, b) => {
+            if (!sortColumn) {
+                return 0;
+            }
+            
+            const av = a[sortColumn];
+            const bv = b[sortColumn];
+            
+            if (av == null && bv == null) {
+                return 0;
+            }
+            if (av == null) {
+                return sortAscending ? -1 : 1;
+            }
+            if (bv == null) {
+                return sortAscending ? 1 : -1;
+            }
+            
+            if (typeof av === 'number' && typeof bv === 'number') {
+                return sortAscending ? av - bv : bv - av;
+            }
+            
+            return sortAscending
+                ? String(av).localeCompare(String(bv))
+                : String(bv).localeCompare(String(av));
+        })
     );
 </script>
 

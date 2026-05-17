@@ -129,7 +129,7 @@
     nav {
         height: 100%;
         background: var(--dark-background-e);
-        max-width: 400px;
+        max-width: calc(var(--content-width) / 2);
     }
 
     .nav-radio {

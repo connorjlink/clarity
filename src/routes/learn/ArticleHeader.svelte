@@ -1,15 +1,18 @@
 <script lang="ts">
-    export let text = "";
-    export let size = "64";
-    export let shadowColor = "";
-    export let foregroundTopColor = "";
-    export let foregroundBottomColor = "";
-    export let backgroundTopColor = "";
-    export let backgroundBottomColor = "";
-    export let title = "Default Title";
-    export let subtitle = "";
+    import SymbolIcon from './SymbolIcon.svelte';
 
-    export let isComplete: boolean = true;
+    let {
+        text = "",
+        size = 64,
+        shadowColor = "",
+        foregroundTopColor = "",
+        foregroundBottomColor = "",
+        backgroundTopColor = "",
+        backgroundBottomColor = "",
+        title = "Default Title",
+        subtitle = "",
+        isComplete = true
+    } = $props();
 </script>
 
 <style>
@@ -59,15 +62,14 @@
 
 <header>
     <div class="icon-wrap">
-        <symbol-icon 
-            text="{text}" 
-            size="{size}" 
-            shadowColor="{shadowColor}"
-            foregroundTopColor="{foregroundTopColor}"
-            foregroundBottomColor="{foregroundBottomColor}"
-            backgroundTopColor="{backgroundTopColor}"
-            backgroundBottomColor="{backgroundBottomColor}">
-        </symbol-icon>
+        <SymbolIcon 
+            {text} 
+            {size} 
+            {shadowColor}
+            {foregroundTopColor}
+            {foregroundBottomColor}
+            {backgroundTopColor}
+            {backgroundBottomColor} />
         {#if !isComplete}
             <span class="incomplete-badge" aria-hidden="true">×</span>
         {/if}

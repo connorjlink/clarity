@@ -1,57 +1,9 @@
 <script lang="ts">
     import { resolve } from '$app/paths';
 
-	const features = [
-        {
-            icon: "/res/brain.svg",
-            title: "LSP Intelligence",
-            description: "Language Server Protocol support for code analysis, completion items, and compiler diagnostics."
-        },
-        {
-            icon: "/res/index.svg",
-            title: "LSIF Indexing",
-            description: "Language Server Index Format-compliant indexer for efficient navigation and search in large codebases."
-        },
-        {
-            icon: "/res/debugger.svg",
-            title: "DAP Debugging",
-            description: "Debug Adapter Protocol support for interactive debugging sessions with breakpoints and variable inspection."
-        }
-    ];
-
-    const others = [
-        {
-            title: "Source Code Editor",
-            description: "Modern, syntax- and semantics-aware interactive code editor with state-of-the-art productivity-enhancing features."
-        },
-        {
-            title: "Compiler Visualization",
-            description: "Detailed and interactive visualizations of five-stage compiler internals and step-by-step breakdowns of code transformations."
-        },
-        {
-            title: "Detailed Statistics",
-            description: "Unprecedented access to low-level compiler data exports and performance metrics with detailed quantitative breakdowns."
-        },
-        {
-            title: "Real-Time Communication",
-            description: "WebSocket-based communication channels for fluid interaction between the web portal and native compiler process."
-        }
-    ];
-
-    const highlights = [
-        {
-            color: "var(--class-type-templated)",
-            title: "Low Latency"
-        },
-        {
-            color: "var(--class-type)",
-            title: "High Throughput"
-        },
-        {
-            color: "var(--enum-member)",
-            title: "Zero Dependencies"
-        }
-    ];
+    import Brain from '$lib/vectors/Brain.svelte';
+    import Index from '$lib/vectors/Index.svelte';
+    import Debugger from '$lib/vectors/Debugger.svelte';
 </script>
 
 <svelte:head>
@@ -66,7 +18,7 @@
         gap: 4rem;
         padding: 1rem;
         width: 100%;
-        max-width: 1000px;
+        max-width: calc(var(--content-width) * 1.3);
         margin: auto;
         border: none;
     }
@@ -110,7 +62,8 @@
 
     .features-list {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+        grid-template-rows: 1fr;
         gap: 2rem;
     }
 
@@ -142,7 +95,7 @@
 
     .highlight {
         border-radius: 0.5rem;
-        backdrop-filter: blur(10px);
+        padding: 0.5rem;        
     }
 
     .action {
@@ -150,16 +103,14 @@
     }
 
     .characteristics-list {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 1rem;
     }
         .characteristics-list .left,
         .characteristics-list .right {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-rows: repeat(auto-fit, auto);
             gap: 1rem;
         }
 
@@ -204,25 +155,30 @@
 		<h3>Featuring real-time compilation insights, interactive diagnostics, and hands-on tools, Clarity unlocks both theoretical and practical understanding with a seamless development environment powered by modern and innovative compiler engineering.</h3> 
 	</div>
 	<div class="item-list">
-		{#each highlights as highlight}
-			<span class="card shadowed hoverable interactive highlight" style="color: {highlight.color}">{highlight.title}</span>
-		{/each}
+        <span class="card shadowed highlight" style="color: var(--class-type-templated)">Low Latency</span>
+        <span class="card shadowed highlight" style="color: var(--class-type)">High Throughput</span>
+        <span class="card shadowed highlight" style="color: var(--enum-member)">Zero Dependencies</span>
 	</div>
 	<div class="item-list">
 		<a class="card shadowed hoverable interactive action" href={resolve('/compiler')}>Get Started</a>
 		<a class="card shadowed hoverable interactive action" href="https://github.com/connorjlink/clarity" target="_blank">View Source</a>
 	</div>
 	<div class="features-list">
-		{#each features as feature}
-			<div class="card shadowed hoverable interactive">
-				{#if feature.icon && feature.icon !== ""}
-					<div class="card-icon">
-					</div>
-				{/if}
-				<div class="card-title">{feature.title}</div>
-				<div class="card-description">{feature.description}</div>
-			</div>
-		{/each}
+        <div class="card shadowed hoverable interactive">
+            <div class="card-icon"><Brain size={24} /></div>
+            <div class="card-title">LSP Intelligence</div>
+            <div class="card-description">Language Server Protocol support for code analysis, completion items, and compiler diagnostics.</div>
+        </div>
+        <div class="card shadowed hoverable interactive">
+            <div class="card-icon"><Index size={24} /></div>
+            <div class="card-title">LSIF Indexing</div>
+            <div class="card-description">Language Server Index Format-compliant indexer for efficient navigation and search in large codebases.</div>
+        </div>
+        <div class="card shadowed hoverable interactive">
+            <div class="card-icon"><Debugger size={24} /></div>
+            <div class="card-title">DAP Debugging</div>
+            <div class="card-description">Debug Adapter Protocol support for interactive debugging sessions with breakpoints and variable inspection.</div>
+        </div>
 	</div>
 	<div class="characteristics-list">
 		<div class="left">
@@ -256,12 +212,22 @@
 			<h4>&rbrace;</h4>
 		</div>
 		<div class="right">
-			{#each others as other}
-				<div class="card shadowed hoverable interactive">
-					<h3 class="card-title">{other.title}</h3>
-					<div class="card-description">{other.description}</div>
-				</div>
-			{/each}
+            <div class="card shadowed hoverable interactive">
+                <h3 class="card-title">Source Code Editor</h3>
+                <div class="card-description">Modern, syntax- and semantics-aware interactive code editor with state-of-the-art productivity-enhancing features.</div>
+            </div>
+            <div class="card shadowed hoverable interactive">
+                <h3 class="card-title">Compiler Visualization</h3>
+                <div class="card-description">Detailed and interactive visualizations of five-stage compiler internals and step-by-step breakdowns of code transformations.</div>
+            </div>
+            <div class="card shadowed hoverable interactive">
+                <h3 class="card-title">Detailed Statistics</h3>
+                <div class="card-description">Unprecedented access to low-level compiler data exports and performance metrics with detailed quantitative breakdowns.</div>
+            </div>
+            <div class="card shadowed hoverable interactive">
+                <h3 class="card-title">Real-Time Communication</h3>
+                <div class="card-description">WebSocket-based communication channels for fluid interaction between the web portal and native compiler process.</div>
+            </div>
 		</div>
 	</div>
 	<div class="footer card">

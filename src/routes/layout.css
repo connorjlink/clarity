@@ -146,6 +146,25 @@
     font-weight: bold;
 }
 
+.integer-literal {
+    color: var(--integer-literal);
+    font-weight: normal;
+}
+
+.local-variable {
+    color: var(--local-variable);
+    font-weight: normal;
+}
+
+.field {
+    color: var(--field);
+}
+
+.operator-overloaded {
+    color: var(--operator-overloaded);
+    font-weight: bold;
+}
+
 :root {
     color-scheme: dark;
 
@@ -190,6 +209,8 @@
     --shadow-active: 0 0 1rem #000C;
     --shadow-inset: inset 0 0 1em rgba(0, 0, 0, 0.3);
     --shadow-inset-active: inset 0 0 1em rgba(0, 0, 0, 0.35);
+
+    --content-width: 50rem;
 
     --code-shadow: 0 0 0.4rem #000A;
 }
@@ -328,7 +349,7 @@ html, body, #root {
 }
 
 blockquote {
-    margin: 2rem;
+    margin: 0.5rem 2rem;
     padding: 10px 1rem;
     border-left: 4px solid var(--accent); 
     background: var(--dark-background-e);

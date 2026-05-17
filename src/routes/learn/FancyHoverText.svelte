@@ -1,18 +1,28 @@
 <script lang="ts">
     let {
         baseText = "0",
-        beforeText = "section[",
-        afterText = "]"
+        name = "Sections",
+        leftDelimiter = "[",
+        rightDelimiter = "]",
+        nameClass = "local-variable",
+        delimiterClass = "operator-overloaded",
+        baseTextClass = "integer-literal",
+        enableTypeOut = false
     } = $props();
 
     let mode = $state<"idle" | "typing" | "hovered" | "deleting">("idle");
     let index = $state(0);
+    let isMouseOver = $state(false);
     
     let timer: ReturnType<typeof setTimeout> | undefined;
     let runId = 0;
 
-    let leftText = $derived(beforeText.slice(0, index) + baseText);
-    let rightText = $derived(mode === "hovered" ? afterText : "");
+    let fullBeforeText = $derived(name + leftDelimiter);
+    
+    let currentName = $derived(mode === "idle" ? name : name.slice(0, index));
+    let currentLeftDelim = $derived(mode === "idle" ? leftDelimiter : leftDelimiter.slice(0, Math.max(0, index - name.length)));
+    let currentRightDelim = $derived(mode === "idle" || mode === "hovered" ? rightDelimiter : "");
+    
     let cursorHidden = $derived(mode === "idle");
 
     function clearTimer() {
@@ -22,6 +32,8 @@
     }
 
     function typeIn() {
+        isMouseOver = true;
+
         if (mode === "typing" || mode === "hovered") {
             return;
         }
@@ -29,18 +41,19 @@
         clearTimer();
         const id = ++runId;
         mode = "typing";
+        index = 0;
 
         const step = () => {
             if (id !== runId) {
                 return;
             }
 
-            if (index < beforeText.length) {
+            if (index < fullBeforeText.length) {
                 index++;
                 const variance = Math.random() * 100 - 50;
                 timer = setTimeout(step, Math.max(15, 70 + variance));
             } else {
-                mode = "hovered";
+                mode = isMouseOver ? "hovered" : "idle";
             }
         };
 
@@ -48,6 +61,15 @@
     }
 
     function typeOut() {
+        isMouseOver = false;
+
+        if (!enableTypeOut) {
+            if (mode === "hovered") {
+                mode = "idle";
+            }
+            return;
+        }
+
         if (mode === "deleting" || mode === "idle") {
             return;
         }
@@ -90,7 +112,6 @@
     .text {
         white-space: nowrap;
         font-family: var(--global-font);
-        font-size: 24px;
     }
 
     .cursor {
@@ -101,7 +122,7 @@
     }
 
     .cursor.hidden {
-        visibility: hidden;
+        display: none;
         animation: none;
     }
 
@@ -114,6 +135,6 @@
 
 <span class="wrapper" role="marquee" onmouseenter={typeIn} onmouseleave={typeOut}>
     <h2 class="text">
-        {leftText}<span class="cursor" class:hidden={cursorHidden}>|</span>{rightText}
+        <span class={nameClass}>{currentName}</span><span class={delimiterClass}>{currentLeftDelim}</span><span class={baseTextClass}>{baseText}</span><span class={delimiterClass}>{currentRightDelim}</span><span class="cursor" class:hidden={cursorHidden}>|</span>
     </h2>
 </span>
