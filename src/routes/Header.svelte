@@ -4,37 +4,12 @@
 
 	import Haze from '$lib/vectors/Haze.svelte';
 	import Github from '$lib/vectors/Github.svelte';
+	import Home from '$lib/vectors/Home.svelte';
+	import Atom from '$lib/vectors/Atom.svelte';
+	import PieChart from '$lib/vectors/PieChart.svelte';
+	import GraduateCap from '$lib/vectors/GraduateCap.svelte';
+	import Info from '$lib/vectors/Info.svelte';
 </script>
-
-<header>
-	<a class="corner" href="/">
-		<Haze size={48} class="rounded" />
-	</a>
-
-	<nav>
-		<ul>
-			<li aria-current={page.url.pathname === '/' ? 'page' : undefined}>
-				<a href={resolve('/')}>Home</a>
-			</li>
-			<li aria-current={page.url.pathname === '/compiler' ? 'page' : undefined}>
-				<a href={resolve('/compiler')}>Compiler</a>
-			</li>
-			<li aria-current={page.url.pathname === '/statistics' ? 'page' : undefined}>
-				<a href={resolve('/statistics')}>Statistics</a>
-			</li>
-			<li aria-current={page.url.pathname === '/learn' ? 'page' : undefined}>
-				<a href={resolve('/learn')}>Learn</a>
-			</li>
-			<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
-				<a href={resolve('/about')}>About</a>
-			</li>
-		</ul>
-	</nav>
-
-	<a class="corner" href="https://github.com/connorjlink/clarity">
-		<Github size={36} />
-	</a>
-</header>
 
 <style>
 	header {
@@ -52,57 +27,87 @@
 	nav {
 		display: flex;
 		justify-content: center;
-		--background: rgba(255, 255, 255, 0.7);
-		position: absolute;
+		position: sticky;
 		left: 50%;
 		transform: translateX(-50%);
 	}
+		nav a {
+			color: inherit;
+		}
 
 	ul {
 		position: relative;
 		padding: 0;
 		margin: 0;
-		height: 3em;
+		height: 3rem;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		list-style: none;
+		gap: 1rem;
 		background: var(--background);
 		background-size: contain;
 	}
 
 	li {
-		position: relative;
 		height: 100%;
-	}
-
-	li[aria-current='page']::before {
-		--size: 6px;
-		content: '';
-		width: 0;
-		height: 0;
-		position: absolute;
-		top: 0;
-		left: calc(50% - var(--size));
-		border: var(--size) solid transparent;
-		border-top: var(--size) solid var(--color-theme-1);
-	}
-
-	nav a {
+		transition: color 100ms ease-in-out;
 		display: flex;
-		height: 100%;
 		align-items: center;
-		padding: 0 0.5rem;
+		position: relative;
 		color: var(--color-text);
-		font-weight: 700;
-		font-size: 0.8rem;
-		text-transform: uppercase;
-		letter-spacing: 0.1em;
-		text-decoration: none;
-		transition: color 0.2s linear;
+	}
+		li:hover {
+			color: var(--accent);
+		}
+
+	li[aria-current='page'] {
+		color: var(--accent);
+	}
+	li[aria-current='page']::after {
+		content: '';
+		height: 2px;
+		position: absolute;
+		width: 100%;
+		left: 0;
+		bottom: 0;
+		background: var(--accent);
 	}
 
-	a:hover {
-		color: var(--color-theme-1);
-	}
+	
 </style>
+
+<header>
+	<a class="corner" href="/">
+		<Haze size={48} class="rounded" />
+	</a>
+
+	<nav>
+		<ul>
+			<li aria-current={page.url.pathname === '/' ? 'page' : undefined}>
+				<Home size={24} />
+				<a href={resolve('/')}>Home</a>
+			</li>
+			<li aria-current={page.url.pathname === '/compiler' ? 'page' : undefined}>
+				<Atom size={24} />
+				<a href={resolve('/compiler')}>Compiler</a>
+			</li>
+			<li aria-current={page.url.pathname === '/statistics' ? 'page' : undefined}>
+				<PieChart size={24} />
+				<a href={resolve('/statistics')}>Statistics</a>
+			</li>
+			<li aria-current={page.url.pathname === '/learn' ? 'page' : undefined}>
+				<GraduateCap size={24} />
+				<a href={resolve('/learn')}>Learn</a>
+			</li>
+			<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
+				<Info size={24} />
+				<a href={resolve('/about')}>About</a>
+			</li>
+		</ul>
+	</nav>
+
+	<a class="corner" href="https://github.com/connorjlink/clarity">
+		<Github size={36} />
+	</a>
+</header>

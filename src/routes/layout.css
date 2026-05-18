@@ -474,7 +474,7 @@ program-tree {
 
 .card.interactive {
     padding: 0;
-    transition: scale 200ms ease-in-out;
+    transition: scale 100ms ease-in-out;
 }
     .card.interactive:active {
         scale: 0.99 !important;

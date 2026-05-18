@@ -94,7 +94,7 @@
             <!-- svelte-ignore a11y_mouse_events_have_key_events -->
             <path
                 class="chart-element {hoveredSeries === j ? 'highlighted' : hoveredSeries !== null ? 'faded' : ''}"
-                style="fill-opacity: 0.8; transition: filter 120ms, opacity 120ms; cursor: pointer;"
+                style="fill-opacity: 0.8; transition: filter 100ms ease-in-out, opacity 100ms ease-in-out; cursor: pointer;"
                 d={(function() {
                     let d = "";
                     for (let i = 0; i < n; i++) {

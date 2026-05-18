@@ -8,7 +8,7 @@
         stroke: currentColor;
         stroke-linecap: round;
         stroke-linejoin: round;
-        stroke-width: 1px;
+        stroke-width: 1.3px;
     }
 </style>
 
