@@ -30,7 +30,7 @@
         children?: Snippet;
     } = $props();
 
-    const ctx = getContext<{
+    const context = getContext<{
         register: (header: any) => number;
         getSelectedIndex: () => number | null;
         setSelectedIndex: (idx: number | null) => void;
@@ -38,8 +38,8 @@
 
     let header = $derived({ isComplete, title, subtitle, text, size, shadowColor, foregroundTopColor, foregroundBottomColor, backgroundTopColor, backgroundBottomColor });
 
-    const index = untrack(() => ctx.register(header));
-    let selectedIndex = $derived(ctx.getSelectedIndex());
+    const index = untrack(() => context.register(header));
+    let selectedIndex = $derived(context.getSelectedIndex());
 </script>
 
 <style>
@@ -109,7 +109,7 @@
             aria-disabled={!isComplete}
             onclick={() => {
                 if (isComplete) {
-                    ctx.setSelectedIndex(index);
+                    context.setSelectedIndex(index);
                 }
             }}
         >

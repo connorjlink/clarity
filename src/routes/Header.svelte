@@ -21,11 +21,12 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		padding: 1rem;
+		padding: 0.5rem;
 	}
 
 	nav {
 		display: flex;
+		align-items: center;		
 		justify-content: center;
 		position: sticky;
 		left: 50%;
@@ -72,6 +73,8 @@
 		left: 0;
 		bottom: 0;
 		background: var(--accent);
+		border-radius: 1px;
+		transform: translateY(-5px);
 	}
 
 	
@@ -79,7 +82,7 @@
 
 <header>
 	<a class="corner" href="/">
-		<Haze size={48} class="rounded" />
+		<Haze size={40} class="rounded" />
 	</a>
 
 	<nav>
@@ -108,6 +111,6 @@
 	</nav>
 
 	<a class="corner" href="https://github.com/connorjlink/clarity">
-		<Github size={36} />
+		<Github size={30} />
 	</a>
 </header>

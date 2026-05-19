@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onMount, onDestroy, afterUpdate } from 'svelte';
-    import { PieceTable } from './PieceTable';
+    import { PieceTable } from '../../clarity/PieceTable';
 
     export let initialText: string = '';
     export let fontSize: number = 1.0; // rem
@@ -160,7 +160,9 @@
     }
 
     function updateContentWidth() {
-        if (!contentWrapperRef) return;
+        if (!contentWrapperRef) {
+            return;
+        }
         contentWidthPx = contentWrapperRef.clientWidth;
     }
 
