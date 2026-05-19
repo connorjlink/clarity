@@ -60,6 +60,12 @@
         return scaleY(y, height, margin, minY, maxY);
     };
 
+    // Ported from LineChart: precomputed stops + stop-color transition (prevents sudden jumps)
+    let gradientStops = $derived(sortedData.map((_, i) => ({
+        color: getActiveColor(i, sortedData.length, hoveredIndex, 0),
+        offset: sortedData.length === 1 ? 0.5 : i / (sortedData.length - 1)
+    })));
+
     let areaPath = $derived.by(() => {
         if (sortedData.length < 2) {
             return "";
@@ -76,6 +82,24 @@
     });
 </script>
 
+<style>
+    .areachart-dotline {
+        stroke: var(--chart-major-tick-color, #666);
+        stroke-width: 1;
+        stroke-dasharray: 4 3;
+        transition: stroke 100ms ease-in-out;
+        pointer-events: none;
+    }
+
+    .areachart-point {
+        stroke: var(--dark-background-e, #222);
+        transition:
+            r 100ms ease-in-out,
+            fill 100ms ease-in-out,
+            stroke-width 100ms ease-in-out;
+    }
+</style>
+
 <ChartBase 
     hasData={sortedData.length > 0} 
     {width} 
@@ -85,11 +109,8 @@
     {#snippet svgContent()}
         <defs>
             <linearGradient id="area-gradient" x1="0" y1="0" x2="1" y2="0" gradientUnits="objectBoundingBox">
-                {#each sortedData as _, i}
-                    <stop 
-                        offset={sortedData.length === 1 ? 0.5 : i / (sortedData.length - 1)} 
-                        stop-color={getActiveColor(i, sortedData.length, hoveredIndex, 0)} 
-                    />
+                {#each gradientStops as stop}
+                    <stop offset={stop.offset} stop-color={stop.color} style="transition: stop-color 100ms;" />
                 {/each}
             </linearGradient>
         </defs>
@@ -116,19 +137,16 @@
 
         {#each sortedData as point, i}
             <line
-                class="chart-element {hoveredIndex === i ? 'highlighted' : hoveredIndex !== null ? 'faded' : ''}"
+                class="chart-element areachart-dotline {hoveredIndex === i ? 'highlighted' : hoveredIndex !== null ? 'faded' : ''}"
                 x1={newScaleX(point.x, i)} y1={newScaleY(point.y)} x2={newScaleX(point.x, i)} y2={height - margin}
-                stroke={hoveredIndex === i ? getActiveColor(i, sortedData.length, hoveredIndex) : "var(--chart-major-tick-color)"}
-                stroke-dasharray="4 3"
-                style="pointer-events: none;"
+                style={hoveredIndex === i ? `stroke: ${getActiveColor(i, sortedData.length, hoveredIndex)}` : undefined}
             />
             <!-- svelte-ignore a11y_mouse_events_have_key_events -->
             <circle
-                class="chart-element {hoveredIndex === i ? 'highlighted' : hoveredIndex !== null ? 'faded' : ''}"
+                class="chart-element areachart-point {hoveredIndex === i ? 'highlighted' : hoveredIndex !== null ? 'faded' : ''}"
                 cx={newScaleX(point.x, i)} cy={newScaleY(point.y)}
                 r={hoveredIndex === i ? 6 : 4}
-                fill={getColor(i, sortedData.length)}
-                stroke="var(--dark-background-e)" stroke-width={hoveredIndex === i ? 3 : 1.5}
+                style={`fill: ${getColor(i, sortedData.length)}; stroke-width: ${hoveredIndex === i ? 3 : 1.5};`}
                 role="figure"
                 onmouseover={() => hoveredIndex = i}
                 onmouseout={() => hoveredIndex = null}
