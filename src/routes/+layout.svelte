@@ -15,13 +15,16 @@
 
 <style>
 	.app {
-		overflow-y: auto;
-	}
-
-	main {
-		flex: 1;
 		display: flex;
 		flex-direction: column;
+		height: 100%;
+		overflow-y: auto;
+		
+	}
+	main {
+		display: flex;
+		flex-direction: column;
+		flex: 1;
 		width: 100%;
 		box-sizing: border-box;
 	}

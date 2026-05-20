@@ -54,8 +54,7 @@
     }
     
     .main-area {
-        display: flex;
-        flex: 1;
+        height: 100%;
     }
 
     .pane-content-wrapper {
@@ -82,8 +81,8 @@
     }
 
     .status-bar {
-        height: 2rem;
-        background: var(--dark-background-e);
+        height: 1.5rem;
+        background: var(--accent);
         border-top: 1px solid var(--dark-background-ll);
         display: flex;
         align-items: center;
@@ -93,7 +92,7 @@
         z-index: 101;
     }
 
-    .icon-btn {
+    .icon-button {
         background: none;
         border: none;
         color: inherit;
@@ -106,7 +105,7 @@
         transition: opacity 0.15s;
     }
 
-    .icon-btn:hover {
+    .icon-button:hover {
         opacity: 1;
     }
 </style>
@@ -171,12 +170,12 @@
     </div>
 
     <div class="status-bar">
-        <button class="icon-btn" onclick={cycleOutput} aria-label="Toggle Output">
+        <button class="icon-button" onclick={cycleOutput} aria-label="Toggle Output">
             <OutputIcon state={outputState} size={16} />
         </button>
         
         {#each paneStates as pane, i}
-            <button class="icon-btn" onclick={() => togglePane(i)} aria-label="Toggle {pane.title}">
+            <button class="icon-button" onclick={() => togglePane(i)} aria-label="Toggle {pane.title}">
                 <PaneIcon paneNumber={i} isOpen={pane.visible} size={16} />
             </button>
         {/each}

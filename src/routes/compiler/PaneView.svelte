@@ -21,7 +21,7 @@
     });
 
     let gridTemplateColumns = $derived(
-        widths.map((w) => `${w}px`).join(" 4px "),
+        widths.map((w) => `${w}px`).join(" 1px "),
     );
 
     function handlePointerDown(index: number, e: PointerEvent) {
@@ -40,7 +40,7 @@
 
         let currentLeft = 0;
         for (let i = 0; i < activeHandleIndex; i++) {
-            currentLeft += widths[i] + 4;
+            currentLeft += widths[i] + 1;
         }
 
         const currentHandlePos = currentLeft + widths[activeHandleIndex];
@@ -109,15 +109,22 @@
         height: 100%;
     }
     .pane-handle {
-        width: 4px;
-        background: #e2e8f0;
+        width: 2px;
+        padding: 0;
+        margin: 0;
+        background: var(--dark-foreground-lll);
         cursor: col-resize;
         z-index: 10;
         transition: background-color 0.15s;
+        border-radius: 0;
     }
-    .pane-handle:hover,
+    .pane-handle:hover {
+        background: var(--accent-hovered);
+        width: 3px;
+    }
     .pane-handle.active {
-        background: #3b82f6;
+        background: var(--accent-selected);
+        width: 4px;
     }
 </style>
 
