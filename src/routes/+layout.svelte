@@ -2,6 +2,8 @@
 	import Header from './Header.svelte';
 	import './layout.css';
 
+	import './+layout.ts'
+
 	let { children } = $props();
 </script>
 
