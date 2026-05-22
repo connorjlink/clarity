@@ -25,9 +25,6 @@
         .container .card.interactive {
             padding: 1.5rem;
         }
-        .container .card.highlight.interactive {
-            padding: 0.5rem;
-        }
 
     .header {
         display: flex;
