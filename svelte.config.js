@@ -9,7 +9,7 @@ const config = {
 		adapter: adapter({
 			pages: 'docs',
 			assets: 'docs',
-			fallback: 'app.html'
+			fallback: 'index.html'
 		}),
 		paths: {
 			base: ''
