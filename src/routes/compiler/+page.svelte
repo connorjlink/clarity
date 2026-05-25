@@ -19,6 +19,12 @@
 
     let activeIds = $derived(paneStates.filter(p => p.visible).map(p => p.id));
 
+    let sourcePluginText = $state("");
+    let astPluginText = $state("");
+    let irPluginText = $state("");
+    let asmPluginText = $state("");
+    let exePluginText = $state("");
+
     type OutputState = 'auto' | 'open' | 'closed';
 
     let outputVisible = $state(true);
@@ -138,50 +144,45 @@
         <PaneView {activeIds}>
             {#snippet source()}
                 <div class="pane-content-wrapper">
-                    <PaneStatus dataHeader="Source Code" dataPlugin="source-plugin" />
-                    <span id="source-plugin" style="display:none"></span>
+                    <PaneStatus dataHeader="Source Code" dataPlugin={sourcePluginText} />
                     <div class="pane-body">
-                        <SourceEditor pluginId="source-plugin" />
+                        <SourceEditor bind:pluginText={sourcePluginText} />
                     </div>
                 </div>
             {/snippet}
 
             {#snippet ast()}
                 <div class="pane-content-wrapper">
-                    <PaneStatus dataHeader="AST" dataPlugin="ast-plugin" />
-                    <span id="ast-plugin" style="display:none"></span>
+                    <PaneStatus dataHeader="AST" dataPlugin={astPluginText} />
                     <div class="pane-body">
-                        <ProgramTree />
+                        <ProgramTree bind:pluginText={astPluginText} />
                     </div>
                 </div>
             {/snippet}
 
             {#snippet ir()}
                 <div class="pane-content-wrapper">
-                    <PaneStatus dataHeader="IR" dataPlugin="ir-plugin" />
-                    <span id="ir-plugin" style="display:none"></span>
+                    <PaneStatus dataHeader="IR" dataPlugin={irPluginText} />
                     <div class="pane-body">
-                        <SourceEditor pluginId="ir-plugin" />
+                        <SourceEditor bind:pluginText={irPluginText} />
                     </div>
                 </div>
             {/snippet}
 
             {#snippet assembly()}
                 <div class="pane-content-wrapper">
-                    <PaneStatus dataHeader="Assembly" dataPlugin="asm-plugin" />
-                    <span id="asm-plugin" style="display:none"></span>
+                    <PaneStatus dataHeader="Assembly" dataPlugin={asmPluginText} />
                     <div class="pane-body">
-                        <SourceEditor pluginId="asm-plugin" />
+                        <SourceEditor bind:pluginText={asmPluginText} />
                     </div>
                 </div>
             {/snippet}
 
             {#snippet machine()}
                 <div class="pane-content-wrapper">
-                    <PaneStatus dataHeader="Machine Code" dataPlugin="exe-plugin" />
-                    <span id="exe-hex-plugin" style="display:none"></span>
+                    <PaneStatus dataHeader="Machine Code" dataPlugin={exePluginText} />
                     <div class="pane-body">
-                        <HexViewer data={new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x40, 0x45, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A])} />
+                        <HexViewer bind:pluginText={exePluginText} data={new Uint8Array([0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x40, 0x45, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A])} />
                     </div>
                 </div>
             {/snippet}

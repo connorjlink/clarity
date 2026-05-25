@@ -1,6 +1,10 @@
 <script lang="ts">
     import type * as nt from "../../clarity/NodeTypes";
 
+    let {
+        pluginText = $bindable('')
+    } = $props();
+
     interface NodeData {
         id: string;
         label: string;
@@ -87,7 +91,9 @@
 
     function clientToSvgLocal(client: nt.Point): nt.Point {
         const rect = svgRef?.getBoundingClientRect();
-        if (!rect) return client;
+        if (!rect) {
+            return client;
+        }
         return { x: client.x - rect.left, y: client.y - rect.top };
     }
 
@@ -390,6 +396,10 @@
     function nodeById(id: string) {
         return nodes.find((n) => n.id === id) ?? null;
     }
+
+    $effect(() => {
+        pluginText = `NODES:${nodes.length} EDGES:${connections.length} ${Math.round(scale * 100)}%`;
+    });
 </script>
 
 <style>

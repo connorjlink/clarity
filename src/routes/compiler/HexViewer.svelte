@@ -5,7 +5,8 @@
         symbols = $bindable<{ address: number; length: number; type: string; color: string }[]>([]),
         client = $bindable<Worker | null>(null),
         sourceUri = $bindable(''),
-        autoColumns = true
+        autoColumns = true,
+        pluginText = $bindable('')
     } = $props();
 
     let container = $state<HTMLElement>();
@@ -31,12 +32,13 @@
         const resizeObserver = new ResizeObserver(() => {
             const style = getComputedStyle(container!);
             const fontSize = parseInt(style.fontSize) || 16;
-            // subtract padding and address/ascii columns to get hex area width
-            const containerWidth = container!.clientWidth - (fontSize * 8) - (fontSize * 4);
-            const maxColumns = Math.max(1, containerWidth / (fontSize * 2));
-            
-            if (Math.abs(maxColumns - columns) > 0.5) {
-                columns = Math.floor(maxColumns);
+            const ch = fontSize * 0.65;
+            const fixedWidth = (6 * fontSize) + (8 * ch);
+            const costPerColumn = 4 * ch;
+
+            const maxColumns = Math.max(1, Math.floor((container!.clientWidth - fixedWidth) / costPerColumn));
+            if (maxColumns !== columns) {
+                columns = maxColumns;
             }
         });
         
@@ -76,14 +78,11 @@
     });
 
     $effect(() => {
-        const plugin = document.querySelector('#exe-hex-plugin');
-        if (plugin) {
-            if (selectedIndex !== null) {
-                const hexAddress = selectedIndex.toString(16).toUpperCase();
-                plugin.setAttribute('dataPlugin', `$${hexAddress} ${selectedIndex + 1}/${data.length} B`);
-            } else {
-                plugin.setAttribute('dataPlugin', `${data.length} B`);
-            }
+        if (selectedIndex !== null) {
+            const hexAddress = selectedIndex.toString(16).toUpperCase().padStart(2, '0');
+            pluginText = `$${hexAddress} ${selectedIndex + 1}/${data.length} B`;
+        } else {
+            pluginText = `${data.length} B`;
         }
     });
 </script>
@@ -134,10 +133,23 @@
         padding-left: 1rem;
     }
 
-    .hex-byte { 
+    .ascii-container {
+        display: flex;
+        gap: 0.15rem;
+    }
+
+    .hex-byte, .hex-ascii-char { 
         cursor: pointer;
     }
-        .hex-byte.selected { 
+        .hex-ascii-char {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 1.5ch;
+            border-radius: 0.25rem;
+        }
+
+        .hex-byte.selected, .hex-ascii-char.selected { 
             outline: 1px solid var(--accent); 
             background: var(--dark-background); 
             border-radius: 0.25rem;
@@ -151,7 +163,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="hex-shell" bind:this={container} onclick={(e) => { 
-    if (!(e.target instanceof HTMLElement) || !e.target.closest('.hex-byte')) {
+    if (!(e.target instanceof HTMLElement) || (!e.target.closest('.hex-byte') && !e.target.closest('.hex-ascii-char'))) {
         selectedIndex = null;
     }
 }}>
@@ -194,15 +206,17 @@
                             {/if}
                         {/each}
                         <td class="hex-ascii">
-                            {#each Array(columns) as _, column}
-                                {@const index = rowOffset + column}
-                                {#if index < data.length}
-                                    {@const byte = data[index]}
-                                    {byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'}
-                                {:else}
-                                    {' '}
-                                {/if}
-                            {/each}
+                            <div class="ascii-container">
+                                {#each Array(columns) as _, column}
+                                    {@const index = rowOffset + column}
+                                    {#if index < data.length}
+                                        {@const byte = data[index]}
+                                        <span class="hex-ascii-char" class:selected={selectedIndex === index} onclick={(e) => { e.stopPropagation(); selectedIndex = index; }}>{byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'}</span>
+                                    {:else}
+                                        <span class="hex-ascii-char"> </span>
+                                    {/if}
+                                {/each}
+                            </div>
                         </td>
                     </tr>
                 {/each}

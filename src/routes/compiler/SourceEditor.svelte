@@ -10,16 +10,15 @@
         readOnly = false,
         allowLoadFromDisk = false,
         lineHeightBasis = 1.5,
-        pluginId = 'ir-editor-plugin',
+        pluginText = $bindable(''),
         tabSize = 4
     } = $props();
 
-    let pieceTable = $state(new PieceTable(initialText));
+    let pieceTable = $state(new PieceTable(untrack(() => initialText)));
 
     let editorRowsRef: HTMLTextAreaElement;
     let contentWrapperRef: HTMLDivElement;
     let measureRef: HTMLSpanElement;
-    let pluginRef: HTMLElement | null;
     let scrollVerticalRef: HTMLDivElement;
 
     let lineCount = $state(1);
@@ -77,9 +76,7 @@
     function onFileLoaded(text: string) { /* stub */ }
 
     function updatePlugin() {
-        if (pluginRef) {
-            pluginRef.setAttribute('dataPlugin', `LN:${cursorLine} COL:${cursorColumn} ${Math.round(fontSize * 100)}%`);
-        }
+        pluginText = `LN:${cursorLine} COL:${cursorColumn} ${Math.round(fontSize * 100)}%`;
     }
 
     async function toggleSoftWrap() {
@@ -253,8 +250,11 @@
     function handleRightGutter(line: number) { onRightGutterAction(line); }
 
     function toggleBreakpoint(line: number) {
-        if (breakpoints.has(line)) breakpoints.delete(line);
-        else breakpoints.add(line);
+        if (breakpoints.has(line)) {
+            breakpoints.delete(line);
+        } else {
+            breakpoints.add(line);
+        }
     }
 
     // Runes for derived state
@@ -274,8 +274,6 @@
     `);
 
     $effect(() => {
-        pluginRef = document.querySelector(`#${pluginId}`) as HTMLElement;
-        
         untrack(() => {
             const text = pieceTable.getText();
             updateLinesFromText(text);
@@ -284,6 +282,7 @@
                 editorRowsRef.value = text;
             }
             recalculateLayout();
+            updatePlugin();
         });
 
         const ro = new ResizeObserver(() => recalculateLayout());
@@ -291,11 +290,11 @@
             ro.observe(contentWrapperRef);
         }
 
-        untrack(() => updatePlugin());
         window.addEventListener('wheel', handleWheel, { passive: false });
 
         return () => {
             ro.disconnect();
+            
             window.removeEventListener('wheel', handleWheel);
         };
     });
