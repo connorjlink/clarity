@@ -43,7 +43,7 @@
         padding: 1rem;
         max-width: var(--content-width);
 		width: 100%;
-		margin: auto;
+		margin: 0 auto;
 		border: none;
     }
 </style>

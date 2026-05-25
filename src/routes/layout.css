@@ -45,6 +45,11 @@
 
     --breakpoint: #D34;
 
+    --connected: rgb(100, 200, 100);
+    --disconnected: rgb(200, 100, 100);
+    --pending: rgb(200, 200, 100);
+    --error: rgb(255, 50, 50);
+
     --purple: rgb(143, 132, 215);
     --blue: rgb(56, 114, 186);
 

@@ -1,7 +1,13 @@
 <script lang="ts">
-    // restrict to string only props for rendering
-    export let dataHeader: string = '';
-    export let dataPlugin: string = '';
+    type Props = {
+        dataHeader: string;
+        dataPlugin: string;
+    };
+
+    let {
+        dataHeader,
+        dataPlugin
+    }: Props = $props();
 </script>
 
 <style>
