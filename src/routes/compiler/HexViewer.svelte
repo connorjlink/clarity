@@ -10,9 +10,17 @@
     } = $props();
 
     let container = $state<HTMLElement>();
-    let selectedIndex = $state<number | null>(null);
+    let selectionStart = $state<number | null>(null);
+    let selectionEnd = $state<number | null>(null);
 
     let rows = $derived(Math.ceil(data.length / columns));
+
+    let selectionRange = $derived.by(() => {
+        if (selectionStart === null || selectionEnd === null) {
+            return null;
+        }
+        return [Math.min(selectionStart, selectionEnd), Math.max(selectionStart, selectionEnd)];
+    });
 
     let byteColors = $derived.by(() => {
         const colors = new Array(data.length).fill('');
@@ -32,7 +40,7 @@
         const resizeObserver = new ResizeObserver(() => {
             const style = getComputedStyle(container!);
             const fontSize = parseInt(style.fontSize) || 16;
-            const ch = fontSize * 0.65;
+            const ch = fontSize * 0.60;
             const fixedWidth = (6 * fontSize) + (8 * ch);
             const costPerColumn = 4 * ch;
 
@@ -78,13 +86,32 @@
     });
 
     $effect(() => {
-        if (selectedIndex !== null) {
-            const hexAddress = selectedIndex.toString(16).toUpperCase().padStart(2, '0');
-            pluginText = `$${hexAddress} ${selectedIndex + 1}/${data.length} B`;
+        if (selectionRange !== null) {
+            const [start, end] = selectionRange;
+            const startHexAddress = start.toString(16).toUpperCase().padStart(2, '0');
+            const endHexAddress = end.toString(16).toUpperCase().padStart(2, '0');
+
+            const length = end - start + 1;
+            
+            if (length === 1) {
+                pluginText = `$${startHexAddress} ${start + 1}/${data.length} B`;
+            } else {
+                pluginText = `Sel $${startHexAddress}-$${endHexAddress} ${end - start + 1}/${data.length} B`;
+            }
         } else {
             pluginText = `${data.length} B`;
         }
     });
+
+    function handleSelection(e: MouseEvent, index: number) {
+        e.stopPropagation();
+        if (e.shiftKey && selectionStart !== null) {
+            selectionEnd = index;
+        } else {
+            selectionStart = index;
+            selectionEnd = index;
+        }
+    }
 </script>
 
 <style>
@@ -97,7 +124,8 @@
     
     .hex-table { 
         font-family: var(--global-font); 
-        border-collapse: collapse; 
+        border-collapse: separate; 
+        border-spacing: 0;
         width: 100%; 
     }
 
@@ -128,14 +156,13 @@
         padding-right: 1rem; 
     }
 
-    .hex-ascii { 
+   .hex-ascii { 
         color: var(--secondary); 
         padding-left: 1rem;
     }
 
     .ascii-container {
         display: flex;
-        gap: 0.15rem;
     }
 
     .hex-byte, .hex-ascii-char { 
@@ -146,13 +173,29 @@
             justify-content: center;
             align-items: center;
             width: 1.5ch;
-            border-radius: 0.25rem;
         }
 
         .hex-byte.selected, .hex-ascii-char.selected { 
-            outline: 1px solid var(--accent); 
             background: var(--dark-background); 
+            border-top: 1px solid var(--accent);
+            border-bottom: 1px solid var(--accent);
+        }
+
+        .hex-byte.selection-start, .hex-ascii-char.selection-start {
+            border-left: 1px solid var(--accent);
+            border-top-left-radius: 0.25rem;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .hex-byte.selection-end, .hex-ascii-char.selection-end {
+            border-right: 1px solid var(--accent);
+            border-top-right-radius: 0.25rem;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .hex-byte.selection-single, .hex-ascii-char.selection-single {
             border-radius: 0.25rem;
+            border: 1px solid var(--accent);
         }
 
     .hex-highlight-layer { 
@@ -164,7 +207,8 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="hex-shell" bind:this={container} onclick={(e) => { 
     if (!(e.target instanceof HTMLElement) || (!e.target.closest('.hex-byte') && !e.target.closest('.hex-ascii-char'))) {
-        selectedIndex = null;
+        selectionStart = null;
+        selectionEnd = null;
     }
 }}>
     <pre class="hex-highlight-layer">
@@ -195,9 +239,12 @@
                             {#if index < data.length}
                                 <td
                                     class="hex-byte"
-                                    class:selected={selectedIndex === index}
+                                    class:selected={selectionRange !== null && index >= selectionRange[0] && index <= selectionRange[1]}
+                                    class:selection-start={selectionRange !== null && index === selectionRange[0] && selectionRange[0] !== selectionRange[1]}
+                                    class:selection-end={selectionRange !== null && index === selectionRange[1] && selectionRange[0] !== selectionRange[1]}
+                                    class:selection-single={selectionRange !== null && index === selectionRange[0] && selectionRange[0] === selectionRange[1]}
                                     style:color={byteColors[index] || '#ccc'}
-                                    onclick={(e) => { e.stopPropagation(); selectedIndex = index; }}
+                                    onclick={(e) => handleSelection(e, index)}
                                 >
                                     {data[index].toString(16).padStart(2, '0')}
                                 </td>
@@ -211,7 +258,14 @@
                                     {@const index = rowOffset + column}
                                     {#if index < data.length}
                                         {@const byte = data[index]}
-                                        <span class="hex-ascii-char" class:selected={selectedIndex === index} onclick={(e) => { e.stopPropagation(); selectedIndex = index; }}>{byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'}</span>
+                                        <span 
+                                            class="hex-ascii-char" 
+                                            class:selected={selectionRange !== null && index >= selectionRange[0] && index <= selectionRange[1]}
+                                            class:selection-start={selectionRange !== null && index === selectionRange[0] && selectionRange[0] !== selectionRange[1]}
+                                            class:selection-end={selectionRange !== null && index === selectionRange[1] && selectionRange[0] !== selectionRange[1]}
+                                            class:selection-single={selectionRange !== null && index === selectionRange[0] && selectionRange[0] === selectionRange[1]}
+                                            onclick={(e) => handleSelection(e, index)}
+                                        >{byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'}</span>
                                     {:else}
                                         <span class="hex-ascii-char"> </span>
                                     {/if}
