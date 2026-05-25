@@ -18,8 +18,10 @@
 
     let activeIds = $derived(paneStates.filter(p => p.visible).map(p => p.id));
 
+    type OutputState = 'auto' | 'open' | 'closed';
+
     let outputVisible = $state(true);
-    let outputState = $state<'auto' | 'open' | 'closed'>('auto');
+    let outputState = $state<OutputState>('auto');
     let messages = $state<OutputWindowMessage[]>([]);
     let outputRef: OutputWindow;
 
@@ -39,6 +41,19 @@
             outputRef?.auto();
         }
     }
+
+    function outputStateToNext(outputState: OutputState): string | undefined {
+        switch (outputState) {
+            case 'auto':
+                return  'Open Output Window';
+            case 'open':
+                return  'Close Output Window';
+            case 'closed':
+                return  'Auto-Hide Output Window';
+        }
+        return undefined;
+    }
+
 </script>
 
 <style>
@@ -171,12 +186,12 @@
 
     <div class="status-bar">
         <button class="icon-button" onclick={cycleOutput} aria-label="Toggle Output">
-            <OutputIcon state={outputState} size={16} />
+            <OutputIcon state={outputState} size={16} title={outputStateToNext(outputState)} />
         </button>
         
         {#each paneStates as pane, i}
             <button class="icon-button" onclick={() => togglePane(i)} aria-label="Toggle {pane.title}">
-                <PaneIcon paneNumber={i} isOpen={pane.visible} size={16} />
+                <PaneIcon paneNumber={i} isOpen={pane.visible} size={16} title="{pane.visible ? 'Close' : 'Open'} {pane.title}" />
             </button>
         {/each}
     </div>

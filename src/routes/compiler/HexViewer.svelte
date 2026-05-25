@@ -95,6 +95,7 @@
         overflow-x: hidden; 
         overflow-y: auto; 
     }
+    
     .hex-table { 
         font-family: var(--global-font); 
         border-collapse: collapse; 
@@ -107,35 +108,41 @@
         text-align: center; 
         white-space: nowrap;
     }
-    .hex-table th { 
-        color: var(--dark-foreground-l); 
-    }
+        .hex-table th { 
+            color: var(--dark-foreground-l); 
+        }
+    
     .header-spacer-row { 
         height: 0.5rem; 
     }
+
     .hex-offset { 
         font-weight: normal; 
     }
-    th.hex-offset { 
-        color: var(--accent); 
-    }
+        th.hex-offset { 
+            color: var(--accent); 
+        }
+
     .hex-address { 
         font-weight: bold; 
         color: var(--light-foreground-l); 
         padding-right: 1rem; 
     }
+
     .hex-ascii { 
         color: var(--secondary); 
         padding-left: 1rem;
     }
+
     .hex-byte { 
         cursor: pointer;
     }
-    .hex-byte.selected { 
-        outline: 1px solid var(--accent); 
-        background: var(--dark-background); 
-        border-radius: 0.25rem;
-    }
+        .hex-byte.selected { 
+            outline: 1px solid var(--accent); 
+            background: var(--dark-background); 
+            border-radius: 0.25rem;
+        }
+
     .hex-highlight-layer { 
         margin: 0; 
     }

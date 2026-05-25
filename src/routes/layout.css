@@ -45,9 +45,6 @@
 
     --breakpoint: #D34;
 
-    --node-border: var(--dark-background-ll);
-
-
     --purple: rgb(143, 132, 215);
     --blue: rgb(56, 114, 186);
 
@@ -375,7 +372,7 @@ main {
     grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 main > * {
-    border: 1px solid var(--node-border);
+    border: 1px solid var(--dark-background-ll);
     border-top-width: 1px;
 }
 
@@ -385,7 +382,7 @@ main > * {
     align-items: center;
     background: var(--accent);
     height: 1rem;
-    border-top: 1px solid var(--node-border);
+    border-top: 1px solid var(--dark-background-ll);
 }
     .status-bar svg {
         height: 1rem;
@@ -401,7 +398,7 @@ main > * {
 
 .compiler-tab {
     overflow-y: hidden;
-    border-top: 1px solid var(--node-border);
+    border-top: 1px solid var(--dark-background-ll);
 }
 .compiler-tab pane-view {
     overflow-y: hidden;
@@ -495,7 +492,7 @@ program-tree {
 
 ::-webkit-scrollbar-track {
     background: var(--dark-background-e);
-    border: 1px solid var(--node-border);
+    border: 1px solid var(--dark-background-ll);
 }
 
 ::-webkit-scrollbar-thumb {

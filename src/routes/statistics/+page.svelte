@@ -134,7 +134,7 @@
 
     .nav-radio {
         width: 100%;
-        border-bottom: 1px solid var(--node-border);
+        border-bottom: 1px solid var(--dark-background-ll);
         color: var(--dark-foreground-ll);
         background: var(--dark-background);
         user-select: none;
@@ -168,7 +168,7 @@
         width: 1px;
         will-change: width;
         cursor: col-resize;
-        background: var(--node-border);
+        background: var(--dark-background-ll);
         height: 100%;
         position: relative;
         transition: background-color 100ms ease-in-out;
@@ -184,8 +184,8 @@
     header {
         padding: 0.5rem;
         background: var(--dark-background-e);
-        border-top: 1px solid var(--node-border);
-        border-bottom: 1px solid var(--node-border);
+        border-top: 1px solid var(--dark-background-ll);
+        border-bottom: 1px solid var(--dark-background-ll);
     }
 </style>
 

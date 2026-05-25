@@ -73,7 +73,7 @@
 
     th, td {
         padding: 0.5rem;
-        border: 1px solid var(--node-border);
+        border: 1px solid var(--dark-background-ll);
         text-align: left;
     }
     
@@ -98,7 +98,7 @@
     
     .filter-box {
         width: 100%;
-        border: 1px solid var(--node-border);
+        border: 1px solid var(--dark-background-ll);
         transition: 100ms border-color ease-in-out;
         text-overflow: ellipsis;
         margin-top: 0.25rem;

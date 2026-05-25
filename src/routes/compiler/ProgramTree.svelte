@@ -17,7 +17,7 @@
     // constants
     const NODE_W = 200;
     const NODE_H = 100;
-    const CLICK_R = 7;
+    const CLICK_R = 4;
     const CONTROL_OFFSET = 100;
 
     const MIN_SCALE = 0.2;
@@ -109,7 +109,9 @@
     function anchorFor(
         node: NodeData,
         clickspotId: string,
-    ): { p: nt.Point; location: nt.ClickspotLocation | null } | null {
+    ): { 
+        p: nt.Point; location: nt.ClickspotLocation | null } | null {
+        
         const spot = node.clickspots.find((s) => s.id === clickspotId);
         if (!spot) {
             return null;
@@ -120,7 +122,7 @@
         if (spot.location === "left") {
             const i = left.findIndex((s) => s.id === clickspotId);
             const n = Math.max(1, left.length);
-            const y = ((i + 1) / (n + 1)) * NODE_H;
+            const y = 22 + ((i + 1) / (n + 1)) * (NODE_H - 22);
             return {
                 p: { x: node.position.x + 0, y: node.position.y + y },
                 location: "left",
@@ -130,7 +132,7 @@
         if (spot.location === "right") {
             const i = right.findIndex((s) => s.id === clickspotId);
             const n = Math.max(1, right.length);
-            const y = ((i + 1) / (n + 1)) * NODE_H;
+            const y = 22 + ((i + 1) / (n + 1)) * (NODE_H - 22);
             return {
                 p: { x: node.position.x + NODE_W, y: node.position.y + y },
                 location: "right",
@@ -408,20 +410,20 @@
 
     .node-header {
         fill: var(--keyword);
-        stroke: var(--node-border);
+        stroke: var(--dark-background-ll);
         stroke-width: 1;
         cursor: grab;
     }
 
     .node-title {
-        fill: white;
+        fill: var(--dark-foreground);
         font-size: 10px;
         dominant-baseline: middle;
     }
 
     .node-body {
         fill: var(--dark-background-e);
-        stroke: var(--node-border);
+        stroke: var(--dark-background-ll);
         stroke-width: 1;
     }
 
@@ -523,29 +525,19 @@
                 >
                     <!-- header drag area -->
                     <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <rect
+                    <path
                         class="node-header"
-                        x="0"
-                        y="0"
-                        width={NODE_W}
-                        height="22"
-                        rx="6"
-                        ry="6"
+                        d="M 0 22 L 0 6 Q 0 0 6 0 L {NODE_W - 6} 0 Q {NODE_W} 0 {NODE_W} 6 L {NODE_W} 22 Z"
                         onpointerdown={(e) => startNodeDrag(n.id, e)}
                     />
-                    <text class="node-title" x="28" y="11"
+                    <text class="node-title" x="28" y="11" style="pointer-events: none;"
                         >Exponentiation Expression</text
                     >
 
                     <!-- body -->
-                    <rect
+                    <path
                         class="node-body"
-                        x="0"
-                        y="22"
-                        width={NODE_W}
-                        height={NODE_H - 22}
-                        rx="6"
-                        ry="6"
+                        d="M {NODE_W} 22 L {NODE_W} {NODE_H - 6} Q {NODE_W} {NODE_H} {NODE_W - 6} {NODE_H} L 6 {NODE_H} Q 0 {NODE_H} 0 {NODE_H - 6} L 0 22 Z"
                     />
 
                     <!-- label -->
@@ -553,7 +545,7 @@
 
                     <!-- clickspots -->
                     {#each parts.left as s, i (s.id)}
-                        {@const y = ((i + 1) / (parts.left.length + 1)) * NODE_H}
+                        {@const y = 22 + ((i + 1) / (parts.left.length + 1)) * (NODE_H - 22)}
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <circle
                             data-clickspot
@@ -575,7 +567,7 @@
                     {/each}
 
                     {#each parts.right as s, i (s.id)}
-                        {@const y = ((i + 1) / (parts.right.length + 1)) * NODE_H}
+                        {@const y = 22 + ((i + 1) / (parts.right.length + 1)) * (NODE_H - 22)}
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <circle
                             data-clickspot

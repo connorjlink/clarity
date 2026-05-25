@@ -49,7 +49,7 @@
 
     .chart-nodata {
         background: var(--dark-background-e);
-        border: 1px solid var(--node-border);
+        border: 1px solid var(--dark-background-ll);
         border-radius: var(--chart-radius);
         display: flex;
         align-items: center;
@@ -62,7 +62,7 @@
 
     .chart-svg {
         background: var(--dark-background-e);
-        border: 1px solid var(--node-border);
+        border: 1px solid var(--dark-background-ll);
         border-radius: var(--chart-radius);
     }
 

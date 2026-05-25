@@ -11,18 +11,35 @@
     let containerRef = $state<HTMLDivElement>();
     let activeHandleIndex = $state<number | null>(null);
 
+    const GAP_PX = 0;
+    const getTotalGapWidth = () => Math.max(0, activeIds.length - 1) * GAP_PX;
+
     // adjust widths array length and space when activeIds changes
     $effect(() => {
         if (containerRef && widths.length !== activeIds.length) {
-            const totalWidth = containerRef.clientWidth;
-            const initialWidth = totalWidth / activeIds.length;
+            const availableWidth = containerRef.clientWidth - getTotalGapWidth();
+            const initialWidth = availableWidth / activeIds.length;
             widths = activeIds.map(() => initialWidth);
         }
     });
 
     let gridTemplateColumns = $derived(
-        widths.map((w) => `${w}px`).join(" 1px "),
+        widths.map((w) => `${w}px`).join(` ${GAP_PX}px `),
     );
+
+    function handleResize() {
+        if (!containerRef || widths.length === 0) {
+            return;
+        }
+        
+        const availableWidth = containerRef.clientWidth - getTotalGapWidth();
+        const currentTotal = widths.reduce((sum, w) => sum + w, 0);
+        
+        if (currentTotal > 0) {
+            const scale = availableWidth / currentTotal;
+            widths = widths.map((w) => w * scale);
+        }
+    }
 
     function handlePointerDown(index: number, e: PointerEvent) {
         e.preventDefault();
@@ -30,20 +47,17 @@
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
     }
 
-    function handlePointerMove(e: PointerEvent) {
-        if (activeHandleIndex === null || !containerRef) {
-            return;
-        }
+     function handlePointerMove(e: PointerEvent) {
+        if (activeHandleIndex === null || !containerRef) return;
 
         const rect = containerRef.getBoundingClientRect();
         const pointerX = e.clientX - rect.left;
 
-        let currentLeft = 0;
-        for (let i = 0; i < activeHandleIndex; i++) {
-            currentLeft += widths[i] + 1;
-        }
+        // Calculate handle position cleanly without manual loops
+        const currentHandlePos = activeHandleIndex * GAP_PX + widths
+            .slice(0, activeHandleIndex + 1)
+            .reduce((sum, w) => sum + w, 0);
 
-        const currentHandlePos = currentLeft + widths[activeHandleIndex];
         let delta = pointerX - currentHandlePos;
         if (delta === 0) {
             // no movement, early return
@@ -112,21 +126,24 @@
         width: 2px;
         padding: 0;
         margin: 0;
-        background: var(--dark-foreground-lll);
+        background: var(--dark-background-l);
+        border: 1px dotted var(--dark-background-lll);
         cursor: col-resize;
         z-index: 10;
-        transition: background-color 0.15s;
+        transition: all 100ms ease-in-out;
         border-radius: 0;
     }
-    .pane-handle:hover {
-        background: var(--accent-hovered);
-        width: 3px;
-    }
-    .pane-handle.active {
-        background: var(--accent-selected);
-        width: 4px;
-    }
+        .pane-handle:hover {
+            background: var(--accent-hovered);
+            width: 3px;
+        }
+        .pane-handle.active {
+            background: var(--accent-selected);
+            width: 4px;
+        }
 </style>
+
+<svelte:window onresize={handleResize} />
 
 <div
     bind:this={containerRef}
@@ -149,7 +166,7 @@
                 class="pane-handle"
                 class:active={activeHandleIndex === i}
                 onpointerdown={(e) => handlePointerDown(i, e)}
-                aria-label="Resize pane"
+                aria-label="Resize Panes"
             ></button>
         {/if}
     {/each}
