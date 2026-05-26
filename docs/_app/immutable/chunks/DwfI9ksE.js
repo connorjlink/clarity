@@ -1,0 +1,1 @@
+import{ft as e}from"./Bw16-kgy.js";e();
