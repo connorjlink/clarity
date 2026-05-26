@@ -4,10 +4,13 @@
     import SourceEditor from "./SourceEditor.svelte";
     import HexViewer from "./HexViewer.svelte";
     import PaneStatus from "./PaneStatus.svelte";
-    import ConnectionIndicator from "./ConnectionIndicator.svelte";
     import PaneIcon from "../../lib/vectors/PaneIcon.svelte";
     import OutputIcon from "../../lib/vectors/OutputIcon.svelte";
+    import ConnectionIndicator, { type Status } from "./ConnectionIndicator.svelte";
     import OutputWindow, { type OutputWindowMessage } from "./OutputWindow.svelte";
+
+    import LSPClientWorker from "../../clarity/LSPClientWorker?worker";
+    import LSPServerWorker from "../../clarity/LSPServerWorker?worker";
 
     let paneStates = $state([
         { id: "source", title: "Source Code", visible: true, pluginId: "source-plugin" },
@@ -31,6 +34,48 @@
     let outputState = $state<OutputState>('auto');
     let messages = $state<OutputWindowMessage[]>([]);
     let outputRef: OutputWindow;
+
+    let clientStatus = $state<Status>("pending");
+    let serverStatus = $state<Status>("pending");
+
+     $effect(() => {
+        const clientWorker = new LSPClientWorker();
+        const serverWorker = new LSPServerWorker();
+        const channel = new MessageChannel();
+
+        clientWorker.postMessage({ type: 'connect', port: channel.port1 }, [channel.port1]);
+        serverWorker.postMessage({ type: 'connect', port: channel.port2 }, [channel.port2]);
+
+        clientWorker.onmessage = (e) => {
+            if (e.data?.status) {
+                clientStatus = e.data.status;
+            } else if (e.data?.type === 'ready') {
+                // fallback, but should not be necessary as the LSPClient sends connected upon open
+                clientStatus = 'connected';
+            }
+            
+        };
+        clientWorker.onerror = () => { 
+            clientStatus = 'error'; 
+        };
+
+        serverWorker.onmessage = (e) => {
+            if (e.data?.status) {
+                serverStatus = e.data.status;
+            } else if (e.data?.type === 'ready') {
+                // fallback, but should not be necessary as the CompilerDriver sends connected upon open
+                serverStatus = 'connected';
+            }
+        };
+        serverWorker.onerror = () => { 
+            serverStatus = 'error'; 
+        };
+
+        return () => {
+            clientWorker.terminate();
+            serverWorker.terminate();
+        };
+    });
 
     function togglePane(index: number) {
         paneStates[index].visible = !paneStates[index].visible;
@@ -197,8 +242,8 @@
     <!-- status bar -->
     <div class="status-bar">
         <div class="status-bar-item">
-            <ConnectionIndicator status="connected" topic="Language server" shortTopic="LSP:" />
-            <ConnectionIndicator status="connected" topic="Debug server" shortTopic="DAP:" />
+            <ConnectionIndicator status={clientStatus} topic="Language client" shortTopic="LSP-client:" />
+            <ConnectionIndicator status={serverStatus} topic="Language server" shortTopic="LSP-server:" />
         </div>
 
         <div class="status-bar-item">

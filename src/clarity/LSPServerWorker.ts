@@ -6,13 +6,18 @@ const HOST = 'localhost';
 const PORT = '8080';
 
 var documentManager = new doc.DocumentManager();
+
 var compilerDriver = new cd.CompilerDriver(HOST, PORT);
 var languageServer = new ls.LanguageServer();
 
 languageServer.injectDependencies(compilerDriver, documentManager);
-compilerDriver.injectDependencies(languageServer);
+compilerDriver?.injectDependencies(languageServer);
 
 let clientPort: MessagePort | null = null;
+
+compilerDriver.onStatusChange = (status) => {
+    self.postMessage({ type: 'status', status });
+};
 
 self.addEventListener('message', (event) => {
     console.log('language server received message:', event.data);
@@ -29,9 +34,6 @@ self.addEventListener('message', (event) => {
             });
             clientPort.start();
         }
-        // NOTE: choosing not to the client that the server is ready, since this is implied if the server
-        // responds successfully to the initialize and initialized requests from the client.
-        //clientPort.postMessage({ type: 'ready' });
     }
 });
 

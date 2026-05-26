@@ -127,6 +127,7 @@ export class LanguageClient {
     private promises: Map<string, { resolve: (value: any) => void, reject: (reason?: any) => void, timeout: number }> = new Map();
 
     private static readonly REQUEST_TIMEOUT: number = 5000;
+    private static readonly REQUEST_THRESHOLD: number = 1500;
 
     private database: sb.SymbolDatabase;
     private serverPort: MessagePort | null;
@@ -327,6 +328,7 @@ export class LanguageClient {
         // otherwise, invalid JSON-RPC response
         postMessage({
             type: 'error',
+            status: 'error',
             message: `language client error: invalid server response`,
         });
     }
@@ -334,6 +336,7 @@ export class LanguageClient {
     onError(event: ErrorEvent): void {
         postMessage({
             type: 'error',
+            status: 'error',
             message: `language server error: ${event.message}`
         });
     }
@@ -341,6 +344,7 @@ export class LanguageClient {
     onMessageError(event: MessageEvent): void {
         postMessage({
             type: 'error',
+            status: 'error',
             message: `language server message error: ${event.data}`
         });
     }
@@ -423,7 +427,7 @@ export class LanguageClient {
     private async recycle(uri: string, deltas: EditorDelta[]): Promise<void> {
         const now = new Date();
         const delta = this.database.lastRecycled ? now.getTime() - this.database.lastRecycled.getTime() : 0;
-        if (!this.database.lastRecycled || delta > 1500) {
+        if (!this.database.lastRecycled || delta > LanguageClient.REQUEST_THRESHOLD) {
             postMessage({
                 type: 'log',
                 message: `synchronizing symbol database... (${delta}ms since last recycle)`
@@ -435,6 +439,7 @@ export class LanguageClient {
                     this.promises.delete(requestId);
                     postMessage({
                         type: 'error',
+                        status: 'error',
                         message: `timeout waiting for recycle response`
                     });
                 }, LanguageClient.REQUEST_TIMEOUT);
@@ -474,7 +479,7 @@ export class LanguageClient {
         const now = new Date();
         const delta = this.database.lastSynchronized ? now.getTime() - this.database.lastSynchronized.getTime() : 0;
         const requestId = crypto.randomUUID();
-        if (!this.database.lastSynchronized || delta > 1500) {
+        if (!this.database.lastSynchronized || delta > LanguageClient.REQUEST_THRESHOLD) {
             postMessage({
                 type: 'log',
                 message: `synchronizing symbol database... (${delta}ms since last invalidation)`
@@ -486,6 +491,7 @@ export class LanguageClient {
                     this.promises.delete(requestId);
                     postMessage({
                         type: 'error',
+                        status: 'error',
                         message: errorMessage
                     });
                     reject(new Error(errorMessage));

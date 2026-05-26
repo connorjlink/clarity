@@ -4,6 +4,8 @@ import * as lsp from './LSP';
 
 export class CompilerDriver {
 
+    public onStatusChange?: (status: 'connected' | 'disconnected' | 'error') => void;
+
     private pendingRequestResolve: (() => void) | null = null;
     private ws: WebSocket | null = null;
 
@@ -32,6 +34,7 @@ export class CompilerDriver {
     /////////////////////////////////////////////////////////
 
     onOpen(ws: WebSocket) {
+        this.onStatusChange?.('connected');
         this.languageServer?.logMessage(`clarity compiler server socket opened`, lsp.MessageKind.Log);
         this.ws = ws;
     }
@@ -98,10 +101,12 @@ export class CompilerDriver {
     }
 
     onClose(ws: WebSocket) {
+        this.onStatusChange?.('disconnected');
         this.languageServer?.logMessage(`clarity compiler server socket closed`, lsp.MessageKind.Log);
     }
 
     onError(ws: WebSocket, error: Event) {
+        this.onStatusChange?.('error');
         this.languageServer?.logMessage(`clarity compiler server socket error: ${error}`, lsp.MessageKind.Error);
     }
 
