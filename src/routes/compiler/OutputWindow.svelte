@@ -16,23 +16,23 @@
 
     let mode = 'auto';
 
-    export function addMessage(msg: string) {
+    export function addMessage(message: string) {
         if (
             messages.length > 0 &&
-            messages[messages.length - 1].rawText === msg
+            messages[messages.length - 1].rawText === message
         ) {
             const last = { ...messages[messages.length - 1] };
             const match = last.text.match(/\[x(\d+)\]$/);
             let count = match ? parseInt(match[1]) + 1 : 2;
-            last.text = `${msg} [x${count}]`;
+            last.text = `${message} [x${count}]`;
             messages = [...messages.slice(0, -1), last];
         } else {
             messages = [
                 ...messages,
                 {
                     id: (++messageIdIdentity).toString(),
-                    text: msg,
-                    rawText: msg,
+                    text: message,
+                    rawText: message,
                     visible: true
                 }
             ];
@@ -102,8 +102,8 @@
 </style>
 
 <div class="console {visible ? '' : 'fade-out'}">
-    {#each messages as msg (msg.id)}
-        <div class="console-line">{msg.text}</div>
+    {#each messages as message (message.id)}
+        <div class="console-line">{message.text}</div>
     {/each}
     <div id="end" bind:this={endRef}></div>
 </div>

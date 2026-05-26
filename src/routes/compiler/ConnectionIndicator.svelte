@@ -51,7 +51,7 @@
     {shortTopic}
     
     <span class="indicator" data-status={status}>
-        <Info title="{topic} is {status}" />
+        <Info title="{topic} has status {status}" />
     </span>
 
     {#if status === "connected"}

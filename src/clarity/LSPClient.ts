@@ -248,8 +248,8 @@ export class LanguageClient {
 
     /////////////////////////////////////////////////////////
 
-    onMessage(event: MessageEvent): void {
-        const data = JSON.parse(event.toString()) as rpc.JSONRPCResponse | rpc.JSONRPCRequest;
+   onMessage(event: MessageEvent): void {
+        const data = (typeof event.data === 'string' ? JSON.parse(event.data) : event.data) as rpc.JSONRPCResponse | rpc.JSONRPCRequest;
         //console.log('language client received message:', data);
         if ('jsonrpc' in data && data.jsonrpc === '2.0') {
             // in case of error, notify the frontend
@@ -453,7 +453,7 @@ export class LanguageClient {
                     type: 'log',
                     message: `recycling document "${uri}"...`
                 });
-                // Update the existing document with the latest deltas. This is always relative to the last time the document was
+                // update the existing document with the latest deltas. This is always relative to the last time the document was
                 // synchronized, not the last time it was recycled.
                 existingDocument.deltas = deltas;
                 this.serverPort?.postMessage(rpc.createRequest(
@@ -467,7 +467,7 @@ export class LanguageClient {
                     requestId
                 ));
             } else {
-                // If the document does not already exist, the client should not register it with the server per LSP.
+                // if the document does not already exist, the client should not register it with the server per LSP.
                 throw new Error(`document "${uri}" does not exist in the client.`);
             }
 

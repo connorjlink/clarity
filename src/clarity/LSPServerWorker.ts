@@ -16,11 +16,14 @@ compilerDriver?.injectDependencies(languageServer);
 let clientPort: MessagePort | null = null;
 
 compilerDriver.onStatusChange = (status) => {
-    self.postMessage({ type: 'status', status });
+    self.postMessage({ 
+        type: 'status', 
+        status, 
+        message: `Compiler driver status changed to '${status}'` 
+    });
 };
 
 self.addEventListener('message', (event) => {
-    console.log('language server received message:', event.data);
     if (event.data?.type === 'connect' && event.data.port) {
         clientPort = event.data.port;
         if (clientPort) {
@@ -38,5 +41,5 @@ self.addEventListener('message', (event) => {
 });
 
 languageServer.onOpen({
-    postMessage: (msg: any) => clientPort?.postMessage(msg)
+    postMessage: (message: any) => clientPort?.postMessage(message)
 } as unknown as Worker);

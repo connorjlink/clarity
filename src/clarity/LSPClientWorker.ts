@@ -12,18 +12,18 @@ self.onmessage = (event) => {
         languageClient = new lc.LanguageClient(symbolDatabase, serverPort);
 
         if (serverPort) {
-            serverPort.onmessage = (e) => {
+            serverPort.onmessage = (error) => {
                 // route messages from the language server to the client port
-                languageClient?.onMessage(e);
+                languageClient?.onMessage(error);
             };
-            serverPort.onmessageerror = (e) => {
+            serverPort.onmessageerror = (error) => {
                 // route parceled message errors from the language server to the client port
-                console.error('language client message receive error:', e);
-                languageClient?.onMessageError(e);
+                console.error('language client message receive error:', error);
+                languageClient?.onMessageError(error);
             };
         }
-        // notify the UI that the client is connected and good to go
-        self.postMessage({ type: 'ready', status: 'connected' });
+        // notify the UI that the client is connected and good to go, adding a log description
+        self.postMessage({ type: 'ready', status: 'connected', message: 'Worker message port successfully bound.' });
     } else if (event.data?.type === 'execute') {
         const method = event.data.method;
         const params = event.data.params;
@@ -31,7 +31,9 @@ self.onmessage = (event) => {
             languageClient.execute(method, ...Object.values(params));
             
         } else {
-            console.error('invalid client execute method request:', event.data);
+            const errorMsg = `invalid client execute method request: ${JSON.stringify(event.data)}`;
+            console.error(errorMsg);
+            self.postMessage({ type: 'error', message: errorMsg });
         }
     }
 };

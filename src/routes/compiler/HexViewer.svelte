@@ -96,7 +96,7 @@
             if (length === 1) {
                 pluginText = `$${startHexAddress} ${start + 1}/${data.length} B`;
             } else {
-                pluginText = `Sel $${startHexAddress}-$${endHexAddress} ${end - start + 1}/${data.length} B`;
+                pluginText = `SEL:$${startHexAddress}-$${endHexAddress} ${end - start + 1}/${data.length} B`;
             }
         } else {
             pluginText = `${data.length} B`;

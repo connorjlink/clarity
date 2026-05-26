@@ -38,7 +38,7 @@
     let clientStatus = $state<Status>("pending");
     let serverStatus = $state<Status>("pending");
 
-     $effect(() => {
+    $effect(() => {
         const clientWorker = new LSPClientWorker();
         const serverWorker = new LSPServerWorker();
         const channel = new MessageChannel();
@@ -54,9 +54,18 @@
                 clientStatus = 'connected';
             }
             
+            // Append long-form textual messages directly to the output window array
+            if (e.data?.message) {
+                messages = [...messages, { 
+                    id: crypto.randomUUID(),
+                    type: e.data.type === 'error' || e.data.type === 'warning' ? e.data.type : 'log', 
+                    message: `[LSP Client] ${e.data.message}` 
+                } as unknown as OutputWindowMessage];
+            }
         };
-        clientWorker.onerror = () => { 
+        clientWorker.onerror = (error) => { 
             clientStatus = 'error'; 
+            messages = [...messages, { id: crypto.randomUUID(), type: 'error', message: `[LSP Client Worker] ${error.message}` } as unknown as OutputWindowMessage];
         };
 
         serverWorker.onmessage = (e) => {
@@ -66,9 +75,19 @@
                 // fallback, but should not be necessary as the CompilerDriver sends connected upon open
                 serverStatus = 'connected';
             }
+
+            // Append long-form textual messages directly to the output window array
+            if (e.data?.message) {
+                messages = [...messages, { 
+                    id: crypto.randomUUID(),
+                    type: e.data.type === 'error' || e.data.type === 'warning' ? e.data.type : 'log', 
+                    message: `[LSP Server] ${e.data.message}` 
+                } as unknown as OutputWindowMessage];
+            }
         };
-        serverWorker.onerror = () => { 
+        serverWorker.onerror = (error) => { 
             serverStatus = 'error'; 
+            messages = [...messages, { id: crypto.randomUUID(), type: 'error', message: `[LSP Server Worker] ${error.message}` } as unknown as OutputWindowMessage];
         };
 
         return () => {
