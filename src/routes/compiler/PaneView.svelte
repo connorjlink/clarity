@@ -1,4 +1,6 @@
 <script lang="ts">
+    import ResizeHandle from "./ResizeHandle.svelte";
+
     interface Props {
         activeIds: string[];
         minWidths?: Record<string, number>;
@@ -118,29 +120,11 @@
         overflow: hidden;
         user-select: none;
     }
+
     .pane-content {
         overflow: auto;
         height: 100%;
     }
-    .pane-handle {
-        width: 2px;
-        padding: 0;
-        margin: 0;
-        background: var(--dark-background-l);
-        border: 1px dotted var(--dark-background-lll);
-        cursor: col-resize;
-        z-index: 10;
-        transition: all 100ms ease-in-out;
-        border-radius: 0;
-    }
-        .pane-handle:hover {
-            background: var(--accent-hovered);
-            width: 3px;
-        }
-        .pane-handle.active {
-            background: var(--accent-selected);
-            width: 4px;
-        }
 </style>
 
 <svelte:window onresize={handleResize} />
@@ -162,12 +146,11 @@
         </div>
 
         {#if i < activeIds.length - 1}
-            <button
-                class="pane-handle"
-                class:active={activeHandleIndex === i}
+            <ResizeHandle
+                active={activeHandleIndex === i}
                 onpointerdown={(e) => handlePointerDown(i, e)}
                 aria-label="Resize Panes"
-            ></button>
+            />
         {/if}
     {/each}
 </div>

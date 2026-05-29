@@ -4,13 +4,21 @@
     import SourceEditor from "./SourceEditor.svelte";
     import HexViewer from "./HexViewer.svelte";
     import PaneStatus from "./PaneStatus.svelte";
+    import TabView from "./TabView.svelte";
+    import MemoryWatch from "./MemoryWatch.svelte";
+    import ConnectionIndicator, { type Status } from "./ConnectionIndicator.svelte";
+
     import PaneIcon from "../../lib/vectors/PaneIcon.svelte";
     import OutputIcon from "../../lib/vectors/OutputIcon.svelte";
-    import ConnectionIndicator, { type Status } from "./ConnectionIndicator.svelte";
-    import OutputWindow, { type OutputWindowMessage } from "./OutputWindow.svelte";
 
     import LSPClientWorker from "../../clarity/LSPClientWorker?worker";
     import LSPServerWorker from "../../clarity/LSPServerWorker?worker";
+
+    type LogMessage = {
+        id: string;
+        type: string;
+        message: string;
+    };
 
     let paneStates = $state([
         { id: "source", title: "Source Code", visible: true, pluginId: "source-plugin" },
@@ -28,15 +36,17 @@
     let asmPluginText = $state("");
     let exePluginText = $state("");
 
-    type OutputState = 'auto' | 'open' | 'closed';
-
-    let outputVisible = $state(true);
-    let outputState = $state<OutputState>('auto');
-    let messages = $state<OutputWindowMessage[]>([]);
-    let outputRef: OutputWindow;
+    let messages = $state<LogMessage[]>([]);
 
     let clientStatus = $state<Status>("pending");
     let serverStatus = $state<Status>("pending");
+
+    let debugTabs = [
+        { id: "logs", label: "Logs" },
+        { id: "output", label: "Output" },
+        { id: "memory", label: "Memory" },
+        { id: "watch", label: "Watch" },
+    ];
 
     $effect(() => {
         const clientWorker = new LSPClientWorker();
@@ -60,12 +70,12 @@
                     id: crypto.randomUUID(),
                     type: e.data.type === 'error' || e.data.type === 'warning' ? e.data.type : 'log', 
                     message: `[LSP Client] ${e.data.message}` 
-                } as unknown as OutputWindowMessage];
+                }];
             }
         };
         clientWorker.onerror = (error) => { 
             clientStatus = 'error'; 
-            messages = [...messages, { id: crypto.randomUUID(), type: 'error', message: `[LSP Client Worker] ${error.message}` } as unknown as OutputWindowMessage];
+            messages = [...messages, { id: crypto.randomUUID(), type: 'error', message: `[LSP Client Worker] ${error.message}` }];
         };
 
         serverWorker.onmessage = (e) => {
@@ -82,12 +92,12 @@
                     id: crypto.randomUUID(),
                     type: e.data.type === 'error' || e.data.type === 'warning' ? e.data.type : 'log', 
                     message: `[LSP Server] ${e.data.message}` 
-                } as unknown as OutputWindowMessage];
+                }];
             }
         };
         serverWorker.onerror = (error) => { 
             serverStatus = 'error'; 
-            messages = [...messages, { id: crypto.randomUUID(), type: 'error', message: `[LSP Server Worker] ${error.message}` } as unknown as OutputWindowMessage];
+            messages = [...messages, { id: crypto.randomUUID(), type: 'error', message: `[LSP Server Worker] ${error.message}` }];
         };
 
         return () => {
@@ -99,32 +109,6 @@
     function togglePane(index: number) {
         paneStates[index].visible = !paneStates[index].visible;
     }
-
-    function cycleOutput() {
-        if (outputState === 'auto') {
-            outputState = 'open';
-            outputRef?.show();
-        } else if (outputState === 'open') {
-            outputState = 'closed';
-            outputRef?.hide();
-        } else {
-            outputState = 'auto';
-            outputRef?.auto();
-        }
-    }
-
-    function outputStateToNext(outputState: OutputState): string | undefined {
-        switch (outputState) {
-            case 'auto':
-                return  'Open Output Window';
-            case 'open':
-                return  'Close Output Window';
-            case 'closed':
-                return  'Auto-Hide Output Window';
-        }
-        return undefined;
-    }
-
 </script>
 
 <style>
@@ -157,13 +141,10 @@
         position: relative;
     }
 
-    .output-container {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        pointer-events: none;
+    .debug-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
     }
 
     .status-bar {
@@ -251,11 +232,42 @@
                 </div>
             {/snippet}
         </PaneView>
+    </div>
 
-        <!-- console window -->
-        <div class="output-container">
-            <OutputWindow bind:this={outputRef} bind:messages bind:visible={outputVisible} />
-        </div>
+    <!-- debug window -->
+    <div class="debug-container">
+        <TabView tabs={debugTabs}>
+            {#snippet logs()}
+                <div style="padding: 1rem; color: var(--dark-foreground); width: 100%; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                    {#each messages as msg (msg.id)}
+                        <div style="white-space: pre-wrap; word-break: break-all; margin-bottom: 0.25rem;" class:error={msg.type === 'error'} class:warning={msg.type === 'warning'}>
+                            {msg.message}
+                        </div>
+                    {/each}
+                    {#if messages.length === 0}
+                        <div style="opacity: 0.7;"><em>No logs available.</em></div>
+                    {/if}
+                </div>
+            {/snippet}
+
+            {#snippet output()}
+                <div style="padding: 1rem; color: var(--dark-foreground); width: 100%;;">
+                    <pre style="margin: 0;">{JSON.stringify({ clientStatus, serverStatus }, null, 2)}</pre>
+                </div>
+            {/snippet}
+
+            {#snippet memory()}
+                <div style="padding: 0.5rem; color: var(--dark-foreground); width: 100%;">
+                    <MemoryWatch />
+                </div>
+            {/snippet}
+
+            {#snippet watch()}
+                <div style="padding: 1rem; color: var(--dark-foreground); opacity: 0.7; width: 100%;">
+                    <em>No variable or register watches.</em>
+                </div>
+            {/snippet}
+        </TabView>
     </div>
 
     <!-- status bar -->
@@ -266,10 +278,6 @@
         </div>
 
         <div class="status-bar-item">
-            <button class="icon-button" onclick={cycleOutput} aria-label="Toggle Output">
-                <OutputIcon state={outputState} size={16} title={outputStateToNext(outputState)} />
-            </button>
-            
             {#each paneStates as pane, i}
                 <button class="icon-button" onclick={() => togglePane(i)} aria-label="Toggle {pane.title}">
                     <PaneIcon paneNumber={i} isOpen={pane.visible} size={16} title="{pane.visible ? 'Close' : 'Open'} {pane.title}" />
