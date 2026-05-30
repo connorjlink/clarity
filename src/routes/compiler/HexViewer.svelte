@@ -6,14 +6,16 @@
         client = $bindable<Worker | null>(null),
         sourceUri = $bindable(''),
         autoColumns = true,
+        fillAvailable = false,
         pluginText = $bindable('')
     } = $props();
 
     let container = $state<HTMLElement>();
     let selectionStart = $state<number | null>(null);
     let selectionEnd = $state<number | null>(null);
+    let visibleRows = $state(0);
 
-    let rows = $derived(Math.ceil(data.length / columns));
+    let rows = $derived(fillAvailable ? Math.max(Math.ceil(data.length / columns), visibleRows) : Math.ceil(data.length / columns));
 
     let selectionRange = $derived.by(() => {
         if (selectionStart === null || selectionEnd === null) {
@@ -34,24 +36,59 @@
     });
 
     $effect(() => {
-        if (!autoColumns || !container) {
+        if (!container || (!autoColumns && !fillAvailable)) {
             return;
         }
-        const resizeObserver = new ResizeObserver(() => {
-            const style = getComputedStyle(container!);
-            const fontSize = parseInt(style.fontSize) || 16;
-            const ch = fontSize * 0.60;
-            const fixedWidth = (6 * fontSize) + (8 * ch);
-            const costPerColumn = 4 * ch;
+        
+        let rafId: number;
 
-            const maxColumns = Math.max(1, Math.floor((container!.clientWidth - fixedWidth) / costPerColumn));
-            if (maxColumns !== columns) {
-                columns = maxColumns;
-            }
+        const resizeObserver = new ResizeObserver((entries) => {
+            if (rafId) cancelAnimationFrame(rafId);
+            
+            rafId = requestAnimationFrame(() => {
+                for (const entry of entries) {
+                    const rect = entry.contentRect;
+                    const style = getComputedStyle(container!);
+                    
+                    if (autoColumns) {
+                        const fontSize = parseInt(style.fontSize) || 16;
+                        const ch = fontSize * 0.60;
+                        const fixedWidth = (6 * fontSize) + (8 * ch);
+                        const costPerColumn = 4 * ch;
+
+                        const maxColumns = Math.max(1, Math.floor((rect.width - fixedWidth) / costPerColumn));
+                        if (maxColumns !== columns) {
+                            columns = maxColumns;
+                        }
+                    }
+
+                    if (fillAvailable) {
+                        const thead = container!.querySelector('thead');
+                        const theadHeight = thead ? thead.getBoundingClientRect().height : 0;
+                        
+                        // entry.contentRect.height already excludes padding/borders
+                        const availableHeight = rect.height - theadHeight;
+                        
+                        const rowElem = container!.querySelector('tbody tr');
+                        const rowHeight = rowElem && rowElem.getBoundingClientRect().height > 0
+                            ? rowElem.getBoundingClientRect().height 
+                            : (parseInt(style.fontSize) * 1.5 || 24);
+
+                        // Use a conservative buffer (-2px) to prevent subpixel thrashing & scrollbar toggles
+                        const maxRows = Math.max(1, Math.floor((availableHeight - 2) / rowHeight));
+                        if (Math.abs(maxRows - visibleRows) > 0) {
+                            visibleRows = maxRows;
+                        }
+                    }
+                }
+            });
         });
         
         resizeObserver.observe(container);
-        return () => resizeObserver.disconnect();
+        return () => {
+            resizeObserver.disconnect();
+            if (rafId) cancelAnimationFrame(rafId);
+        };
     });
 
     $effect(() => {
@@ -115,11 +152,22 @@
 </script>
 
 <style>
+    .hex-viewer-wrapper {
+        position: relative;
+        height: 100%;
+        width: 100%;
+        min-height: 0;
+        flex: 1;
+    }
+
     .hex-shell { 
+        position: absolute;
+        inset: 0;
         color: var(--light-foreground); 
         padding: 1rem; 
-        overflow-x: hidden; 
-        overflow-y: auto; 
+        overflow: hidden;
+        height: 100%;
+        box-sizing: border-box;
     }
     
     .hex-table { 
@@ -198,6 +246,22 @@
             border: 1px solid var(--accent);
         }
 
+    .fill-byte {
+        color: gray;
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    .fill-char {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        width: 1.5ch;
+        color: gray;
+        opacity: 0.5;
+        cursor: default;
+    }
+
     .hex-highlight-layer { 
         margin: 0; 
     }
@@ -205,76 +269,78 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
-<div class="hex-shell" bind:this={container} onclick={(e) => { 
-    if (!(e.target instanceof HTMLElement) || (!e.target.closest('.hex-byte') && !e.target.closest('.hex-ascii-char'))) {
-        selectionStart = null;
-        selectionEnd = null;
-    }
-}}>
-    <pre class="hex-highlight-layer">
-        <table class="hex-table">
-            <thead>
-                <tr>
-                    <th class="hex-address">Address</th>
-                    <th colspan={columns}>Offset</th>
-                    <th class="hex-ascii">ASCII</th>
-                </tr>
-                <tr class="header-spacer-row"></tr>
-                <tr class="hex-offset-row">
-                    <th></th>
-                    {#each Array(columns) as _, column}
-                        <th class="hex-offset">+{column.toString(16).toUpperCase()}</th>
-                    {/each}
-                    <th></th>
-                </tr>
-                <tr class="header-spacer-row"></tr>
-            </thead>
-            <tbody>
-                {#each Array(rows) as _, row}
-                    {@const rowOffset = row * columns}
+<div class="hex-viewer-wrapper">
+    <div class="hex-shell" bind:this={container} onclick={(e) => { 
+        if (!(e.target instanceof HTMLElement) || (!e.target.closest('.hex-byte') && !e.target.closest('.hex-ascii-char'))) {
+            selectionStart = null;
+            selectionEnd = null;
+        }
+    }}>
+        <pre class="hex-highlight-layer">
+            <table class="hex-table">
+                <thead>
                     <tr>
-                        <td class="hex-address">{rowOffset.toString(16).padStart(8, '0')}</td>
-                        {#each Array(columns) as _, column}
-                            {@const index = rowOffset + column}
-                            {#if index < data.length}
-                                <td
-                                    class="hex-byte"
-                                    class:selected={selectionRange !== null && index >= selectionRange[0] && index <= selectionRange[1]}
-                                    class:selection-start={selectionRange !== null && index === selectionRange[0] && selectionRange[0] !== selectionRange[1]}
-                                    class:selection-end={selectionRange !== null && index === selectionRange[1] && selectionRange[0] !== selectionRange[1]}
-                                    class:selection-single={selectionRange !== null && index === selectionRange[0] && selectionRange[0] === selectionRange[1]}
-                                    style:color={byteColors[index] || '#ccc'}
-                                    onclick={(e) => handleSelection(e, index)}
-                                >
-                                    {data[index].toString(16).padStart(2, '0')}
-                                </td>
-                            {:else}
-                                <td></td>
-                            {/if}
-                        {/each}
-                        <td class="hex-ascii">
-                            <div class="ascii-container">
-                                {#each Array(columns) as _, column}
-                                    {@const index = rowOffset + column}
-                                    {#if index < data.length}
-                                        {@const byte = data[index]}
-                                        <span 
-                                            class="hex-ascii-char" 
-                                            class:selected={selectionRange !== null && index >= selectionRange[0] && index <= selectionRange[1]}
-                                            class:selection-start={selectionRange !== null && index === selectionRange[0] && selectionRange[0] !== selectionRange[1]}
-                                            class:selection-end={selectionRange !== null && index === selectionRange[1] && selectionRange[0] !== selectionRange[1]}
-                                            class:selection-single={selectionRange !== null && index === selectionRange[0] && selectionRange[0] === selectionRange[1]}
-                                            onclick={(e) => handleSelection(e, index)}
-                                        >{byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'}</span>
-                                    {:else}
-                                        <span class="hex-ascii-char"> </span>
-                                    {/if}
-                                {/each}
-                            </div>
-                        </td>
+                        <th class="hex-address">Address</th>
+                        <th colspan={columns}>Offset</th>
+                        <th class="hex-ascii">ASCII</th>
                     </tr>
-                {/each}
-            </tbody>
-        </table>
-    </pre>
+                    <tr class="header-spacer-row"></tr>
+                    <tr class="hex-offset-row">
+                        <th></th>
+                        {#each Array(columns) as _, column}
+                            <th class="hex-offset">+{column.toString(16).toUpperCase()}</th>
+                        {/each}
+                        <th></th>
+                    </tr>
+                    <tr class="header-spacer-row"></tr>
+                </thead>
+                <tbody>
+                    {#each Array(rows) as _, row}
+                        {@const rowOffset = row * columns}
+                        <tr>
+                            <td class="hex-address">{rowOffset.toString(16).padStart(8, '0')}</td>
+                            {#each Array(columns) as _, column}
+                                {@const index = rowOffset + column}
+                                {#if index < data.length}
+                                    <td
+                                        class="hex-byte"
+                                        class:selected={selectionRange !== null && index >= selectionRange[0] && index <= selectionRange[1]}
+                                        class:selection-start={selectionRange !== null && index === selectionRange[0] && selectionRange[0] !== selectionRange[1]}
+                                        class:selection-end={selectionRange !== null && index === selectionRange[1] && selectionRange[0] !== selectionRange[1]}
+                                        class:selection-single={selectionRange !== null && index === selectionRange[0] && selectionRange[0] === selectionRange[1]}
+                                        style:color={byteColors[index] || '#ccc'}
+                                        onclick={(e) => handleSelection(e, index)}
+                                    >
+                                        {data[index].toString(16).padStart(2, '0')}
+                                    </td>
+                                {:else}
+                                    <td class="fill-byte">xx</td>
+                                {/if}
+                            {/each}
+                            <td class="hex-ascii">
+                                <div class="ascii-container">
+                                    {#each Array(columns) as _, column}
+                                        {@const index = rowOffset + column}
+                                        {#if index < data.length}
+                                            {@const byte = data[index]}
+                                            <span 
+                                                class="hex-ascii-char" 
+                                                class:selected={selectionRange !== null && index >= selectionRange[0] && index <= selectionRange[1]}
+                                                class:selection-start={selectionRange !== null && index === selectionRange[0] && selectionRange[0] !== selectionRange[1]}
+                                                class:selection-end={selectionRange !== null && index === selectionRange[1] && selectionRange[0] !== selectionRange[1]}
+                                                class:selection-single={selectionRange !== null && index === selectionRange[0] && selectionRange[0] === selectionRange[1]}
+                                                onclick={(e) => handleSelection(e, index)}
+                                            >{byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.'}</span>
+                                        {:else}
+                                            <span class="fill-char">.</span>
+                                        {/if}
+                                    {/each}
+                                </div>
+                            </td>
+                        </tr>
+                    {/each}
+                </tbody>
+            </table>
+        </pre>
+    </div>
 </div>

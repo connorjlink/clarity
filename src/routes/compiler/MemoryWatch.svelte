@@ -55,7 +55,6 @@
         display: flex;
         flex-direction: column;
         height: 100%;
-        padding: 0.5rem;
         gap: 0.5rem;
         box-sizing: border-box;
     }
@@ -120,6 +119,7 @@
         <HexViewer 
             bind:pluginText={pluginText} 
             data={memoryData} 
+            fillAvailable={true}
         />
     </div>
 </div>

@@ -8,6 +8,8 @@
     import MemoryWatch from "./MemoryWatch.svelte";
     import ConnectionIndicator, { type Status } from "./ConnectionIndicator.svelte";
 
+    import { untrack } from "svelte";
+
     import PaneIcon from "../../lib/vectors/PaneIcon.svelte";
     import OutputIcon from "../../lib/vectors/OutputIcon.svelte";
 
@@ -18,6 +20,12 @@
         id: string;
         type: string;
         message: string;
+    };
+
+    type OutputMessage = {
+        id: string;
+        text: string;
+        isSystem: boolean;
     };
 
     let paneStates = $state([
@@ -37,6 +45,7 @@
     let exePluginText = $state("");
 
     let messages = $state<LogMessage[]>([]);
+    let outputMessages = $state<OutputMessage[]>([]);
 
     let clientStatus = $state<Status>("pending");
     let serverStatus = $state<Status>("pending");
@@ -64,7 +73,7 @@
                 clientStatus = 'connected';
             }
             
-            // Append long-form textual messages directly to the output window array
+            // append long-form textual messages directly to the output window array
             if (e.data?.message) {
                 messages = [...messages, { 
                     id: crypto.randomUUID(),
@@ -86,7 +95,7 @@
                 serverStatus = 'connected';
             }
 
-            // Append long-form textual messages directly to the output window array
+            // append long-form textual messages directly to the output window array
             if (e.data?.message) {
                 messages = [...messages, { 
                     id: crypto.randomUUID(),
@@ -106,8 +115,42 @@
         };
     });
 
+    function startDebugSession() {
+        outputMessages = [...outputMessages, {
+            id: crypto.randomUUID(),
+            text: `Debugger session started at ${new Date().toLocaleTimeString()}`,
+            isSystem: true
+        }];
+
+        // TODO: real DAP connection state management and logic
+        setTimeout(() => {
+            endDebugSession();
+        }, 3000);
+    }
+
+    function endDebugSession() {
+        outputMessages = [...outputMessages, {
+            id: crypto.randomUUID(),
+            text: `Debugger session ended at ${new Date().toLocaleTimeString()}`,
+            isSystem: true
+        }];
+    }
+
+    $effect(() => {
+        // TODO: connect to DAP and begin only once DAP session is valid and ready to reiceve requests 
+        untrack(() => startDebugSession());
+    });
+
     function togglePane(index: number) {
         paneStates[index].visible = !paneStates[index].visible;
+    }
+
+    function type_to_string(type: string): string {
+        switch (type) {
+            case 'warning': return 'WARN';
+            case 'error': return 'ERRO';
+        }
+        return "INFO";
     }
 </script>
 
@@ -146,6 +189,29 @@
         flex-direction: column;
         flex: 1;
     }
+
+    .debug-window {
+        width: 100%;
+        padding: 1rem; 
+        color: var(--dark-foreground); 
+    }
+
+    .debug-logs {
+        overflow-y: auto;
+    }
+
+    .debug-log {
+        white-space: pre-wrap; 
+        word-break: break-all;
+        margin-bottom: 0.25rem;
+        color: var(--operator);
+    }
+        .debug-log.warning {
+            color: var(--function);
+        }
+        .debug-log.error {
+            color: var(--static-field);
+        }
 
     .status-bar {
         height: 1.5rem;
@@ -238,32 +304,43 @@
     <div class="debug-container">
         <TabView tabs={debugTabs}>
             {#snippet logs()}
-                <div style="padding: 1rem; color: var(--dark-foreground); width: 100%; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                <div class="debug-window debug-logs">
                     {#each messages as msg (msg.id)}
-                        <div style="white-space: pre-wrap; word-break: break-all; margin-bottom: 0.25rem;" class:error={msg.type === 'error'} class:warning={msg.type === 'warning'}>
-                            {msg.message}
+                        <div class="debug-log" class:error={msg.type === 'error'} class:warning={msg.type === 'warning'}>
+                            {type_to_string(msg.type)}: {msg.message}
                         </div>
                     {/each}
                     {#if messages.length === 0}
-                        <div style="opacity: 0.7;"><em>No logs available.</em></div>
+                        <i>No logs available.</i>
                     {/if}
                 </div>
             {/snippet}
 
             {#snippet output()}
-                <div style="padding: 1rem; color: var(--dark-foreground); width: 100%;;">
-                    <pre style="margin: 0;">{JSON.stringify({ clientStatus, serverStatus }, null, 2)}</pre>
+                <div class="debug-window debug-logs">
+                    {#each outputMessages as msg (msg.id)}
+                        <div class="debug-log">
+                            {#if msg.isSystem}
+                                <i>{msg.text}</i>
+                            {:else}
+                                {msg.text}
+                            {/if}
+                        </div>
+                    {/each}
+                    {#if outputMessages.length === 0}
+                        <i>No output available.</i>
+                    {/if}
                 </div>
             {/snippet}
 
             {#snippet memory()}
-                <div style="padding: 0.5rem; color: var(--dark-foreground); width: 100%;">
+                <div class="debug-window">
                     <MemoryWatch />
                 </div>
             {/snippet}
 
             {#snippet watch()}
-                <div style="padding: 1rem; color: var(--dark-foreground); opacity: 0.7; width: 100%;">
+                <div class="debug-window">
                     <em>No variable or register watches.</em>
                 </div>
             {/snippet}
