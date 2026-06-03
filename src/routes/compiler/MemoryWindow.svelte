@@ -74,7 +74,7 @@
         border-radius: 0.25rem;
         padding: 0.25rem 0.5rem;
         background: var(--dark-background-d);
-        color: var(--light-foreground);
+        color: var(--dark-foreground);
         font-family: inherit;
     }
 

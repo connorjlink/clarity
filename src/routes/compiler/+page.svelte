@@ -5,7 +5,8 @@
     import HexViewer from "./HexViewer.svelte";
     import PaneStatus from "./PaneStatus.svelte";
     import TabView from "./TabView.svelte";
-    import MemoryWatch from "./MemoryWatch.svelte";
+    import MemoryWindow from "./MemoryWindow.svelte";
+    import WatchWindow from "./WatchWindow.svelte";
     import ConnectionIndicator, { type Status } from "./ConnectionIndicator.svelte";
 
     import { untrack } from "svelte";
@@ -305,9 +306,9 @@
         <TabView tabs={debugTabs}>
             {#snippet logs()}
                 <div class="debug-window debug-logs">
-                    {#each messages as msg (msg.id)}
-                        <div class="debug-log" class:error={msg.type === 'error'} class:warning={msg.type === 'warning'}>
-                            {type_to_string(msg.type)}: {msg.message}
+                    {#each messages as message (message.id)}
+                        <div class="debug-log" class:error={message.type === 'error'} class:warning={message.type === 'warning'}>
+                            {type_to_string(message.type)}: {message.message}
                         </div>
                     {/each}
                     {#if messages.length === 0}
@@ -318,12 +319,12 @@
 
             {#snippet output()}
                 <div class="debug-window debug-logs">
-                    {#each outputMessages as msg (msg.id)}
+                    {#each outputMessages as message (message.id)}
                         <div class="debug-log">
-                            {#if msg.isSystem}
-                                <i>{msg.text}</i>
+                            {#if message.isSystem}
+                                <i>{message.text}</i>
                             {:else}
-                                {msg.text}
+                                {message.text}
                             {/if}
                         </div>
                     {/each}
@@ -335,13 +336,13 @@
 
             {#snippet memory()}
                 <div class="debug-window">
-                    <MemoryWatch />
+                    <MemoryWindow />
                 </div>
             {/snippet}
 
             {#snippet watch()}
                 <div class="debug-window">
-                    <em>No variable or register watches.</em>
+                    <WatchWindow isConnected={true} isAtBreak={true} />
                 </div>
             {/snippet}
         </TabView>
@@ -350,8 +351,8 @@
     <!-- status bar -->
     <div class="status-bar">
         <div class="status-bar-item">
-            <ConnectionIndicator status={clientStatus} topic="Language client" shortTopic="LSP-client:" />
-            <ConnectionIndicator status={serverStatus} topic="Language server" shortTopic="LSP-server:" />
+            <ConnectionIndicator status={clientStatus} topic="Language client" prefix="LSP-client:" />
+            <ConnectionIndicator status={serverStatus} topic="Language server" prefix="LSP-server:" />
         </div>
 
         <div class="status-bar-item">

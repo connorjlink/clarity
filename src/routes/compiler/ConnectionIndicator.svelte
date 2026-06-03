@@ -8,14 +8,25 @@
     type Props = {
         status: Status;
         topic: string;
-        shortTopic?: string;
+        prefix?: string;
+        stateLabels?: Partial<Record<Status, string>>;
     };
 
     let {
         status,
         topic,
-        shortTopic,
+        prefix,
+        stateLabels = {}
     }: Props = $props();
+
+    let defaultLabels: Record<Status, string> = {
+        connected: "Connected",
+        pending: "Pending",
+        disconnected: "Disconnected",
+        error: "Error"
+    };
+
+    let currentText = $derived(stateLabels[status] ?? defaultLabels[status]);
 </script>
 
 <style>
@@ -48,19 +59,13 @@
 </style>
 
 <div class="connection-indicator">
-    {shortTopic}
+    {#if prefix}
+        <span>{prefix}</span>
+    {/if}
     
     <span class="indicator" data-status={status}>
-        <Info title="{topic} has status {status}" />
+        <Info title="{topic} has status {status}" size={16} />
     </span>
 
-    {#if status === "connected"}
-        Connected
-    {:else if status === "pending"}
-        Pending
-    {:else if status === "disconnected"}
-        Disconnected
-    {:else if status === "error"}
-        Error
-    {/if}
+    <span>{currentText}</span>
 </div>
