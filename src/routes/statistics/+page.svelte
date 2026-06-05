@@ -7,10 +7,11 @@
     import AreaChart, { type AreaData } from './AreaChart.svelte';
     import StackedAreaChart, { type StackedAreaSeries } from './StackedAreaChart.svelte';
     import DataTable from './DataTable.svelte';
+    import TabView from '../../lib/components/TabView.svelte'; 
 
     const minNavWidth = 150;
 
-    let selected = "general1";
+    let selected = "general";
     let navWidth = 150;
     let isResizing = false;
 
@@ -32,8 +33,7 @@
     }
 
     function handleRadioChange(_: Event) {
-        
-        
+        // TODO: update trigger on radio page changing
     }
 
     onMount(() => {
@@ -46,6 +46,12 @@
         window.removeEventListener("mouseup", handleMouseUp);
     });
 
+
+    const tabs = [
+        { id: "general", label: "General" },
+        { id: "performance", label: "Performance" },
+        { id: "memory", label: "Memory" }
+    ];
     
     let pieData = [
         { fieldName: "A", value: 10 },
@@ -123,63 +129,11 @@
 
     .content-container {
         display: flex;
+        flex-direction: column;
         height: 100%;
+        overflow-y: auto;
+        padding: 2rem;
     }
-
-    nav {
-        height: 100%;
-        background: var(--dark-background-e);
-        max-width: calc(var(--content-width) / 2);
-    }
-
-    .nav-radio {
-        width: 100%;
-        border-bottom: 1px solid var(--dark-background-ll);
-        color: var(--dark-foreground-ll);
-        background: var(--dark-background);
-        user-select: none;
-        transition: background-color 100ms ease-in-out;
-    }
-
-    .nav-radio input {
-        display: flex;
-        margin: 0;
-    }
-
-    .nav-radio label {
-        display: block;
-        width: 100%;
-        height: 100%;
-        padding: 0.5rem 1rem;
-        text-wrap: wrap;
-    }
-
-    .nav-radio:hover {
-        background: var(--accent-hovered);
-        color: var(--dark-foreground);
-    }
-
-    .nav-radio:has(input[type="radio"]:checked) {
-        background: var(--accent);
-        color: var(--dark-foreground);
-    }
-
-    .resizer {
-        width: 1px;
-        will-change: width;
-        cursor: col-resize;
-        background: var(--dark-background-ll);
-        height: 100%;
-        position: relative;
-        transition: background-color 100ms ease-in-out;
-    }
-        .resizer:hover {
-            width: 2px;
-            background: var(--accent-hovered);
-        }
-        .resizer:active {
-            background: var(--accent-selected);
-        }
 
     header {
         padding: 0.5rem;
@@ -194,42 +148,32 @@
         <span>Statistics</span>
     </header>
 
-    <div class="content-container">
-        <nav style="width: {navWidth}px;">
-            <div class="nav-radio">
-                <label for="general">General</label>
-                <input type="radio" id="general" name="statistics" value="general" bind:group={selected} on:change={handleRadioChange}>
+    <TabView tabs={tabs} bind:activeId={selected}>
+        {#snippet general()}
+            <div class="content-container">
+                <div style="flex:1; display:flex; flex-direction:column; gap:5rem; align-items:center; justify-content:center;">
+                    <DataTable data={users} />
+                    <PieChart data={pieData} />
+                </div>
             </div>
-            <div class="nav-radio">
-                <label for="performance">Performance</label>
-                <input type="radio" id="performance" name="statistics" value="performance" bind:group={selected} on:change={handleRadioChange}>
+        {/snippet}
+
+        {#snippet performance()}
+            <div class="content-container">
+                <div style="flex:1; display:flex; flex-direction:column; gap:5rem; align-items:center; justify-content:center;">
+                    <LineChart data={lineData} maximumY={25} minimumY={0} majorTickScale={4} minorTickScale={2} />
+                    <BarChart data={barData} maximumY={13} majorTickScale={2} minorTickScale={1} />
+                </div>
             </div>
-            <div class="nav-radio">
-                <label for="memory">Memory</label>
-                <input type="radio" id="memory" name="statistics" value="memory" bind:group={selected} on:change={handleRadioChange}>
+        {/snippet}
+
+        {#snippet memory()}
+            <div class="content-container">
+                <div style="flex:1; display:flex; flex-direction:column; gap:5rem; align-items:center; justify-content:center;">
+                    <AreaChart data={areaData} maximumY={30} minimumY={0} majorTickScale={4} minorTickScale={2} />
+                    <StackedAreaChart series={stackedSeries} />
+                </div>
             </div>
-        </nav>
-
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-        <div 
-            class="resizer" 
-            on:mousedown={handleMouseDown}
-            role="separator"
-        ></div>
-        
-        <div style="flex:1; display:flex; flex-direction:column; gap:5rem; align-items:center; justify-content:center;">
-
-            <DataTable data={users} />
-
-            <PieChart data={pieData} />
-            
-            <LineChart data={lineData} maximumY=25 minimumY=0 majorTickScale=4 minorTickScale=2 />
-
-            <BarChart data={barData} maximumY=13 majorTickScale=2 minorTickScale=1 />
-
-            <AreaChart data={areaData} maximumY=30 minimumY=0 majorTickScale=4 minorTickScale=2 />
-
-            <StackedAreaChart series={stackedSeries} />
-        </div>
-    </div>
+        {/snippet}
+    </TabView>
 </div>

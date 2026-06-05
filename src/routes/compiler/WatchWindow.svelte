@@ -1,4 +1,5 @@
 <script lang="ts">
+    import TableBase from "$lib/components/TableBase.svelte";
     import ConnectionIndicator, { type Status } from "./ConnectionIndicator.svelte";
 
     type WatchItem = {
@@ -115,6 +116,10 @@
             addWatch();
         }
     }
+
+    function removeWatch(watchToRemove: WatchItem) {
+        watches = watches.filter(w => w.id !== watchToRemove.id);
+    }
 </script>
 
 <style>
@@ -169,32 +174,6 @@
         background: var(--dark-background-l);
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        border: 1px solid var(--dark-background-ll);
-    }
-
-    th, td {
-        padding: 0.5rem;
-        border: 1px solid var(--dark-background-ll);
-        text-align: left;
-    }
-
-    th {
-        background: var(--dark-background-e);
-        position: sticky;
-        top: 0;
-    }
-
-    tr:nth-child(even) {
-        background: var(--dark-background);
-    }
-    
-    tr:nth-child(odd) {
-        background: var(--dark-background-d);
-    }
-
     .row-inactive {
         opacity: 0.4;
     }
@@ -224,6 +203,27 @@
         color: var(--dark-background-ll);
         text-align: center;
     }
+
+    .remove-button {
+        border: 1px solid var(--dark-background-ll);
+        color: var(--dark-foreground);
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        cursor: pointer;
+        background: var(--danger-selectable);
+        border-color: var(--danger-hovered);
+    }
+
+    .remove-button:hover {
+        background: var(--danger-hovered);
+        border-color: var(--danger-selected);
+    }
+    
+    .remove-button:disabled {
+        background: var(--dark-background-l);
+        color: inherit;
+        border-color: transparent;
+    }
 </style>
 
 <div class="watch-window" title={tooltip}>
@@ -249,15 +249,17 @@
     </div>
 
     <div class="table-container" class:opacity-disabled={disabled}>
-        <table>
-            <thead>
+        <TableBase>
+            {#snippet header()}
                 <tr>
-                    <th>Watch Number ({activeWatchesCount}/{maxWatches})</th>
-                    <th>Expression</th>
-                    <th>Status</th>
+                    <th style="width: 150px;">Watch Number ({activeWatchesCount}/{maxWatches})</th>
+                    <th style="width: auto;">Expression</th>
+                    <th style="width: 160px;">Status</th>
+                    <th style="width: 80px;">Actions</th>
                 </tr>
-            </thead>
-            <tbody>
+            {/snippet}
+
+            {#snippet body()}
                 {#each watches as watch}
                     <tr class:row-inactive={!watch.active}>
                         <td>
@@ -289,16 +291,25 @@
                                 }}
                             />
                         </td>
+                        <td>
+                            <button 
+                                class="remove-button"
+                                onclick={() => removeWatch(watch)}
+                                disabled={disabled}
+                            >
+                                Delete
+                            </button>
+                        </td>
                     </tr>
                 {/each}
                 {#if watches.length === 0}
                     <tr>
-                        <td colspan="3" class="no-watches">
+                        <td colspan="4" class="no-watches">
                             No active watches. Type the name of an in-scope variable or register above to monitor its value while the debuggee awaits a breakpoint.
                         </td>
                     </tr>
                 {/if}
-            </tbody>
-        </table>
+            {/snippet}
+        </TableBase>
     </div>
 </div>

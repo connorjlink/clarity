@@ -1,5 +1,9 @@
 <script lang="ts">
-    let { data = [] }: { data: any[] } = $props();
+    import TableBase from "../../lib/components/TableBase.svelte";
+
+    let { 
+        data = [] 
+    }: { data: any[] } = $props();
     
     let columns = $derived(data.length ? Object.keys(data[0]) : []);
 
@@ -66,31 +70,6 @@
 </script>
 
 <style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-
-    th, td {
-        padding: 0.5rem;
-        border: 1px solid var(--dark-background-ll);
-        text-align: left;
-    }
-    
-    th {
-        background: var(--dark-background-e);
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
-    
-    tr:nth-child(even) {
-        background: var(--dark-background);
-    }
-    tr:nth-child(odd) {
-        background: var(--dark-background-d);
-    }
-    
     .sort-indicator {
         margin-left: 0.3rem;
         font-size: 0.9rem;
@@ -125,11 +104,12 @@
     }
 </style>
 
+
 {#if columns.length === 0}
     <p>There are no data to display.</p>
 {:else}
-    <table>
-        <thead>
+    <TableBase>
+        {#snippet header()}
             <tr>
                 {#each columns as column}
                     <th>
@@ -159,8 +139,9 @@
                     </th>
                 {/each}
             </tr>
-        </thead>
-        <tbody>
+        {/snippet}
+
+        {#snippet body()}
             {#each filteredData as row, i}
                 <tr>
                     {#each columns as column}
@@ -168,6 +149,6 @@
                     {/each}
                 </tr>
             {/each}
-        </tbody>
-    </table>
+        {/snippet}
+    </TableBase>
 {/if}

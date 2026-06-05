@@ -4,7 +4,7 @@
     import SourceEditor from "./SourceEditor.svelte";
     import HexViewer from "./HexViewer.svelte";
     import PaneStatus from "./PaneStatus.svelte";
-    import TabView from "./TabView.svelte";
+    import TabView from "../../lib/components/TabView.svelte";
     import MemoryWindow from "./MemoryWindow.svelte";
     import WatchWindow from "./WatchWindow.svelte";
     import ConnectionIndicator, { type Status } from "./ConnectionIndicator.svelte";

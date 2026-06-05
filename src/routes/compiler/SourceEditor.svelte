@@ -294,7 +294,6 @@
 
         return () => {
             ro.disconnect();
-            
             window.removeEventListener('wheel', handleWheel);
         };
     });

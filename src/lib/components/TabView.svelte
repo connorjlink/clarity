@@ -1,5 +1,7 @@
 <script lang="ts">
-    import ResizeHandle from "./ResizeHandle.svelte";
+    import ResizeHandle from "../../routes/compiler/ResizeHandle.svelte";
+
+    import { untrack } from "svelte";
 
     interface Tab {
         id: string;
@@ -26,13 +28,13 @@
         ...snippets
     }: Props = $props();
 
-    let navWidth = $state(initialNavWidth);
+    let navWidth = $state(untrack(() => initialNavWidth));
     let isResizing = $state(false);
 
     let startX = 0;
     let startWidth = 0;
 
-    let tabViewHeight = $state(initialHeight);
+    let tabViewHeight = $state(untrack(() => initialHeight));
     let actualHeight = $state(0);
     let isResizingHeight = $state(false);
     

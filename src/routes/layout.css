@@ -63,6 +63,11 @@
     --accent-selected: color-mix(in srgb, var(--purple) 80%, white);
     --accent-selectable: color-mix(in srgb, var(--purple) 50%, white);
 
+    --danger: var(--error);
+    --danger-hovered: color-mix(in srgb, var(--error) 80%, black);
+    --danger-selected: color-mix(in srgb, var(--error) 80%, white);
+    --danger-selectable: color-mix(in srgb, var(--error) 70%, white);
+
 
     --haze-color-shadow: rgb(40, 80, 130);
     --haze-color-foreground-top: rgb(150, 197, 219);
