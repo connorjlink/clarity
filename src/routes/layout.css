@@ -154,6 +154,14 @@
     font-weight: bold;
 }
 
+.function {
+    color: var(--function);
+}
+
+.namespace {
+    color: var(--namespace);
+}
+
 .integer-literal {
     color: var(--integer-literal);
     font-weight: normal;
@@ -166,6 +174,10 @@
 
 .field {
     color: var(--field);
+}
+
+.operator {
+    color: var(--operator);
 }
 
 .operator-overloaded {
