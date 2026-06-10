@@ -1,0 +1,18 @@
+[
+    {
+        "id": "srd-core-001",
+        "title": "System Architecture",
+        "description": "Defines the fundamental structural design and component relationships.",
+        "version": "1.2.0",
+        "lastModified": "2026-05-15",
+        "icon": "A"
+    },
+    {
+        "id": "srd-ui-002",
+        "title": "Interface Standards",
+        "description": "Guidelines for component behavior, color tokens, and accessibility.",
+        "version": "2.0.4",
+        "lastModified": "2026-06-01",
+        "icon": "U"
+    }
+]

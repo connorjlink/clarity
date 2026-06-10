@@ -154,6 +154,14 @@
     font-weight: bold;
 }
 
+.class-type-templated {
+    color: var(--class-type-templated);
+}
+
+.template-parameter {
+    color: var(--template-parameter);
+}
+
 .function {
     color: var(--function);
 }

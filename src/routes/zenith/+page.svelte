@@ -1,4 +1,7 @@
 <script lang="ts">
+	import srdData from './srd-metadata.json';
+    import SRDEntry from './SRDEntry.svelte';
+
 	let isMenuOpen = $state(false);
 
 	const navLinks = [
@@ -75,8 +78,8 @@
 	<main class="content">
 		<section class="hero">
 			<div class="hero-content">
-				<h1><span class="gradient-text">Haze Zenith</span></h1>
-				<h2><span class="keyword">namespace</span> <span class="namespace">zenith</span> <span class="operator">&gt;</span> <span class="function">visualize</span>(<span class="local-variable">complexity</span>);</h2>
+				<h1 class="gradient-text">Haze Zenith</h1>
+				<h2 style="color: var(--operator)"><span class="keyword">template</span>&lt;<span class="keyword">typename</span>... <span class="template-parameter">Rs</span>&gt; <span class="keyword">struct</span> <span class="class-type-templated">Zenith</span> : <span class="class-type-templated">Requirement</span>&lt;<span class="template-parameter">Rs</span>&gt;... &lbrace;&rbrace;;</h2>
 				<p class="subtitle">
 					A centralized documentation and architectural visualization platform designed for developers working across massive, multi-repository ecosystems.
 				</p>
@@ -86,6 +89,17 @@
 				</div>
 			</div>
 		</section>
+
+		<div class="header">
+			<h1>SRD Repository</h1>
+			<h2><span class="keyword">concept</span> <span class="class-type-templated">IsSRD</span> <span class="operator">=</span> <span class="namespace">hz</span><span class="operator">&lt;</span><span class="local-variable">T</span><span class="operator">&gt;</span></h2>
+		</div>
+
+		<div class="srd-grid">
+			{#each srdData as srd}
+				<SRDEntry {srd} />
+			{/each}
+		</div>
 
 		<section class="diagram-section">
 			<div class="zenith-system-container">
@@ -197,14 +211,12 @@
 			linear-gradient(to top, var(--accent), var(--secondary));
 		background-size: 200px 100%, 100% 100%;
 		background-repeat: no-repeat;
-		-webkit-background-clip: text;
 		background-clip: text;
 		-webkit-text-fill-color: transparent;
-		animation: enchanted-shimmer 4s infinite linear;
-		
+		animation: shimmer 4s infinite linear;
 	}
 
-	@keyframes enchanted-shimmer {
+	@keyframes shimmer {
 		from {
 			background-position: -200px 0, 0 0;
 		}
@@ -213,6 +225,40 @@
 		}
 	}
 
+
+	.container {
+        display: flex;
+        flex-direction: column;
+        gap: 4rem;
+        padding: 2rem 1rem;
+        width: 100%;
+        max-width: calc(var(--content-width) * 1.5);
+        margin: auto;
+    }
+
+    .header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .header h1 {
+        font-size: 4rem;
+        background: linear-gradient(0deg, var(--accent), var(--secondary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin: 0;
+        filter: drop-shadow(0 0 1rem #0008);
+    }
+
+    .srd-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        width: 100%;
+    }
 
 	.content {
 		flex: 1;

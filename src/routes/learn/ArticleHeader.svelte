@@ -1,5 +1,5 @@
 <script lang="ts">
-    import SymbolIcon from './SymbolIcon.svelte';
+    import SymbolIcon from '../../lib/vectors/SymbolIcon.svelte';
 
     let {
         text = "",
@@ -37,13 +37,12 @@
         right: -0.25rem;
         width: 1.1rem;
         height: 1.1rem;
-        border-radius: 999px;
+        border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
         line-height: 1;
-        font-size: 0.9rem;
         color: var(--dark-foreground);
         background: color-mix(in srgb, var(--error, #d34), #000 35%);
         border: 1px solid var(--dark-background-ll);
